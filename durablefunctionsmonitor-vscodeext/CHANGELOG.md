@@ -86,7 +86,7 @@
 ## Version 4.2
 
 - Orchestrations/Entities are now also visualized as a time histogram and as a Gantt chart. Time histogram is interactive, you can zoom it in/out with your mouse.
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/time-histogram.png" width="400">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/time-histogram.png" width="400">
 
 - 'Send Signal' button for Durable Entities.
 - Minor bugfixes.
@@ -122,14 +122,14 @@
 ## Version 3.7
 
 - Now settings are stored in VsCode's settings.json. **File->Preferences->Settings->Durable Functions Monitor**: 
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/vscodeext-settings.png" width="400">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-settings.png" width="400">
 
 - Local Storage Emulator, Azure Government and other exotic Storage Account types are now supported. If your Local Storage Emulator is running and there're some TaskHubs in it - they will appear automatically on your Azure Functions View Container (if not, try to modify the 'Storage Emulator Connection String' parameter on the Settings page).
 
 - Long-awaited 'Cancel' button on the Orchestrations page.
 
 - Now you can hide the columns you're not interested in:
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/hide-columns.png" width="350">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/hide-columns.png" width="350">
 
 - Minor other UI improvements.
 
@@ -150,12 +150,12 @@
 ## Version 3.5
 
 - Now the **Orchestration Details** page features a nice [mermaid](https://www.npmjs.com/package/mermaid)-based sequence diagram:
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/vscodeext-orchestration-diagram-small.png">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-orchestration-diagram-small.png">
 - Also it's now possible to navigate to suborchestrations from the history list on the **Orchestration Details** page.
 
 ## Version 3.4
 
-- Now integrated with [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension, so once logged in to Azure, you can now see and connect to all your TaskHubs. It is also still possible to connect with connection strings, as before. NOTE1: only filtered Azure Subscriptions are shown, so make sure your filter is set correctly with [Azure: Select Subscriptions](https://docs.microsoft.com/en-us/azure/governance/policy/how-to/extension-for-vscode#select-subscriptions) command. NOTE2: many things can go wrong when fetching the list of TaskHubs, so to investigate those problems you can [enable logging](https://github.com/scale-tone/DurableFunctionsMonitor/blob/master/durablefunctionsmonitor-vscodeext/CHANGELOG.md#version-21) and then check the 'Durable Functions Monitor' output channel.
+- Now integrated with [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension, so once logged in to Azure, you can now see and connect to all your TaskHubs. It is also still possible to connect with connection strings, as before. NOTE1: only filtered Azure Subscriptions are shown, so make sure your filter is set correctly with [Azure: Select Subscriptions](https://docs.microsoft.com/en-us/azure/governance/policy/how-to/extension-for-vscode#select-subscriptions) command. NOTE2: many things can go wrong when fetching the list of TaskHubs, so to investigate those problems you can [enable logging](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor-vscodeext/CHANGELOG.md#version-21) and then check the 'Durable Functions Monitor' output channel.
 
 ## Version 3.3
 
