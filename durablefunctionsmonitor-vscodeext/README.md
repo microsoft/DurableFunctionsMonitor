@@ -18,20 +18,20 @@ List/monitor/debug your Azure Durable Functions inside VsCode.
 
 ## Pictures
 
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/vscodeext-command-palette.png" width="624">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-command-palette.png" width="624">
 
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/vscodeext-orchestrations.png" width="768">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-orchestrations.png" width="768">
 
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/vscodeext-orchestration.png" width="843">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-orchestration.png" width="843">
 
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/gantt-chart.png" width="843">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/gantt-chart.png" width="843">
 
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/vscodeext-orchestration-diagram.png" width="600">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-orchestration-diagram.png" width="600">
 
-<img src="https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/readme/screenshots/function-graph.png" width="800">
+<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/function-graph.png" width="800">
 
 ## Prerequisites
 
 Make sure you have the latest [Azure Functions Core Tools](https://www.npmjs.com/package/azure-functions-core-tools) globally installed on your devbox.
 
-More info and sources on [the github repo](https://github.com/scale-tone/DurableFunctionsMonitor#features).
+More info and sources on [the github repo](https://github.com/microsoft/DurableFunctionsMonitor#features).
