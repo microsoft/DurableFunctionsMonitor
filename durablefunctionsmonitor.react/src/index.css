@@ -1,0 +1,60 @@
+html {
+    overflow-y: scroll !important;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    display: table;
+    width: 100%;
+}
+
+.top-appbar {
+    box-shadow: none !important;
+}
+
+.top-toolbar {
+    padding-top: 5px;
+    padding-bottom: 18px;
+    max-width: 100vw;
+    min-width: 900px;
+}
+
+.toolbar-select {
+    min-width: 150px;
+}
+
+.long-text-cell {
+    min-width: 160px;
+    max-width: 250px;
+}
+
+.long-text-cell-input {
+    font-size: x-small !important;
+}
+
+.long-text-cell-input:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.empty-table-placeholder {
+    padding: 30px;
+    text-align: center;
+}
+
+.name-cell {
+    min-width: 165px;
+    word-break: break-all;
+}
+
+.link-with-pointer-cursor {
+    cursor: pointer;
+}
+
+.time-zone-name-span {
+    padding-left: 2px;
+    font-size: x-small;
+}

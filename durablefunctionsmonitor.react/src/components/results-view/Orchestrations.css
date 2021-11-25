@@ -1,0 +1,154 @@
+
+.datetime-cell {
+    min-width: 145px;
+}
+
+.till-checkbox {
+    padding-top: 20px !important;
+    padding-bottom: 4px !important;
+    padding-left: 4px !important;
+    padding-right: 14px !important;
+}
+
+.till-label {
+    padding-left: 15px !important;
+}
+
+.from-input {
+    width: 215px;
+    margin-left: 10px !important;
+}
+
+.till-input {
+    width: 215px;
+}
+
+.time-period-menu-drop-btn {
+    width: 32px !important;
+    min-width: 32px !important;
+    margin-top: 16px !important;
+}
+
+.filter-value-input {
+    flex: 1;
+    margin-left: 20px !important;
+}
+
+.filtered-column-input {
+    width: 180px;
+}
+
+.items-count-label {
+    margin-top: 8px !important;
+    padding-left: 15px;
+    height: 20px;
+}
+
+.instance-id-cell {
+    min-width: 145px;
+    max-width: 270px;
+    word-break: break-all;
+}
+
+.output-cell {
+    min-width: 75px;
+    max-width: 200px;
+}
+
+.entity-type-radio {
+    margin-bottom: 0px;
+}
+
+.toolbar-grid1 {
+    width: 260px !important;
+}
+
+.toolbar-grid1-item2 {
+    padding-top: 20px;
+    min-height: 68px !important;
+    min-width: 257px !important;
+}
+
+.toolbar-grid2 {
+    margin-left: 40px;
+    margin-right: 40px;
+}
+
+.toolbar-grid2-item-1 {
+    display: flex;
+}
+
+
+.toolbar-grid2-item1-select {
+    margin-left: 20px !important;
+}
+
+.toolbar-grid2-item2 {
+    padding-top: 20px;
+}
+
+.toolbar-grid3 {
+    width: auto !important;
+}
+
+.toolbar-grid3-item2 {
+    padding-top: 26px;
+}
+
+.toolbar-runtime-status-group {
+    margin-left: 30px;
+    margin-right: 30px;
+}
+
+.toolbar-runtime-status-group-label {
+    padding-left: 10px !important;
+}
+
+.form-control-float-right {
+    float: right;
+}
+
+.column-hide-button {
+    width: 8px !important;
+    padding: 0px !important;
+    margin-right: -8px !important;
+    float: right;
+    opacity: 0.7;
+}
+
+.unhide-button {
+    vertical-align: text-bottom !important;
+    font-size: 12px;
+}
+
+.tab-buttons {
+    min-height: 37px !important;
+}
+
+.histogram-legend {
+    padding-left: 70px;
+    white-space: normal !important;
+}
+
+.histogram-legend-dark-mode > div > span {
+    color:lightgrey;
+}
+
+.status-checkbox {
+    padding-left: 10px !important;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+}
+
+.autorefresh-select {
+    min-width: 130px
+}
+
+.refresh-button {
+    width: 130px;
+}
+
+.selected-statuses-box {
+    display: flex;
+    flex-wrap: wrap;
+}

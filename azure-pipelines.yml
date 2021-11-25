@@ -1,0 +1,117 @@
+pool:
+  name: Azure Pipelines
+  vmImage: 'ubuntu-18.04'
+  demands: npm
+
+steps:
+- task: Npm@1
+  displayName: 'npm install durablefunctionsmonitor.react'
+  inputs:
+    workingDir: durablefunctionsmonitor.react
+    verbose: false
+
+- task: Npm@1
+  displayName: 'npm build durablefunctionsmonitor.react'
+  inputs:
+    command: custom
+    workingDir: durablefunctionsmonitor.react
+    verbose: false
+    customCommand: 'run build'
+
+- task: CopyFiles@2
+  displayName: 'copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics'
+  inputs:
+    SourceFolder: durablefunctionsmonitor.react/build
+    Contents: |
+     static/**
+     index.html
+     favicon.png
+     logo.svg
+     service-worker.js
+     manifest.json
+    TargetFolder: durablefunctionsmonitor.dotnetbackend/DfmStatics
+    CleanTargetFolder: true
+
+- task: CopyFiles@2
+  displayName: 'copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory'
+  inputs:
+    SourceFolder: durablefunctionsmonitor.dotnetbackend
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend'
+    OverWrite: true
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests'
+  inputs:
+    command: 'test'
+    projects: 'tests/durablefunctionsmonitor.dotnetbackend.tests/*.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish durablefunctionsmonitor.dotnetbackend'
+  inputs:
+    command: publish
+    publishWebProjects: false
+    projects: durablefunctionsmonitor.dotnetbackend
+    arguments: '--output $(Build.ArtifactStagingDirectory)/output'
+    zipAfterPublish: false
+    modifyOutputPath: false
+
+- task: CopyFiles@2
+  displayName: 'copy dotnetbackend to durablefunctionsmonitor-vscodeext/backend'
+  inputs:
+    SourceFolder: '$(Build.ArtifactStagingDirectory)/output'
+    Contents: |
+     **
+     !logo.svg
+    TargetFolder: 'durablefunctionsmonitor-vscodeext/backend'
+    CleanTargetFolder: true
+
+- task: CopyFiles@2
+  displayName: 'copy custom-backends to durablefunctionsmonitor-vscodeext/custom-backends'
+  inputs:
+    SourceFolder: 'custom-backends'
+    Contents: |
+     **
+     !*.md
+    TargetFolder: 'durablefunctionsmonitor-vscodeext/custom-backends'
+    CleanTargetFolder: true
+
+- task: Npm@1
+  displayName: 'npm install durablefunctionsmonitor-vscodeext'
+  inputs:
+    workingDir: 'durablefunctionsmonitor-vscodeext'
+    verbose: false
+
+- task: Npm@1
+  displayName: 'package durablefunctionsmonitor-vscodeext to VSIX-file'
+  inputs:
+    command: custom
+    workingDir: 'durablefunctionsmonitor-vscodeext'
+    verbose: false
+    customCommand: 'run package'
+
+- task: CopyFiles@2
+  displayName: 'copy VSIX-file to ArtifactStagingDirectory'
+  inputs:
+    SourceFolder: 'durablefunctionsmonitor-vscodeext'
+    Contents: 'durablefunctionsmonitor*.vsix'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    OverWrite: true
+
+- task: CopyFiles@2
+  displayName: 'copy LICENSE to output'
+  inputs:
+    Contents: |
+     LICENSE
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/output'
+    OverWrite: true
+
+- task: NuGetCommand@2
+  displayName: 'package dotnetbackend into a Nuget package'
+  inputs:
+    command: 'pack'
+    packagesToPack: '$(Build.ArtifactStagingDirectory)/output/nuspec.nuspec'
+    packDestination: '$(Build.ArtifactStagingDirectory)'
+    versioningScheme: 'off'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'

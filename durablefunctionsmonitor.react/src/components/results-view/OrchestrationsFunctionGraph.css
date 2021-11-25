@@ -1,0 +1,29 @@
+
+.settings-group {
+    padding-top: 5px;
+    padding-left: 20px;
+    padding-bottom: 5px;
+}
+
+.link-to-az-func-as-a-graph {
+    float: right;
+    padding-top: 10px;
+    padding-right: 10px;
+}
+
+.metrics-chip {
+    margin-right: 3px;
+    font-size: xx-small !important;
+}
+
+.metrics-span {
+    position: absolute;
+    visibility: hidden;
+    white-space: nowrap;
+}
+
+.total-metrics-span {
+    display: inherit;
+    padding-top: 9px;
+    padding-left: 20px;
+}

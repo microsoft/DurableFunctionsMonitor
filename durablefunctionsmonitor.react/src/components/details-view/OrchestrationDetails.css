@@ -1,0 +1,73 @@
+.details-top-toolbar {
+    padding-top: 5px;
+    padding-bottom: 20px;
+    max-width: 100vw;
+    min-width: 900px;
+}
+
+.grid-container {
+    padding-top: 20px;
+    padding-right: 15px;
+}
+
+.grid-item {
+    padding-left: 15px;
+}
+
+.details-datetime-cell {
+    min-width: 250px;
+}
+
+.history-events-count-label {
+    padding-top: 10px;
+    padding-left: 16px;
+    padding-bottom: 10px;
+}
+
+.details-refresh-button {
+    width: 90px;
+}
+
+.functions-graph-tab-span {
+    display: inline-flex;
+    flex-direction: row;
+}
+
+.functions-graph-link-icon {
+    width: 15px !important;
+    margin-top: -2px;
+    padding-left: 5px;
+}
+
+.history-filtered-column-input {
+    width: 150px;
+}
+
+.history-filter-value-input {
+    width: 250px;
+}
+
+.history-appbar {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.history-toolbar {
+    margin-left: -8px !important;
+    padding-left: 0px !important;
+    padding-top: 17px !important;
+}
+
+.history-from-input {
+    width: 210px;
+}
+
+.history-from-checkbox {
+    padding-top: 18px !important;
+}
+
+.history-from-label {
+    margin-left: -40px;
+}

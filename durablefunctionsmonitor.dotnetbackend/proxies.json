@@ -1,0 +1,14 @@
+{
+    "$schema": "http://json.schemastore.org/proxies",
+    "proxies": {
+        "DisableRuntimeWebhooks": {
+            "matchCondition": {
+                "route": "{url:regex(runtime)}/{*all}"
+            },
+            "responseOverrides": {
+                "response.statusCode": "403",
+                "response.statusReason": "Forbidden"
+            }
+        }
+    }
+}

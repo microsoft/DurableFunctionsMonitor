@@ -1,0 +1,18 @@
+
+.purge-history-from-input {
+    padding-bottom: 20px !important;
+}
+
+.purge-history-till-input {
+    margin-left: 20px !important;
+    padding-bottom: 20px !important;
+}
+
+.purge-history-apply-to {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+}
+
+.success-message {
+    color: green !important;
+}

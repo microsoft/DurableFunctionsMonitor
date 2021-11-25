@@ -1,0 +1,19 @@
+.title-typography {
+    padding-right: 10px;
+}
+
+.app-bar {
+    margin-bottom: 10px;
+}
+
+.instance-id-input {
+    width: 320px;
+}
+
+.instance-id-valid .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+    border-color: green !important;
+}
+
+.raw-html-div {
+    padding: 10px;
+}

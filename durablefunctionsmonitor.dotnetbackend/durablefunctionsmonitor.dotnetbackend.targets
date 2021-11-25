@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+        <!-- Tells microsoft.net.sdk.functions to include DFM's dll to metadata generation -->
+        <FunctionsInDependencies>true</FunctionsInDependencies>
+        <!-- Fix for https://github.com/Azure/azure-functions-host/issues/5894 -->
+        <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+    </PropertyGroup>
+
+    <!-- Copying statics -->
+    <ItemGroup >
+        <Content Include="$(MSBuildThisFileDirectory)\..\DfmStatics\**" LinkBase="DfmStatics\">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <!-- 
+        This inline task applies DurableFunctionsMonitorRoutePrefix to previously generated DFM's function.json files.
+        
+        By default, DFM's endpoint is served from root URL (which is typically 'https://<my-functions-host>/api')
+        and overshadows all existing HTTP triggers.
+        To prevent that from happening and make your DFM endpoint be served from e.g. 'https://<my-functions-host>/api/my-dfm' 
+        add the following to your CSPROJ-file:
+
+            <DurableFunctionsMonitorRoutePrefix>my-dfm</<DurableFunctionsMonitorRoutePrefix>
+    -->
+    <UsingTask
+        TaskName="FixDfmPrefixesInFunctionJsonTask"
+        TaskFactory="RoslynCodeTaskFactory"
+        AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" >
+        <ParameterGroup>
+            <FolderWithDfmFunctions ParameterType="System.String" />
+            <DfmRoutePrefix ParameterType="System.String" />
+        </ParameterGroup>
+        <Task>
+        <Using Namespace="System"/>
+        <Using Namespace="System.IO"/>
+        <Using Namespace="System.Text.RegularExpressions"/>
+        <Code Type="Fragment" Language="cs">
+        <![CDATA[
+
+            Log.LogMessage(MessageImportance.High, $"#DurableFunctionsMonitor: applying '{DfmRoutePrefix}' route prefix to function.json files in {FolderWithDfmFunctions}");
+
+            var regex = new Regex("\"route\":\\s*\"", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+            bool dfmFunctionsFound = false;
+            foreach(var folder in Directory.EnumerateDirectories($"{FolderWithDfmFunctions}", "Dfm*"))
+            {
+                string functionJsonPath = Path.Combine(folder, "function.json");
+                if(!File.Exists(functionJsonPath))
+                {
+                    continue;
+                }
+
+                string json = File.ReadAllText(functionJsonPath);
+
+                var match = regex.Match(json);
+                if(match.Success)
+                {
+                    string before = json.Substring(0, match.Index);
+                    string after = json.Substring(match.Index + match.Length);
+                    
+                    if(after.StartsWith(DfmRoutePrefix))
+                    {
+                        continue;
+                    }
+
+                    json = $"{before}\"route\": \"{DfmRoutePrefix}/{after}";
+
+                    File.WriteAllText(functionJsonPath, json);
+
+                    dfmFunctionsFound = true;
+                    Log.LogMessage(MessageImportance.High, $"#DurableFunctionsMonitor: modified {functionJsonPath}");
+                }
+            }
+
+            if(!dfmFunctionsFound)
+            {
+                Log.LogWarning("#DurableFunctionsMonitor: Couldn't find any DFM functions in output folder. Make sure you called DfmEndpoint.Setup() in your code.");
+            }
+        ]]>
+        </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="FixDfmPrefixesInFunctionJsonAfterBuild" 
+        AfterTargets="_GenerateFunctionsPostBuild" 
+        DependsOnTargets="_GenerateFunctionsPostBuild"
+        Condition="$(DurableFunctionsMonitorRoutePrefix) != ''"
+    >
+        <FixDfmPrefixesInFunctionJsonTask FolderWithDfmFunctions="$(TargetDir)" DfmRoutePrefix="$(DurableFunctionsMonitorRoutePrefix)"/>
+    </Target>
+
+    <Target Name="FixDfmPrefixesInFunctionJsonAfterPublish" 
+        AfterTargets="_FunctionsPostPublish" 
+        DependsOnTargets="_FunctionsPostPublish"
+        Condition="$(DurableFunctionsMonitorRoutePrefix) != ''"
+    >
+        <FixDfmPrefixesInFunctionJsonTask FolderWithDfmFunctions="$(PublishDir)" DfmRoutePrefix="$(DurableFunctionsMonitorRoutePrefix)"/>
+    </Target>
+
+</Project>

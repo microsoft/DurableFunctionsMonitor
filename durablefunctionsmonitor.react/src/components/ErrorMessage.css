@@ -1,0 +1,13 @@
+
+.message-snackbar {
+    top: 80px !important;
+}
+
+.error-icon {
+    margin-right: 10px;
+    margin-bottom: -7px;
+}
+
+.error-snackbar-content {
+    background-color: red !important;
+}

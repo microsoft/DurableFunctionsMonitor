@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata minClientVersion="2.5">
+        <id>DurableFunctionsMonitor.DotNetBackend</id>
+        <version>5.1.1</version>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>DurableFunctionsMonitor.DotNetBackend</description>
+        <authors>DurableFunctionsMonitor</authors>
+        <repository type="git" url="https://github.com/scale-tone/DurableFunctionsMonitor" />
+        <license type="file">LICENSE</license>
+
+        <dependencies>
+            <dependency id="Microsoft.Azure.WebJobs.Extensions.DurableTask" version="2.4.0" />
+            <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" version="6.8.0" />
+            <dependency id="Fluid.Core" version="1.0.0-beta-9722" />
+        </dependencies>
+
+    </metadata>
+
+    <files>
+        <file src="..\output\bin\durablefunctionsmonitor.dotnetbackend.dll" target="lib/netcoreapp2.1" />
+        <file src="..\output\**" target="/" />
+        <file src="..\output\durablefunctionsmonitor.dotnetbackend.targets" target="build" />
+    </files>
+</package>

@@ -1,0 +1,17 @@
+
+.diagram-div {
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+.diagram-div > svg {
+    display: block;
+    margin: auto;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.link-to-az-func-as-a-graph {
+    float: right;
+    padding-right: 10px;
+}

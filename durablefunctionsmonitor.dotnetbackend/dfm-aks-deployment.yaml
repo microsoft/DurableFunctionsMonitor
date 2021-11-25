@@ -1,0 +1,32 @@
+# Deploys DFM from Docker image.
+# Expects a secret named 'dfm-secret' to be previously created.
+# Here is how to create that secret:
+#
+# kubectl create secret generic dfm-secret \
+#  --from-literal=AzureWebJobsStorage='<your-azure-storage-connection-string>' \
+#  --from-literal=WEBSITE_AUTH_CLIENT_ID='<your-aad-app-client-id>' \
+#  --from-literal=WEBSITE_AUTH_OPENID_ISSUER='<your-token-issuer>' \
+#  --from-literal=DFM_ALLOWED_USER_NAMES='<your-email>'
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dfm
+spec:
+  selector:
+    matchLabels:
+      app: dfm
+  template:
+    metadata:
+      labels:
+        app: dfm
+    spec:
+      containers:
+      - name: dfm
+        image: docker.io/scaletone/durablefunctionsmonitor:5.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80        
+        envFrom:
+        - secretRef:
+            name: dfm-secret
