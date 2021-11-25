@@ -1,6 +1,6 @@
 # DurableFunctionsMonitor.DotNetBackend
 
-Backend for DurableFunctionsMonitor, reimplemented in C#. Also serves the UI statics (at root URL: http://localhost:7072).
+Backend for DurableFunctionsMonitor. Also serves the UI statics (at root URL: http://localhost:7072).
 
 Use this project as a standalone service, either run it locally or deploy to Azure (and **protect** with AAD).
 
@@ -57,7 +57,7 @@ Deploy to your own Azure Function instance (separate from where your Durable Fun
     
     **OR**
     
-    Add **DFM_ALLOWED_USER_NAMES** configuration setting with a comma-separated list of emails. The backend then [will only allow users from this list to call itself](https://github.com/scale-tone/DurableFunctionsMonitor/blob/master/durablefunctionsmonitor.dotnetbackend/Common/Auth.cs#L68).
+    Add **DFM_ALLOWED_USER_NAMES** configuration setting with a comma-separated list of emails. The backend then [will only allow users from this list to call itself](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/Common/Auth.cs#L68).
 * Navigate to https://your-function-app.azurewebsites.net and ensure you can login (and unwelcomed ones cannot).
 
 **OR**
@@ -70,10 +70,10 @@ kubectl create secret generic dfm-secret \
   --from-literal=WEBSITE_AUTH_OPENID_ISSUER='<your-token-issuer>' \
   --from-literal=DFM_ALLOWED_USER_NAMES='<your-email>'
 
-kubectl apply -f https://raw.githubusercontent.com/scale-tone/DurableFunctionsMonitor/master/durablefunctionsmonitor.dotnetbackend/dfm-aks-deployment.yaml
+kubectl apply -f https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/durablefunctionsmonitor.dotnetbackend/dfm-aks-deployment.yaml
 ```
    
-   This will create a secret with all required config settings and then run [this Docker container](https://hub.docker.com/r/scaletone/durablefunctionsmonitor) with [this deployment yaml](https://github.com/scale-tone/DurableFunctionsMonitor/blob/master/durablefunctionsmonitor.dotnetbackend/dfm-aks-deployment.yaml).
+   This will create a secret with all required config settings and then run [this Docker container](https://hub.docker.com/r/scaletone/durablefunctionsmonitor) with [this deployment yaml](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/dfm-aks-deployment.yaml).
    
    WARNING: by default, *all* Task Hubs in the underlying Storage account are accessible. To restrict the list of allowed Task Hubs specify an extra **DFM_HUB_NAME** secret value with a comma-separated list of Task Hub names. 
 
@@ -98,13 +98,13 @@ The following optional config settings are supported. Depending on the way you r
 
 ## Details
 
-The backend is a C#-written Azure Function itself, that leverages [Durable Functions management interface](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-instance-management) and adds paging/filtering/sorting/etc. capabilities on top of it. UI is a set of static build artifacts from [this project](https://github.com/scale-tone/DurableFunctionsMonitor/tree/master/durablefunctionsmonitor.react), committed into [this folder](https://github.com/scale-tone/DurableFunctionsMonitor/tree/master/durablefunctionsmonitor.dotnetbackend/DfmStatics) and served by [this function](https://github.com/scale-tone/DurableFunctionsMonitor/blob/master/durablefunctionsmonitor.dotnetbackend/Functions/ServeStatics.cs). 
+The backend is a C#-written Azure Function itself, that leverages [Durable Functions management interface](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-instance-management) and adds paging/filtering/sorting/etc. capabilities on top of it. UI is a set of static build artifacts from [this project](https://github.com/scale-tone/DurableFunctionsMonitor/tree/master/durablefunctionsmonitor.react), committed into [this folder](https://github.com/scale-tone/DurableFunctionsMonitor/tree/master/durablefunctionsmonitor.dotnetbackend/DfmStatics) and served by [this function](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/Functions/ServeStatics.cs). 
 
-By default, Azure Functions runtime exposes a /runtime/webhooks/durabletask endpoint, which (when running locally) doesn't have any auth and returns quite sensitive data. That endpoint is being suppressed via [proxies.json](https://github.com/scale-tone/DurableFunctionsMonitor/blob/master/durablefunctionsmonitor.dotnetbackend/proxies.json). Still, when running on your devbox, please, ensure that the HTTP port you're using is not accessible externally.
+By default, Azure Functions runtime exposes a /runtime/webhooks/durabletask endpoint, which (when running locally) doesn't have any auth and returns quite sensitive data. That endpoint is being suppressed via [proxies.json](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/proxies.json). Still, when running on your devbox, please, ensure that the HTTP port you're using is not accessible externally.
 
-When this backend is run as part of [VsCode extension](https://github.com/scale-tone/DurableFunctionsMonitor/tree/master/durablefunctionsmonitor-vscodeext), it's being [protected with a random nonce](https://github.com/scale-tone/DurableFunctionsMonitor/blob/master/durablefunctionsmonitor.dotnetbackend/Common/Auth.cs#L42), so that nobody else could make calls to it except your VsCode instance.
+When this backend is run as part of [VsCode extension](https://github.com/scale-tone/DurableFunctionsMonitor/tree/master/durablefunctionsmonitor-vscodeext), it's being [protected with a random nonce](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/Common/Auth.cs#L42), so that nobody else could make calls to it except your VsCode instance.
 
-When deployed to Azure, your DFM instance **must** be secured with [Easy Auth](https://docs.microsoft.com/en-us/azure/app-service/overview-authentication-authorization). Support for AAD login was added to **v.1.1.0** (client side [signs the user in and obtains an access token](https://github.com/scale-tone/DurableFunctionsMonitor/blob/master/durablefunctionsmonitor.react/src/states/LoginState.ts), backend [validates the token and the user](https://github.com/scale-tone/DurableFunctionsMonitor/blob/master/durablefunctionsmonitor.dotnetbackend/Common/Globals.cs#L62)), but it needs to be configured properly, as described above.
+When deployed to Azure, your DFM instance **must** be secured with [Easy Auth](https://docs.microsoft.com/en-us/azure/app-service/overview-authentication-authorization). Support for AAD login was added to **v.1.1.0** (client side [signs the user in and obtains an access token](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.react/src/states/LoginState.ts), backend [validates the token and the user](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/Common/Globals.cs#L62)), but it needs to be configured properly, as described above.
 
 Enjoy and please report any bugs.
 
