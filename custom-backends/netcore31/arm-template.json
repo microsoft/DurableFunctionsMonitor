@@ -77,8 +77,8 @@
                         "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
                     ],
                     "properties": {
-                        "RepoUrl": "https://github.com/scale-tone/DurableFunctionsMonitor",
-                        "branch": "master",
+                        "RepoUrl": "https://github.com/microsoft/DurableFunctionsMonitor",
+                        "branch": "main",
                         "IsManualIntegration": true
                     }
                 },
