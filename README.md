@@ -11,7 +11,7 @@ A monitoring/debugging UI tool for Azure Durable Functions
 
 ## How to use
 
-You can run this tool [as a VsCode extension](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.durablefunctionsmonitor), [as a Standalone service](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-run-DfMon-in-Standalone-mode) or [in Injected mode](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/NUGET_README.md) (installed [as a NuGet package](https://www.nuget.org/profiles/durablefunctionsmonitor) to your Functions project).
+You can run this tool [as a VsCode extension](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.durablefunctionsmonitor), [as a Standalone service](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-run-DfMon-in-Standalone-mode) or [in Injected mode](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/NUGET_README.md) (installed [as a NuGet package](https://www.nuget.org/profiles/durablefunctionsmonitor) to your .Net Functions project).
 
 See [detailed instructions in our Wiki](https://github.com/microsoft/DurableFunctionsMonitor/wiki).
 
