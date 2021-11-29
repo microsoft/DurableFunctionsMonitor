@@ -15,6 +15,12 @@ You can run this tool [as a VsCode extension](https://marketplace.visualstudio.c
 
 See [detailed instructions in our Wiki](https://github.com/microsoft/DurableFunctionsMonitor/wiki).
 
+## Contents of this repo
+
+* [durablefunctionsmonitor.dotnetbackend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) - the main component, implemented as a .Net-based Azure Function. Implements a thin layer of RESTful APIs on top of [Durable Task Framework](https://github.com/Azure/azure-functions-durable-extension), also serves [client UI statics](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.react).
+* [durablefunctionsmonitor.react](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.react) - client UI implementation. A React app written in TypeScript. Compiled HTML/JS/CSS statics from this project are copied to [this folder](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend/DfmStatics) and then served by the backend.
+* [durablefunctionsmonitor-vscodeext](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor-vscodeext) - VsCode extension implementation, written in TypeScript.
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
