@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { ITypedLocalStorage } from './ITypedLocalStorage';
 
 // A global variable declared in index.html and replaced by VsCode extension

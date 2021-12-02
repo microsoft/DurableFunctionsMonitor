@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Method } from 'axios';
 
 // Interface for communicating with the backend (sending HTTP requests)

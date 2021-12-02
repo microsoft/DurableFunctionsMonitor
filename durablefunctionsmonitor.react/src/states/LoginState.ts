@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { observable, computed } from 'mobx'
 import axios from 'axios';
 import * as Msal from 'msal';
@@ -174,7 +177,7 @@ export class LoginState extends ErrorMessageState {
 
                 // Couldn't find a better way to detect this
                 if (err.message === 'Network Error') {
-                    window.location.reload(true);
+                    window.location.reload();
                 }
 
                 return Promise.reject(err);

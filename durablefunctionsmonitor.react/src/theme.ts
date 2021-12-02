@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { createMuiTheme } from '@material-ui/core';
 
 import { RuntimeStatus } from './states/DurableOrchestrationStatus';

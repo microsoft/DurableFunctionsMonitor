@@ -222,7 +222,6 @@
                     "group": "4_storage_explorer@2"
                 }
             ],
-
             "commandPalette": [
                 {
                     "command": "durableFunctionsMonitorTreeView.openInstancesInStorageExplorer",

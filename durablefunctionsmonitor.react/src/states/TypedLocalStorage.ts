@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { ITypedLocalStorage } from './ITypedLocalStorage';
 import { QueryString } from './QueryString';
 

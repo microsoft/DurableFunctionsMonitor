@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { observable, computed } from 'mobx';
 import moment from 'moment';
 

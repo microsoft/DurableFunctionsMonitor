@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 // Interface for pesristing class field values in some storage
 export interface ITypedLocalStorage<T>

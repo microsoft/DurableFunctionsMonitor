@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { DurableOrchestrationStatus } from '../DurableOrchestrationStatus';
 import { CancelToken } from '../../CancelToken';
 

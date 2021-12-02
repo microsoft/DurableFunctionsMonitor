@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 const portscanner = require('portscanner');
 
 import * as fs from 'fs';

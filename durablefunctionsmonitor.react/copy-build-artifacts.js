@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 const ncp = require('ncp').ncp;
 const rimraf = require("rimraf");
 

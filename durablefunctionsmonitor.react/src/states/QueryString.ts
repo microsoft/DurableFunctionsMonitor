@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 // Helper class for dealing with browser's query string
 export class QueryString {

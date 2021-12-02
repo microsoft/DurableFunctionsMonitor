@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { observable } from 'mobx';
 import mermaid from 'mermaid';
 import { DateTimeHelpers } from '../DateTimeHelpers';

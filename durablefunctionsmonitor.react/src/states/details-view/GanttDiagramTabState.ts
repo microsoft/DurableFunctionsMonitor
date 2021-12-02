@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import mermaid from 'mermaid';
 import moment from 'moment';
 

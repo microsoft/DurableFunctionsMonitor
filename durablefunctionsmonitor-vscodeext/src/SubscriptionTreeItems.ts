@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as vscode from 'vscode';
 
 import { StorageManagementClient } from "@azure/arm-storage";
@@ -221,7 +224,7 @@ export class SubscriptionTreeItems {
 
             } catch (err) {
 
-                this._log(`Failed to load storage accounts from subscription ${s.subscription.displayName}. ${err.message}`);
+                this._log(`Failed to load storage accounts from subscription ${s.subscription.displayName}. ${(err as any).message}`);
 
                 return null;
             }

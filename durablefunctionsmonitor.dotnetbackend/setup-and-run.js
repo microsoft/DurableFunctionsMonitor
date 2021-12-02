@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 // Checks that a local.settings.json file exists in local folder.
 // If not, asks the user to specify the Azure Storage connection string and creates the file.
 // Then runs func start

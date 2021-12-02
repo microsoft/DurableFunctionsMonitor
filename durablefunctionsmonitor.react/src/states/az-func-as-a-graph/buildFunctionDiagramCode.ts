@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { FunctionsMap, ProxiesMap } from './FunctionsMap';
 
 const space = '#32;';

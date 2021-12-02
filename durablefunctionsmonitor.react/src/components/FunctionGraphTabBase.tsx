@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 import { FunctionGraphStateBase } from '../states/FunctionGraphStateBase';
 import { FunctionGraphBase } from './FunctionGraphBase';

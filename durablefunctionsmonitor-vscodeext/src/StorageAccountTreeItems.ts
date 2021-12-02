@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { MonitorView } from "./MonitorView";
 import { MonitorViewList } from "./MonitorViewList";
 import { StorageAccountTreeItem } from "./StorageAccountTreeItem";

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { computed } from 'mobx';
 
 import { ICustomTabState, CustomTabTypeEnum } from './ICustomTabState';

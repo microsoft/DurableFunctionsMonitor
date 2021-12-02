@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 // A DTO used by DurableOrchestrationStatus.historyEvents
 export class HistoryEvent {

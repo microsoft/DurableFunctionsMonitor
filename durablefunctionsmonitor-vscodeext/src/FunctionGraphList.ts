@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -107,7 +110,7 @@ export class FunctionGraphList {
             try {
                 rimraf.sync(tempFolder)
             } catch (err) {
-                this._log(`Failed to remove ${tempFolder}: ${err.message}`);
+                this._log(`Failed to remove ${tempFolder}: ${(err as any).message}`);
             }
         }
     }

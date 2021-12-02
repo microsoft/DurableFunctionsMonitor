@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;

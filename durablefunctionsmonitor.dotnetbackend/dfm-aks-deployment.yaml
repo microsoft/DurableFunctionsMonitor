@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+#
 # Deploys DFM from Docker image.
 # Expects a secret named 'dfm-secret' to be previously created.
 # Here is how to create that secret:
