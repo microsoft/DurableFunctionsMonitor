@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using DurableFunctionsMonitor.DotNetBackend;
 using System;
