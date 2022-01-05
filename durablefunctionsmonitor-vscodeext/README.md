@@ -16,17 +16,19 @@ List/monitor/debug your Azure Durable Functions inside VsCode.
 * Observe all Task Hubs in your Azure Subscription and connect to them - **Azure Functions View Container -> DURABLE FUNCTIONS**
 * Delete Task Hubs - **Command Palette -> Delete Task Hub...**
 
+See the [complete list of features in our wiki](https://github.com/microsoft/DurableFunctionsMonitor/wiki#features).
+
 ## How to run
 
 After installing this extension from the Marketplace or from a VSIX-file you have multiple ways to show the **DfMon**'s main window:
-* (Most typical, but requires being logged in into Azure) go to `AZURE` view, expand the `DURABLE FUNCTIONS` tab and click on a Task Hub that you wish to monitor:
+* (Most typical, but requires being logged in into Azure) go to **AZURE** view container, expand the **DURABLE FUNCTIONS** tab and click on a Task Hub that you wish to monitor:
 
   ![image](https://user-images.githubusercontent.com/5447190/148263305-d96cc6ab-9308-4253-9e19-8f4c987166d8.png)
 
-  NOTE: if you don't see your Azure Subscription there, run the `Azure: Select Subscriptions` command and configure Subscription filtering.
+  NOTE: if you don't see your Azure Subscription there, run the **Azure: Select Subscriptions** command and configure Subscription filtering.
 
-* Run the `Durable Functions Monitor` command via Command Palette, provide the storage connection string and a Task Hub name.
-* (If you have your Azure Functions project opened) right-click on the `host.json` file and use one of the context menus:
+* Run the **Durable Functions Monitor** command via Command Palette, provide the storage connection string and a Task Hub name.
+* (If you have your Azure Functions project opened) right-click on the **host.json** file and use one of the context menus:
 
   ![image](https://user-images.githubusercontent.com/5447190/148263042-e91fac9b-f305-40aa-bc11-44fff495df06.png)
 
@@ -36,11 +38,11 @@ When attaching to Task Hubs, **DfMon** starts [the backend](https://github.com/m
 
   ![image](https://user-images.githubusercontent.com/5447190/148265469-5cf645a7-4425-4684-9166-733be17fdb8b.png)
 
-You can also generate and view [Function Graphs](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-generate-and-use-Function-Graphs) for arbitrary Azure Functions projects. Use the `Visualize Functions as a Graph...` command for that.
+You can also generate and view [Function Graphs](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-generate-and-use-Function-Graphs) for arbitrary Azure Functions projects. Use the **Visualize Functions as a Graph...** command for that.
 
 ## Prerequisites
 
 * Make sure you have the latest [Azure Functions Core Tools](https://www.npmjs.com/package/azure-functions-core-tools) globally installed on your devbox.
 
-* For most features to work you also need to have [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension installed and be logged in into Azure. To login into Azure execute the `Azure: Sign In` command in Command Palette. To filter the list of Azure subscriptions shown execute the `Azure: Select Subscriptions` command.
+* For most features to work you also need to have [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension installed and be logged in into Azure. To login into Azure execute the **Azure: Sign In** command in Command Palette. To filter the list of Azure subscriptions shown execute the **Azure: Select Subscriptions** command.
 
