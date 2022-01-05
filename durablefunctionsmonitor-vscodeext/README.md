@@ -9,11 +9,11 @@ List/monitor/debug your Azure Durable Functions inside VsCode.
 * Get a bird's eye view of any Azure Functions project in form of a graph - **Command Palette -> Visualize Functions as a Graph...**. 
 * List your Orchestrations and/or Durable Entities, with sorting, infinite scrolling and auto-refresh.
 * Monitor the status of a certain Orchestration/Durable Entity. Restart, Purge, Rewind, Terminate, Raise Events.
-* Start new orchestration instances - **Azure Functions View Container -> DURABLE FUNCTIONS -> [right-click on your TaskHub] -> Start New Orchestration Instance...**
+* Start new orchestration instances - **AZURE view container -> DURABLE FUNCTIONS -> [right-click on your TaskHub] -> Start New Orchestration Instance...**
 * Quickly navigate to an Orchestration/Entity instance by its ID - **Command Palette -> Durable Functions Monitor: Go to instanceId...** or **Azure Functions View Container -> DURABLE FUNCTIONS -> [right-click on your TaskHub] -> Go to instanceId...**
 * Purge Orchestrations/Durable Entities history - **Command Palette -> Durable Functions Monitor: Purge History...**
 * Cleanup deleted Durable Entities - **Command Palette -> Durable Functions Monitor: Clean Entity Storage...**
-* Observe all Task Hubs in your Azure Subscription and connect to them - **Azure Functions View Container -> DURABLE FUNCTIONS**
+* Observe all Task Hubs in your Azure Subscription and connect to them - **AZURE view container -> DURABLE FUNCTIONS**
 * Delete Task Hubs - **Command Palette -> Delete Task Hub...**
 
 See the [complete list of features in our wiki](https://github.com/microsoft/DurableFunctionsMonitor/wiki#features).
@@ -45,4 +45,15 @@ You can also generate and view [Function Graphs](https://github.com/microsoft/Du
 * Make sure you have the latest [Azure Functions Core Tools](https://www.npmjs.com/package/azure-functions-core-tools) globally installed on your devbox.
 
 * For most features to work you also need to have [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension installed and be logged in into Azure. To login into Azure execute the **Azure: Sign In** command in Command Palette. To filter the list of Azure subscriptions shown execute the **Azure: Select Subscriptions** command.
+
+## How to compile and run this project locally
+
+This project is a typical [VsCode extension](https://code.visualstudio.com/api/get-started/your-first-extension), so to run/debug it locally you just open these sources in your VsCode and press F5. 
+But before that you'll need to get the [backend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) binaries compiled and copied:
+* Go to **durablefunctionsmonitor.dotnetbackend** folder.
+* Execute `dotnet publish -o ../durablefunctionsmonitor-vscodeext/backend` there with your command line. This will compile the backend and place its binaries into the newly created **durablefunctionsmonitor-vscodeext/backend** subfolder.
+
+Now you'll also need to do `npm install` in **durablefunctionsmonitor-vscodeext**. 
+
+Then finally you can press F5. This will start a sandbox VsCode instance, with **DfMon** extension running in it from sources. 
 
