@@ -50,7 +50,7 @@ You can also generate and view [Function Graphs](https://github.com/microsoft/Du
 
 This project is a typical [VsCode extension](https://code.visualstudio.com/api/get-started/your-first-extension), so to run/debug it locally you just open these sources in your VsCode and press F5. 
 But before that you'll need to get the [backend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) binaries compiled and copied:
-* Go to **durablefunctionsmonitor.dotnetbackend** folder.
+* Go to [durablefunctionsmonitor.dotnetbackend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) folder.
 * Execute `dotnet publish -o ../durablefunctionsmonitor-vscodeext/backend` there with your command line. This will compile the backend and place its binaries into the newly created **durablefunctionsmonitor-vscodeext/backend** subfolder.
 
 Now you'll also need to do `npm install` in **durablefunctionsmonitor-vscodeext** folder. 
