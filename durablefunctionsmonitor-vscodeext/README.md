@@ -53,7 +53,7 @@ But before that you'll need to get the [backend](https://github.com/microsoft/Du
 * Go to **durablefunctionsmonitor.dotnetbackend** folder.
 * Execute `dotnet publish -o ../durablefunctionsmonitor-vscodeext/backend` there with your command line. This will compile the backend and place its binaries into the newly created **durablefunctionsmonitor-vscodeext/backend** subfolder.
 
-Now you'll also need to do `npm install` in **durablefunctionsmonitor-vscodeext**. 
+Now you'll also need to do `npm install` in **durablefunctionsmonitor-vscodeext** folder. 
 
 Then finally you can press F5. This will start a sandbox VsCode instance, with **DfMon** extension running in it from sources. 
 
