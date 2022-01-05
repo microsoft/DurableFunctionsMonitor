@@ -2,7 +2,7 @@
 
 List/monitor/debug your Azure Durable Functions inside VsCode.
 
-**Command Palette -> Durable Functions Monitor**, or (if you have [Azure Functions](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions) extension also installed) **Azure Functions View Container -> DURABLE FUNCTIONS**, or right-click on your **host.json** file and use the context menu.
+![image](https://user-images.githubusercontent.com/5447190/148266774-fab07560-17bd-4022-947d-137719109f67.png)
 
 ## Features
 
@@ -16,22 +16,31 @@ List/monitor/debug your Azure Durable Functions inside VsCode.
 * Observe all Task Hubs in your Azure Subscription and connect to them - **Azure Functions View Container -> DURABLE FUNCTIONS**
 * Delete Task Hubs - **Command Palette -> Delete Task Hub...**
 
-## Pictures
+## How to run
 
-<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-command-palette.png" width="624">
+After installing this extension from the Marketplace or from a VSIX-file you have multiple ways to show the **DfMon**'s main window:
+* (Most typical, but requires being logged in into Azure) go to `AZURE` view, expand the `DURABLE FUNCTIONS` tab and click on a Task Hub that you wish to monitor:
 
-<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-orchestrations.png" width="768">
+  ![image](https://user-images.githubusercontent.com/5447190/148263305-d96cc6ab-9308-4253-9e19-8f4c987166d8.png)
 
-<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-orchestration.png" width="843">
+  NOTE: if you don't see your Azure Subscription there, run the `Azure: Select Subscriptions` command and configure Subscription filtering.
 
-<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/gantt-chart.png" width="843">
+* Run the `Durable Functions Monitor` command via Command Palette, provide the storage connection string and a Task Hub name.
+* (If you have your Azure Functions project opened) right-click on the `host.json` file and use one of the context menus:
 
-<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/vscodeext-orchestration-diagram.png" width="600">
+  ![image](https://user-images.githubusercontent.com/5447190/148263042-e91fac9b-f305-40aa-bc11-44fff495df06.png)
 
-<img src="https://raw.githubusercontent.com/microsoft/DurableFunctionsMonitor/main/readme/screenshots/function-graph.png" width="800">
+* **DfMon** will also propose to automatically open the current Task Hub when you start a debugging session for an Azure Functions project.
+
+When attaching to Task Hubs, **DfMon** starts [the backend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) as a separate process (one process per each Storage account). You can use the tree view buttons/menu items to explicitly start/stop these backend processes:
+
+  ![image](https://user-images.githubusercontent.com/5447190/148265469-5cf645a7-4425-4684-9166-733be17fdb8b.png)
+
+You can also generate and view [Function Graphs](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-generate-and-use-Function-Graphs) for arbitrary Azure Functions projects. Use the `Visualize Functions as a Graph...` command for that.
 
 ## Prerequisites
 
-Make sure you have the latest [Azure Functions Core Tools](https://www.npmjs.com/package/azure-functions-core-tools) globally installed on your devbox.
+* Make sure you have the latest [Azure Functions Core Tools](https://www.npmjs.com/package/azure-functions-core-tools) globally installed on your devbox.
 
-More info and sources on [the github repo](https://github.com/microsoft/DurableFunctionsMonitor#features).
+* For most features to work you also need to have [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension installed and be logged in into Azure. To login into Azure execute the `Azure: Sign In` command in Command Palette. To filter the list of Azure subscriptions shown execute the `Azure: Select Subscriptions` command.
+
