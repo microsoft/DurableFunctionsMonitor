@@ -44,7 +44,7 @@ You can also generate and view [Function Graphs](https://github.com/microsoft/Du
 
 * Make sure you have the latest [Azure Functions Core Tools](https://www.npmjs.com/package/azure-functions-core-tools) globally installed on your devbox.
 
-* For most features to work you also need to have [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension installed and be logged in into Azure. To login into Azure execute the **Azure: Sign In** command in Command Palette. To filter the list of Azure subscriptions shown execute the **Azure: Select Subscriptions** command.
+* [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension is also required to be installed. To login into Azure execute the **Azure: Sign In** command in Command Palette. To filter the list of Azure subscriptions shown execute the **Azure: Select Subscriptions** command.
 
 ## How to compile and run this project locally
 
