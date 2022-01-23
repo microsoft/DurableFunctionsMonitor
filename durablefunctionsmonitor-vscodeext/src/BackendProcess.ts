@@ -190,7 +190,7 @@ export class BackendProcess {
                 env
             });
     
-            this._funcProcess.stdout.on('data', (data) => {
+            this._funcProcess.stdout?.on('data', (data) => {
                 const msg = data.toString();
                 this._log(msg);
     
@@ -199,7 +199,7 @@ export class BackendProcess {
                 }
             });
 
-            this._funcProcess!.stderr.on('data', (data) => {
+            this._funcProcess!.stderr?.on('data', (data) => {
                 const msg = data.toString();
                 this._log(`ERROR: ${msg}`);
                 reject(`Func: ${msg}`);

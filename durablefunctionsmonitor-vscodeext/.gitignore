@@ -1,3 +1,6 @@
+# vscode test files
+.vscode-test
+
 # build output
 *.vsix
 
