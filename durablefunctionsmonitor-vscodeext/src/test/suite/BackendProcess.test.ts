@@ -10,11 +10,13 @@ import { BackendProcess, StorageConnectionSettings } from '../../BackendProcess'
 
 suite('BackendProcess Test Suite', () => {
 
+	const testTimeoutInMs = 60000;
+
 	test('Throws when backend process fails due to invalid connection string', async () => {
 
 		// Arrange
 
-		const tempBackendFolder = await copyBackendProjectToTempFolder();
+		const tempBackendFolder = await copyBackendProjectToTempFolder('netcore31');
 
 		const connSettings = new StorageConnectionSettings(['my-invalid-conn-string'], 'my-task-hub');
 
@@ -49,16 +51,16 @@ suite('BackendProcess Test Suite', () => {
 
 		try {
 
-			const process = new BackendProcess(tempBackendFolder, connSettings, callbackFunc, logFunc);
+			const backendProcess = new BackendProcess(tempBackendFolder, connSettings, callbackFunc, logFunc);
 
 			// Calling getBackend() twice. It should return the same promise.
 			try {
 				
-				await process.getBackend();
+				await backendProcess.getBackend();
 				
 			} catch (err) {
 
-				await process.getBackend();
+				await backendProcess.getBackend();
 			}
 
 		} catch (err) {
@@ -84,17 +86,125 @@ suite('BackendProcess Test Suite', () => {
 
 		throw `BackendProcess didn't throw as expected`;
 
-	}).timeout(30000);
+	}).timeout(testTimeoutInMs);
+
+	test('Throws when backend process fails due to invalid SqlServer connection string', async () => {
+
+		// Arrange
+
+		const tempBackendFolder = await copyBackendProjectToTempFolder('mssql');
+
+		const connSettings = new StorageConnectionSettings(['Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;'], 'my-task-hub');
+
+		var callbackWasCalled = false;
+		var callbackWasCalledTwice = false;
+		var backendWasStarted = false;
+		var backendWasPublished = false;
+
+		const callbackFunc = () => {
+
+			if (!!callbackWasCalled) {
+				callbackWasCalledTwice = true;
+			}
+
+			callbackWasCalled = true;
+		};
+
+		const logFunc = (s: string) => { 
+
+			console.log(s);
+
+			if (`Attempting to start the backend from ${tempBackendFolder} on http://localhost:37072/a/p/i...` === s) {
+				backendWasStarted = true;
+			}
+
+			if (s.startsWith('Microsoft (R) Build Engine version ')) {
+				backendWasPublished = true;
+			}
+		};
+
+		// Act
+
+		const backendProcess = new BackendProcess(tempBackendFolder, connSettings, callbackFunc, logFunc);
+
+		try {
+
+			// Calling getBackend() twice. It should return the same promise.
+			try {
+				
+				await backendProcess.getBackend();
+				
+			} catch (err) {
+
+				await backendProcess.getBackend();
+			}
+
+		} catch (err) {
+
+			// Assert
+
+			// Backend should return 401 from its ping endpoint, due to invalid Task Hub name
+			assert.strictEqual(err, `Request failed with status code 401`);
+
+			assert.strictEqual(backendWasPublished, true);
+			assert.strictEqual(callbackWasCalled, true);
+			assert.strictEqual(callbackWasCalledTwice, false);
+			assert.strictEqual(backendWasStarted, true);
+
+			return;
+
+		} finally {
+
+			await backendProcess.cleanup();
+
+			// Wait a bit, before removing backend binaries
+			await new Promise<void>((resolve) => setTimeout(resolve, 500));
+
+			await fs.promises.rm(tempBackendFolder, { recursive: true });
+		}
+
+		throw `BackendProcess didn't throw as expected`;
+
+	}).timeout(testTimeoutInMs);
+
+	test('Throws on invalid backend binaries folder', async () => {
+
+		// Arrange
+
+		const nonExistingFolder = path.join(__dirname, 'non-existing-folder');
+		const connSettings = new StorageConnectionSettings(['my-invalid-conn-string'], 'my-task-hub');
+
+		// Act
+
+		try {
+
+			const backendProcess = new BackendProcess(nonExistingFolder, connSettings, () => {}, () => {});
+
+			await backendProcess.getBackend();
+
+		} catch (err) {
+
+			// Assert
+
+			assert.strictEqual(err, `Couldn't find backend binaries in ${nonExistingFolder}`);
+
+			return;
+		}
+
+		throw `BackendProcess didn't throw as expected`;
+
+	}).timeout(testTimeoutInMs);
+
 });
 
-async function copyBackendProjectToTempFolder(): Promise<string>{
+async function copyBackendProjectToTempFolder(customBackendName: string): Promise<string>{
 
-	const customBackendFolder = path.join(__dirname, '..', '..', '..', '..', 'custom-backends', 'netcore31');
+	const sourceFolder = path.join(__dirname, '..', '..', '..', '..', 'custom-backends', customBackendName);
 	const resultFolder = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dfm-backend-'));
 
-	const prms = (await fs.promises.readdir(customBackendFolder)).map(async fileName => {
+	const prms = (await fs.promises.readdir(sourceFolder)).map(async fileName => {
 
-		const fullPath = path.join(customBackendFolder, fileName);
+		const fullPath = path.join(sourceFolder, fileName);
 
 		if (!!(await fs.promises.lstat(fullPath)).isFile()) {
 
