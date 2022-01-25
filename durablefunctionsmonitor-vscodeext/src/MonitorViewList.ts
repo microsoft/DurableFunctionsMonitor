@@ -9,7 +9,8 @@ import axios from 'axios';
 import { ConnStringUtils } from "./ConnStringUtils";
 
 import { MonitorView } from "./MonitorView";
-import { BackendProcess, StorageConnectionSettings, CreateAuthHeadersForTableStorage } from './BackendProcess';
+import { BackendProcess } from './BackendProcess';
+import { StorageConnectionSettings, CreateAuthHeadersForTableStorage } from "./StorageConnectionSettings";
 import { Settings } from './Settings';
 import { FunctionGraphList } from './FunctionGraphList';
 

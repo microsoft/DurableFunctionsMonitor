@@ -4,7 +4,7 @@
 import { MonitorView } from "./MonitorView";
 import { MonitorViewList } from "./MonitorViewList";
 import { StorageAccountTreeItem } from "./StorageAccountTreeItem";
-import { StorageConnectionSettings } from "./BackendProcess";
+import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { ConnStringUtils } from "./ConnStringUtils";
 import { TaskHubTreeItem } from "./TaskHubTreeItem";
 

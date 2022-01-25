@@ -6,7 +6,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as assert from 'assert';
 
-import { BackendProcess, StorageConnectionSettings } from '../../BackendProcess';
+import { BackendProcess } from '../../BackendProcess';
+import { StorageConnectionSettings } from "../../StorageConnectionSettings";
 
 suite('BackendProcess Test Suite', () => {
 

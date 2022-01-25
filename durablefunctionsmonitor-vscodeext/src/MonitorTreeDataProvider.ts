@@ -12,7 +12,7 @@ import { SubscriptionTreeItems } from './SubscriptionTreeItems';
 import { SubscriptionTreeItem } from './SubscriptionTreeItem';
 import { FunctionGraphList } from './FunctionGraphList';
 import { Settings, UpdateSetting } from './Settings';
-import { StorageConnectionSettings } from './BackendProcess';
+import { StorageConnectionSettings } from "./StorageConnectionSettings";
 
 // Root object in the hierarchy. Also serves data for the TreeView.
 export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> { 

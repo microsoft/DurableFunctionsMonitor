@@ -11,7 +11,7 @@ import { StorageAccountTreeItems } from "./StorageAccountTreeItems";
 import { getTaskHubNamesFromTableStorage } from './MonitorViewList';
 import { ConnStringUtils } from "./ConnStringUtils";
 import { Settings } from './Settings';
-import { StorageConnectionSettings } from "./BackendProcess";
+import { StorageConnectionSettings } from "./StorageConnectionSettings";
 
 // Full typings for this can be found here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
 type AzureSubscription = { session: { credentials2: any }, subscription: { subscriptionId: string, displayName: string } };

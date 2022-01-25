@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-import { StorageConnectionSettings } from './BackendProcess';
+import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { StorageAccountTreeItem } from "./StorageAccountTreeItem";
 
 // Represents the Task Hub item in the TreeView

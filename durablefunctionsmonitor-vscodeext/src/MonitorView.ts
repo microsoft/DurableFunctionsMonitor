@@ -8,7 +8,8 @@ import axios from 'axios';
 
 import * as SharedConstants from './SharedConstants';
 
-import { BackendProcess, StorageConnectionSettings } from './BackendProcess';
+import { BackendProcess } from './BackendProcess';
+import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { ConnStringUtils } from './ConnStringUtils';
 import { Settings } from './Settings';
 import { FunctionGraphList } from './FunctionGraphList';

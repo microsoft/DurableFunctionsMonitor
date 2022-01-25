@@ -10,12 +10,10 @@ import * as crypto from 'crypto';
 import * as killProcessTree from 'tree-kill';
 import axios from 'axios';
 import { spawn, spawnSync, ChildProcess } from 'child_process';
-import * as CryptoJS from 'crypto-js';
-
-import { ConnStringUtils } from "./ConnStringUtils";
 
 import * as SharedConstants from './SharedConstants';
 import { Settings } from './Settings';
+import { StorageConnectionSettings } from "./StorageConnectionSettings";
 
 // Responsible for running the backend process
 export class BackendProcess {
@@ -248,54 +246,4 @@ export class BackendProcess {
             }, intervalInMs);
         });
     }
-}
-
-export class StorageConnectionSettings {
-
-    get storageConnStrings(): string[] { return this._connStrings; };
-    get hubName(): string { return this._hubName; };
-    get connStringHashKey(): string { return this._connStringHashKey; }
-    get hashKey(): string { return this._hashKey; }
-    get isFromLocalSettingsJson(): boolean { return this._fromLocalSettingsJson; }
-    get isMsSql(): boolean { return !!ConnStringUtils.GetSqlServerName(this._connStrings[0]); }
-
-    constructor(private _connStrings: string[],
-        private _hubName: string,
-        private _fromLocalSettingsJson: boolean = false) {
-
-        this._connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(this._connStrings);
-        this._hashKey = this._connStringHashKey + this._hubName.toLowerCase();
-    }
-
-    static GetConnStringHashKey(connStrings: string[]): string {
-
-        const sqlServerName = ConnStringUtils.GetSqlServerName(connStrings[0]);
-
-        if (!!sqlServerName) {
-            return sqlServerName + ConnStringUtils.GetSqlDatabaseName(connStrings[0]);
-        }
-
-        return ConnStringUtils.GetTableEndpoint(connStrings[0]).toLowerCase();
-    }
-
-    static MaskStorageConnString(connString: string): string {
-        return connString.replace(/AccountKey=[^;]+/gi, 'AccountKey=*****');
-    }
-
-    private readonly _connStringHashKey: string;
-    private readonly _hashKey: string;
-}
-
-// Creates the SharedKeyLite signature to query Table Storage REST API, also adds other needed headers
-export function CreateAuthHeadersForTableStorage(accountName: string, accountKey: string, queryUrl: string): {} {
-
-    const dateInUtc = new Date().toUTCString();
-    const signature = CryptoJS.HmacSHA256(`${dateInUtc}\n/${accountName}/${queryUrl}`, CryptoJS.enc.Base64.parse(accountKey));
-
-    return {
-        'Authorization': `SharedKeyLite ${accountName}:${signature.toString(CryptoJS.enc.Base64)}`,
-        'x-ms-date': dateInUtc,
-        'x-ms-version': '2015-12-11',
-        'Accept': 'application/json;odata=nometadata'
-    };
 }
