@@ -18,10 +18,14 @@ suite('MonitorView Test Suite', () => {
 
 		// Arrange
 
+		const webViewState = {
+			myKey: new Date().toISOString()
+		};
+
 		const context: any = {
 
 			globalState: {
-				get: () => {}
+				get: () => webViewState
 			}
 		};
 
@@ -36,6 +40,8 @@ suite('MonitorView Test Suite', () => {
 			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend')
 		};
 
+		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backend.binariesFolder });
+		
 		const functionGraphList: any = {};
 
 		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => { });
@@ -49,10 +55,22 @@ suite('MonitorView Test Suite', () => {
 		assert.strictEqual(monitorView.isVisible, true);
 
 		const webViewPanel: vscode.WebviewPanel = (monitorView as any)._webViewPanel;
-
-		// Checking links
 		const html = webViewPanel.webview.html;
 
+		// Checking embedded constants
+		const stateFromVsCodeScript = `<script>var OrchestrationIdFromVsCode="",StateFromVsCode=${JSON.stringify(webViewState)}</script>`;
+		assert.strictEqual(html.includes(stateFromVsCodeScript), true);
+
+		const dfmClientConfigScript = `<script>var DfmClientConfig={'theme':'light','showTimeAs':'UTC'}</script>`;
+		assert.strictEqual(html.includes(dfmClientConfigScript), true);
+
+		const dfmViewModeScript = `<script>var DfmViewMode=0</script>`;
+		assert.strictEqual(html.includes(dfmViewModeScript), true);
+
+		const isFunctionGraphAvailableScript = `<script>var IsFunctionGraphAvailable=1</script>`;
+		assert.strictEqual(html.includes(isFunctionGraphAvailableScript), true);
+
+		// Checking links
 		const linkToManifestJson = webViewPanel.webview.asWebviewUri(vscode.Uri.file(path.join(backend.binariesFolder, 'DfmStatics', 'manifest.json')));
 		assert.strictEqual(html.includes(`href="${linkToManifestJson}"`), true);
 
