@@ -200,137 +200,139 @@ export class MonitorView
         panel.webview.html = html;
 
         // handle events from WebView
-        panel.webview.onDidReceiveMessage(request => {
+        panel.webview.onDidReceiveMessage(request => this.handleMessageFromWebView(panel.webview, request, messageToWebView), undefined, this._context.subscriptions);
 
-            switch (request.method) {
-                case 'IAmReady':
-                    // Sending an initial message (if any), when the webView is ready
-                    if (!!messageToWebView) {
-                        panel.webview.postMessage(messageToWebView);
-                        messageToWebView = undefined;
-                    }
-                    return;
-                case 'PersistState':
-                    // Persisting state values
-                    const webViewState = this._context.globalState.get(MonitorView.GlobalStateName, {}) as any;
-                    webViewState[request.key] = request.data;
-                    this._context.globalState.update(MonitorView.GlobalStateName, webViewState);
-                    return;
-                case 'OpenInNewWindow':
-                    // Opening another WebView
-                    this._childWebViewPanels.push(this.showWebView(request.url));
-                    return;
-                case 'SaveAs':
+        return panel;
+    }
 
-                    // Just to be extra sure...
-                    if (!MonitorView.looksLikeSvg(request.data)) {
-                        vscode.window.showErrorMessage(`Invalid data format. Save failed.`);
-                        return;
-                    }
-                    
-                    // Saving some file to local hard drive
-                    vscode.window.showSaveDialog({ filters: { 'SVG Images': ['svg'] } }).then(filePath => {
+    // Does communication between code in WebView and this class
+    private handleMessageFromWebView(webView: vscode.Webview, request: any, messageToWebView: any): void {
 
-                        if (!filePath || !filePath.fsPath) { 
-                            return;
-                        }
+        switch (request.method) {
+            case 'IAmReady':
+                // Sending an initial message (if any), when the webView is ready
+                if (!!messageToWebView) {
+                    webView.postMessage(messageToWebView);
+                    messageToWebView = undefined;
+                }
+                return;
+            case 'PersistState':
+                // Persisting state values
+                const webViewState = this._context.globalState.get(MonitorView.GlobalStateName, {}) as any;
+                webViewState[request.key] = request.data;
+                this._context.globalState.update(MonitorView.GlobalStateName, webViewState);
+                return;
+            case 'OpenInNewWindow':
+                // Opening another WebView
+                this._childWebViewPanels.push(this.showWebView(request.url));
+                return;
+            case 'SaveAs':
 
-                        fs.writeFile(filePath!.fsPath, request.data, err => {
-                            if (!err) {
-                                vscode.window.showInformationMessage(`Saved to ${filePath!.fsPath}`);
-                            } else {
-                                vscode.window.showErrorMessage(`Failed to save. ${err}`);
-                            }
-                        });
-                    });
-                    return;
-                case 'GotoFunctionCode':
-
-                    const func = this._functionsAndProxies[request.url];
-                    if (!!func && !!func.filePath) {
-
-                        vscode.window.showTextDocument(vscode.Uri.file(func.filePath)).then(ed => {
-
-                            const pos = ed.document.positionAt(!!func.pos ? func.pos : 0);
-
-                            ed.selection = new vscode.Selection(pos, pos);
-                            ed.revealRange(new vscode.Range(pos, pos));
-                        });
-                    }
-
-                    return;
-                case 'VisualizeFunctionsAsAGraph':
-
-                    const ws = vscode.workspace;
-                    if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
-                        this._functionGraphList.visualizeProjectPath(ws.rootPath);
-                    }
-
-                    return;
-            }
-
-            // Intercepting request for Function Map
-            if (request.method === "GET" && request.url === '/function-map') {
-                
-                if (!this._functionProjectPath) {
+                // Just to be extra sure...
+                if (!MonitorView.looksLikeSvg(request.data)) {
+                    vscode.window.showErrorMessage(`Invalid data format. Save failed.`);
                     return;
                 }
+                
+                // Saving some file to local hard drive
+                vscode.window.showSaveDialog({ filters: { 'SVG Images': ['svg'] } }).then(filePath => {
 
-                const requestId = request.id;
-                this._functionGraphList.traverseFunctions(this._functionProjectPath).then(result => {
-
-                    this._functionsAndProxies = {};
-                    for (const name in result.functions) {
-                        this._functionsAndProxies[name] = result.functions[name];
-                    }
-                    for (const name in result.proxies) {
-                        this._functionsAndProxies['proxy.' + name] = result.proxies[name];
+                    if (!filePath || !filePath.fsPath) { 
+                        return;
                     }
 
-                    panel.webview.postMessage({
-                        id: requestId, data: { 
-                            functions: result.functions,
-                            proxies: result.proxies
+                    fs.writeFile(filePath!.fsPath, request.data, err => {
+                        if (!err) {
+                            vscode.window.showInformationMessage(`Saved to ${filePath!.fsPath}`);
+                        } else {
+                            vscode.window.showErrorMessage(`Failed to save. ${err}`);
                         }
                     });
-
-                }, err => {
-                    // err might fail to serialize here, so passing err.message only
-                    panel.webview.postMessage({ id: requestId, err: { message: err.message } });
                 });
+                return;
+            case 'GotoFunctionCode':
 
+                const func = this._functionsAndProxies[request.url];
+                if (!!func && !!func.filePath) {
+
+                    vscode.window.showTextDocument(vscode.Uri.file(func.filePath)).then(ed => {
+
+                        const pos = ed.document.positionAt(!!func.pos ? func.pos : 0);
+
+                        ed.selection = new vscode.Selection(pos, pos);
+                        ed.revealRange(new vscode.Range(pos, pos));
+                    });
+                }
+
+                return;
+            case 'VisualizeFunctionsAsAGraph':
+
+                const ws = vscode.workspace;
+                if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
+                    this._functionGraphList.visualizeProjectPath(ws.rootPath);
+                }
+
+                return;
+        }
+
+        // Intercepting request for Function Map
+        if (request.method === "GET" && request.url === '/function-map') {
+            
+            if (!this._functionProjectPath) {
                 return;
             }
 
-            // Then it's just a propagated HTTP request
             const requestId = request.id;
+            this._functionGraphList.traverseFunctions(this._functionProjectPath).then(result => {
 
-            const headers: any = {};
-            headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
+                this._functionsAndProxies = {};
+                for (const name in result.functions) {
+                    this._functionsAndProxies[name] = result.functions[name];
+                }
+                for (const name in result.proxies) {
+                    this._functionsAndProxies['proxy.' + name] = result.proxies[name];
+                }
 
-            // Workaround for https://github.com/Azure/azure-functions-durable-extension/issues/1926
-            var hubName = this._hubName;
-            if (hubName === 'TestHubName' && request.method === 'POST' && request.url.match(/\/(orchestrations|restart)$/i)) {
-                // Turning task hub name into lower case, this allows to bypass function name validation
-                hubName = 'testhubname';
-            }
+                webView.postMessage({
+                    id: requestId, data: { 
+                        functions: result.functions,
+                        proxies: result.proxies
+                    }
+                });
 
-            axios.request({
-                url: `${this._backend.backendUrl}/--${hubName}${request.url}`,
-                method: request.method,
-                data: request.data,
-                headers
-            }).then(response => {
-
-                panel.webview.postMessage({ id: requestId, data: response.data });
             }, err => {
-
-                panel.webview.postMessage({ id: requestId, err: { message: err.message, response: { data: !err.response ? undefined : err.response.data } } });
+                // err might fail to serialize here, so passing err.message only
+                webView.postMessage({ id: requestId, err: { message: err.message } });
             });
 
-        }, undefined, this._context.subscriptions);
+            return;
+        }
 
-        return panel;
+        // Then it's just a propagated HTTP request
+        const requestId = request.id;
+
+        const headers: any = {};
+        headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
+
+        // Workaround for https://github.com/Azure/azure-functions-durable-extension/issues/1926
+        var hubName = this._hubName;
+        if (hubName === 'TestHubName' && request.method === 'POST' && request.url.match(/\/(orchestrations|restart)$/i)) {
+            // Turning task hub name into lower case, this allows to bypass function name validation
+            hubName = 'testhubname';
+        }
+
+        axios.request({
+            url: `${this._backend.backendUrl}/--${hubName}${request.url}`,
+            method: request.method,
+            data: request.data,
+            headers
+        }).then(response => {
+
+            webView.postMessage({ id: requestId, data: response.data });
+        }, err => {
+
+            webView.postMessage({ id: requestId, err: { message: err.message, response: { data: !err.response ? undefined : err.response.data } } });
+        });
     }
 
     // Embeds the current color theme

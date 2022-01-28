@@ -46,15 +46,29 @@ suite('MonitorView Test Suite', () => {
 
 		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => { });
 
+		var iAmReadyMessageSent = false;
+
 		// Act
 
 		await monitorView.show();
 
 		// Assert
 
-		assert.strictEqual(monitorView.isVisible, true);
-
 		const webViewPanel: vscode.WebviewPanel = (monitorView as any)._webViewPanel;
+
+		(monitorView as any).handleMessageFromWebView = (webView: vscode.Webview, request: any, messageToWebView: any) => {
+
+			if (webView === webViewPanel.webview && request.method === 'IAmReady') {
+				iAmReadyMessageSent = true;
+			}
+		};
+
+		// Waiting for the webView to send a message
+		await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+
+		assert.strictEqual(monitorView.isVisible, true);
+		assert.strictEqual(iAmReadyMessageSent, true);
+
 		const html = webViewPanel.webview.html;
 
 		// Checking embedded constants
