@@ -151,7 +151,7 @@ export class MonitorView
 
     // Validates incoming SVG, just to be extra sure...
     static looksLikeSvg(data: string): boolean {
-        return data.startsWith('<svg') && data.endsWith('</svg>') && !data.includes('<script');
+        return data.startsWith('<svg') && data.endsWith('</svg>') && !data.toLowerCase().includes('<script');
     }
 
     // Reference to the already opened WebView with the main page

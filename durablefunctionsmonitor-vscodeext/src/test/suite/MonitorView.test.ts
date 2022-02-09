@@ -206,4 +206,106 @@ suite('MonitorView Test Suite', () => {
 
 		assert.strictEqual(stateWasUpdated, true);
 	});	
+
+	test('Handles OpenInNewWindow', async () => {
+
+		// Arrange
+
+		const globalState = {};
+		
+		const context: any = {
+
+			globalState: {
+				get: () => globalState
+			}
+		};
+
+		const backend: any = {
+
+			getBackend: () => Promise.resolve(),
+
+			storageConnectionStrings: [
+				Settings().storageEmulatorConnectionString
+			],
+
+			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend')
+		};
+		
+		const functionGraphList: any = {};
+		const webView: any = {};
+
+		const orchestrationId = new Date().toISOString();
+
+		const request: any = {
+			method: 'OpenInNewWindow',
+			url: orchestrationId
+		};
+
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => { });
+
+		// Act
+
+		(monitorView as any).handleMessageFromWebView(webView, request);
+
+		// Assert
+
+		const childWebViewPanels: vscode.WebviewPanel[] = (monitorView as any)._childWebViewPanels;
+
+		assert.strictEqual(childWebViewPanels.length, 1);
+
+		const viewPanel = childWebViewPanels[0];
+
+		assert.strictEqual(viewPanel.title, `Instance '${orchestrationId}'`);
+
+		const html = viewPanel.webview.html;
+		const stateFromVsCodeScript = `<script>var OrchestrationIdFromVsCode="${orchestrationId}",StateFromVsCode={}</script>`;
+		assert.strictEqual(html.includes(stateFromVsCodeScript), true);
+
+	}).timeout(testTimeoutInMs);
+
+	test('Handles SaveAs', async () => {
+
+		// Arrange
+
+		const context: any = {};
+		const backend: any = {};
+		const functionGraphList: any = {};
+		const webView: any = {};
+
+		const svgFileName = `dfm-test-svg-${new Date().valueOf().toString()}.svg`;
+		const svgFilePath = path.join(os.tmpdir(), svgFileName);
+
+		const request: any = {
+
+			method: 'SaveAs',
+			data: `<svg id="${svgFileName}"></svg>`
+		};
+
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => { });
+
+		(vscode.window as any).showSaveDialog = (options: vscode.SaveDialogOptions) => {
+
+			const filters = options.filters!;
+			assert.strictEqual(filters['SVG Images'].length, 1);
+			assert.strictEqual(filters['SVG Images'][0], 'svg');
+
+			return Promise.resolve({ fsPath: svgFilePath });
+		};
+
+		// Act
+
+		(monitorView as any).handleMessageFromWebView(webView, request);
+
+		await new Promise<void>((resolve) => setTimeout(resolve, 100));
+
+		// Assert
+
+		const svg = await fs.promises.readFile(svgFilePath, { encoding: 'utf8' });
+
+		await fs.promises.rm(svgFilePath);
+
+		assert.strictEqual(svg, request.data);
+
+	});	
+
 });
