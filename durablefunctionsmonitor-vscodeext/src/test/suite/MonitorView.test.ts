@@ -115,4 +115,95 @@ suite('MonitorView Test Suite', () => {
 
 	}).timeout(testTimeoutInMs);
 
+	test('Handles IAmReady', async () => {
+
+		// Arrange
+
+		const context: any = {};
+		const backend: any = {};
+		const functionGraphList: any = {};
+
+		const msgToWebView = 'just-a-message';
+		var msgWasSent = false;
+		const webView: any = {
+
+			postMessage: (msg: any) => {
+
+				if (msg === msgToWebView) {
+					msgWasSent = true;
+				}
+			}
+		};
+
+		const request: any = {
+
+			method: 'IAmReady'
+		};
+
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => { });
+
+		// Act
+
+		(monitorView as any).handleMessageFromWebView(webView, request, msgToWebView);
+
+		// Assert
+
+		assert.strictEqual(msgWasSent, true);
+	});	
+
+	test('Handles PersistState', async () => {
+
+		// Arrange
+
+		const globalStateName = 'durableFunctionsMonitorWebViewState';
+		const globalState = {
+			someOtherField: new Date()
+		};
+		const stateFieldKey = 'my-field-key';
+		const stateFieldValue = 'my-field-value';
+		
+		var stateWasUpdated = false;
+
+		const context: any = {
+
+			globalState: {
+
+				get: (name: string) => {
+
+					assert.strictEqual(name, globalStateName);
+
+					return globalState;
+				},
+
+				update: (name: string, value: any) => {
+
+					assert.strictEqual(name, globalStateName);
+					assert.strictEqual(value.someOtherField, globalState.someOtherField);
+					assert.strictEqual(value[stateFieldKey], stateFieldValue);
+
+					stateWasUpdated = true;
+				}
+			}
+		};
+
+		const backend: any = {};
+		const functionGraphList: any = {};
+		const webView: any = {};
+
+		const request: any = {
+			method: 'PersistState',
+			key: stateFieldKey,
+			data: stateFieldValue
+		};
+
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => { });
+
+		// Act
+
+		(monitorView as any).handleMessageFromWebView(webView, request);
+
+		// Assert
+
+		assert.strictEqual(stateWasUpdated, true);
+	});	
 });
