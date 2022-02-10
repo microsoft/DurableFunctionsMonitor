@@ -113,7 +113,14 @@ suite('MonitorView Test Suite', () => {
 			}
 		}
 
+		var webViewPanelDisposed = false;
+		(webViewPanel as any).dispose = () => {
+			webViewPanelDisposed = true;
+		}
+
 		monitorView.cleanup();
+
+		assert.strictEqual(webViewPanelDisposed, true);
 
 	}).timeout(testTimeoutInMs);
 
@@ -339,7 +346,7 @@ suite('MonitorView Test Suite', () => {
 
 		(monitorView as any).handleMessageFromWebView(webView, request);
 
-		await new Promise<void>((resolve) => setTimeout(resolve, 100));
+		await new Promise<void>((resolve) => setTimeout(resolve, 500));
 
 		// Assert
 
@@ -488,5 +495,48 @@ suite('MonitorView Test Suite', () => {
 		assert.strictEqual(responseMessagePosted, true);
 		
 	}).timeout(testTimeoutInMs);	
+
+	test('Deletes Task Hub', async () => {
+
+		// Arrange
+
+		const context: any = {};
+		const functionGraphList: any = {};
+
+		const backend: any = {
+
+			backendUrl: 'http://localhost:12345',
+			backendCommunicationNonce: `nonce-${new Date().valueOf()}`
+
+		};
+		const hubName = 'my-hub-6789';
+
+		const monitorView = new MonitorView(context, backend, hubName, functionGraphList, () => { });
+
+		(axios as any).post = (url: string, data: any, config: any) => {
+
+			assert.strictEqual(url, `${backend.backendUrl}/--${hubName}/delete-task-hub`);
+			assert.strictEqual(config.headers[SharedConstants.NonceHeaderName], backend.backendCommunicationNonce);
+
+			return Promise.resolve();
+		};
+
+		var webViewPanelDisposed = false;
+
+		(monitorView as any)._webViewPanel = {
+			dispose: () => {
+				webViewPanelDisposed = true;
+			}
+		}
+
+		// Act
+
+		await monitorView.deleteTaskHub();
+
+		// Assert
+
+		assert.strictEqual(webViewPanelDisposed, true);
+		
+	}).timeout(testTimeoutInMs);
 
 });
