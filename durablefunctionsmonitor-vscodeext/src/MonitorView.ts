@@ -294,7 +294,8 @@ export class MonitorView
                 }
 
                 webView.postMessage({
-                    id: requestId, data: { 
+                    id: requestId,
+                    data: { 
                         functions: result.functions,
                         proxies: result.proxies
                     }

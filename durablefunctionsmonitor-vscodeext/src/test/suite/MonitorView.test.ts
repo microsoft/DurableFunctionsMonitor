@@ -306,6 +306,114 @@ suite('MonitorView Test Suite', () => {
 
 		assert.strictEqual(svg, request.data);
 
-	});	
+	}).timeout(testTimeoutInMs);
 
+	test('Handles GotoFunctionCode', async () => {
+
+		// Arrange
+
+		const context: any = {};
+		const backend: any = {};
+		const webView: any = {};
+		const functionGraphList: any = {};
+
+		const request: any = {
+
+			method: 'GotoFunctionCode',
+			url: 'my-func-1'
+		};
+
+		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backendFolder });
+
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => { });
+
+		(monitorView as any)._functionsAndProxies[request.url] = {
+			filePath: path.join(backendFolder, 'Functions', 'About.cs'),
+			pos: 67
+		};
+
+		// Act
+
+		(monitorView as any).handleMessageFromWebView(webView, request);
+
+		await new Promise<void>((resolve) => setTimeout(resolve, 100));
+
+		// Assert
+
+		const projectPath = (monitorView as any)._functionProjectPath;
+		assert.strictEqual(backendFolder, projectPath);
+
+		assert.strictEqual(1, vscode.window.activeTextEditor!.selection.start.line);
+		assert.strictEqual(26, vscode.window.activeTextEditor!.selection.start.character);
+
+	}).timeout(testTimeoutInMs);
+
+
+	test('Handles GET /function-map', async () => {
+
+		// Arrange
+
+		const context: any = {};
+		const backend: any = {};
+
+		const request: any = {
+
+			method: 'GET',
+			url: '/function-map',
+			id: new Date().toISOString()
+		};
+
+		const functions = {
+			'my-func-1': {},
+			'my-func-2': {},
+		}
+
+		const proxies = {
+			'my-proxy-1': {},
+			'my-proxy-2': {}
+		}
+
+		const webView: any = {
+
+			postMessage: (msg: any) => {
+
+				assert.strictEqual(msg.id, request.id);
+				assert.strictEqual(msg.data.functions, functions);
+				assert.strictEqual(msg.data.proxies, proxies);
+			}
+		};
+
+		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backendFolder });
+
+		const functionGraphList: any = {
+
+			traverseFunctions: (projectPath: string) => {
+
+				assert.strictEqual(projectPath, backendFolder);
+
+				return Promise.resolve({ functions, proxies });
+			}
+		};
+
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => { });
+
+		// Act
+
+		(monitorView as any).handleMessageFromWebView(webView, request);
+
+		await new Promise<void>((resolve) => setTimeout(resolve, 100));
+
+		// Assert
+
+		const projectPath = (monitorView as any)._functionProjectPath;
+		assert.strictEqual(backendFolder, projectPath);
+
+		const functionsAndProxies = (monitorView as any)._functionsAndProxies;
+
+		assert.strictEqual(functionsAndProxies['my-func-1'], functions['my-func-1']);
+		
+	}).timeout(testTimeoutInMs);
+	
 });
