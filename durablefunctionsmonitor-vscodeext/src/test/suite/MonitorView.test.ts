@@ -9,6 +9,8 @@ import * as vscode from 'vscode';
 
 import { MonitorView } from '../../MonitorView';
 import { Settings } from "../../Settings";
+import * as SharedConstants from '../../SharedConstants';
+import axios from 'axios';
 
 suite('MonitorView Test Suite', () => {
 
@@ -349,7 +351,6 @@ suite('MonitorView Test Suite', () => {
 
 	}).timeout(testTimeoutInMs);
 
-
 	test('Handles GET /function-map', async () => {
 
 		// Arrange
@@ -374,6 +375,8 @@ suite('MonitorView Test Suite', () => {
 			'my-proxy-2': {}
 		}
 
+		var responseMessagePosted = false;
+
 		const webView: any = {
 
 			postMessage: (msg: any) => {
@@ -381,6 +384,8 @@ suite('MonitorView Test Suite', () => {
 				assert.strictEqual(msg.id, request.id);
 				assert.strictEqual(msg.data.functions, functions);
 				assert.strictEqual(msg.data.proxies, proxies);
+
+				responseMessagePosted = true;
 			}
 		};
 
@@ -407,6 +412,8 @@ suite('MonitorView Test Suite', () => {
 
 		// Assert
 
+		assert.strictEqual(responseMessagePosted, true);
+
 		const projectPath = (monitorView as any)._functionProjectPath;
 		assert.strictEqual(backendFolder, projectPath);
 
@@ -415,5 +422,71 @@ suite('MonitorView Test Suite', () => {
 		assert.strictEqual(functionsAndProxies['my-func-1'], functions['my-func-1']);
 		
 	}).timeout(testTimeoutInMs);
-	
+
+	test('Handles HTTP requests', async () => {
+
+		// Arrange
+
+		const context: any = {};
+		const functionGraphList: any = {};
+
+		const backend: any = {
+
+			backendUrl: 'http://localhost:12345',
+			backendCommunicationNonce: `nonce-${new Date().valueOf()}`
+
+		};
+		const hubName = 'my-hub-4321';
+
+		const monitorView = new MonitorView(context, backend, hubName, functionGraphList, () => { });
+
+		const request: any = {
+
+			id: new Date().toISOString(),
+			method: 'OPTIONS',
+			url: '/some/other/path',
+			data: {
+				fieldOne: 'value1'
+			}
+		};
+
+		const responseData: any = {
+			fieldTwo: 'value2'
+		};
+
+		var responseMessagePosted = false;
+
+		const webView: any = {
+
+			postMessage: (msg: any) => {
+
+				assert.strictEqual(msg.id, request.id);
+				assert.strictEqual(msg.data, responseData);
+
+				responseMessagePosted = true;
+			}
+		};
+
+		(axios as any).request = (r: any) => {
+
+			assert.strictEqual(r.method, request.method);
+			assert.strictEqual(r.url, `${backend.backendUrl}/--${hubName}${request.url}`);
+			assert.strictEqual(r.data, request.data);
+			assert.strictEqual(r.headers[SharedConstants.NonceHeaderName], backend.backendCommunicationNonce);
+
+			return Promise.resolve({ data: responseData });
+		};
+
+		// Act
+
+		(monitorView as any).handleMessageFromWebView(webView, request);
+
+		await new Promise<void>((resolve) => setTimeout(resolve, 100));
+
+		// Assert
+
+		assert.strictEqual(responseMessagePosted, true);
+		
+	}).timeout(testTimeoutInMs);	
+
 });

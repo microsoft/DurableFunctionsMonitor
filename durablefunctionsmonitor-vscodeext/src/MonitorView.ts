@@ -330,6 +330,7 @@ export class MonitorView
         }).then(response => {
 
             webView.postMessage({ id: requestId, data: response.data });
+            
         }, err => {
 
             webView.postMessage({ id: requestId, err: { message: err.message, response: { data: !err.response ? undefined : err.response.data } } });
