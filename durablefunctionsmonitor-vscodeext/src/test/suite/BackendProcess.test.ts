@@ -80,7 +80,7 @@ suite('BackendProcess Test Suite', () => {
 		} finally {
 
 			// Wait a bit, before removing backend binaries
-			await new Promise<void>((resolve) => setTimeout(resolve, 500));
+			await new Promise<void>((resolve) => setTimeout(resolve, 800));
 
 			await fs.promises.rm(tempBackendFolder, { recursive: true });
 		}
