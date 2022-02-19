@@ -7,9 +7,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
-import * as killProcessTree from 'tree-kill';
 import axios from 'axios';
-import { spawn, spawnSync, ChildProcess } from 'child_process';
+import * as cp from 'child_process';
+import * as util from 'util';
+
+const execAsync = util.promisify(cp.exec);
 
 import * as SharedConstants from './SharedConstants';
 import { Settings } from './Settings';
@@ -40,23 +42,19 @@ export class BackendProcess {
     }
 
     // Kills the pending backend process
-    cleanup(): Promise<any> {
+    async cleanup(): Promise<any> {
 
         this._backendPromise = null;
         this._backendUrl = '';
 
         if (!this._funcProcess) {
-            return Promise.resolve();
+            return;
         }
 
         console.log('Killing func process...');
 
-        return new Promise((resolve) => {
-
-            // The process is a shell. So to stop func.exe, we need to kill the entire process tree.
-            killProcessTree(this._funcProcess!.pid, resolve);
-            this._funcProcess = null;
-        });
+        this._funcProcess.kill();
+        this._funcProcess = null;
     }
 
     get backendCommunicationNonce(): string { return this._backendCommunicationNonce; }
@@ -72,7 +70,7 @@ export class BackendProcess {
     }
     
     // Reference to the shell instance running func.exe
-    private _funcProcess: ChildProcess | null = null;
+    private _funcProcess: cp.ChildProcess | null = null;
 
     // Promise that resolves when the backend is started successfully
     private _backendPromise: Promise<void> | null = null;
@@ -86,11 +84,15 @@ export class BackendProcess {
     // A nonce for communicating with the backend
     private _backendCommunicationNonce = crypto.randomBytes(64).toString('base64');
 
+    // Path to Functions host
+    private static _funcExePath: string = '';
+
     // Runs the backend Function instance on some port
-    private startBackendOnPort(portNr: number, backendUrl: string, cancelToken: vscode.CancellationToken): Promise<void> {
+    private startBackendOnPort(funcExePath: string, portNr: number, backendUrl: string, cancelToken: vscode.CancellationToken): Promise<void> {
 
         return new Promise<void>((resolve, reject) => {
 
+            this._log(`Using Functions host: ${funcExePath}`);
             this._log(`Attempting to start the backend from ${this._binariesFolder} on ${backendUrl}...`);
 
             if (!fs.existsSync(this._binariesFolder)) {
@@ -107,7 +109,7 @@ export class BackendProcess {
                 if (!fs.existsSync(publishFolder)) {
     
                     // publishing it
-                    const publishProcess = spawnSync('dotnet', ['publish', '-o', publishFolder],
+                    const publishProcess = cp.spawnSync('dotnet', ['publish', '-o', publishFolder],
                         { cwd: this._binariesFolder, encoding: 'utf8' }
                     );
     
@@ -152,9 +154,8 @@ export class BackendProcess {
                 env['AzureWebJobsStorage'] = this._storageConnectionSettings.storageConnStrings[0];
             }
             
-            this._funcProcess = spawn('func', ['start', '--port', portNr.toString(), '--csharp'], {
+            this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString(), '--csharp'], {
                 cwd: this._eventualBinariesFolder,
-                shell: true,
                 env
             });
     
@@ -230,6 +231,8 @@ export class BackendProcess {
 
             try {
 
+                const funcExePath = await BackendProcess.getFuncExePath();
+
                 // Starting the backend on a first available port
                 const portNr = await portscanner.findAPortNotInUse(37072, 38000);
 
@@ -237,7 +240,7 @@ export class BackendProcess {
                 progress.report({ message: backendUrl });
 
                 // Now running func.exe in backend folder
-                await this.startBackendOnPort(portNr, backendUrl, token)
+                await this.startBackendOnPort(funcExePath, portNr, backendUrl, token)
 
             } catch (err) {
                 
@@ -247,5 +250,34 @@ export class BackendProcess {
                 throw err;
             }
         });
+    }
+
+    private static async getFuncExePath(): Promise<string> {
+
+        if (!!BackendProcess._funcExePath) {
+            return BackendProcess._funcExePath;
+        }
+
+        if (!!Settings().customPathToAzureFunctionsHost) {
+            
+            BackendProcess._funcExePath = Settings().customPathToAzureFunctionsHost;
+            return BackendProcess._funcExePath;
+        }
+
+        const npmListResult = await execAsync(`npm list -g --depth=0`);
+
+        const npmGlobalFolder = npmListResult
+            .stdout
+            .split('\n')[0];
+
+        const globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func.exe`);
+
+        if (!fs.existsSync(globalFuncPath)) {
+
+            throw new Error(`Could not Azure Functions host (func.exe). Either install Azure Functions Core Tools globally (npm i -g azure-functions-core-tools) or specify custom path to func.exe via 'customPathToFuncExe' setting.`);
+        }
+
+        BackendProcess._funcExePath = globalFuncPath;
+        return BackendProcess._funcExePath;
     }
 }
