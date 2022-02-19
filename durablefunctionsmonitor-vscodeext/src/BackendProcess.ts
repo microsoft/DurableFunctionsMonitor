@@ -64,40 +64,10 @@ export class BackendProcess {
     // Ensures that the backend is running (starts it, if needed) and returns its properties
     getBackend(): Promise<void> {
 
-        if (!!this._backendPromise) {
-            return this._backendPromise;
+        if (!this._backendPromise) {
+
+            this._backendPromise = this.getBackendAsync();
         }
-
-        this._backendPromise = new Promise<void>((resolve, reject) => {
-
-            vscode.window.withProgress({
-                location: vscode.ProgressLocation.Notification,
-                title: `Starting the backend `,
-                cancellable: true
-            }, (progress, token) => new Promise(stopProgress => {
-
-                // Starting the backend on a first available port
-                portscanner.findAPortNotInUse(37072, 38000).then((portNr: number) => {
-
-                    const backendUrl = Settings().backendBaseUrl.replace('{portNr}', portNr.toString());
-                    progress.report({ message: backendUrl });
-
-                    // Now running func.exe in backend folder
-                    this.startBackendOnPort(portNr, backendUrl, token)
-                        .then(resolve, reject)
-                        .finally(() => stopProgress(undefined));
-
-                }, (err: any) => { stopProgress(undefined); reject(`Failed to choose port for backend: ${err.message}`); });
-            }));
-        });
-
-        // Allowing the user to try again
-        this._backendPromise.catch(() => {
-
-            // This call is important, without it a typo in connString would persist until vsCode restart
-            this._removeMyselfFromList();
-        });
-
         return this._backendPromise;
     }
     
@@ -245,6 +215,37 @@ export class BackendProcess {
                 }
 
             }, intervalInMs);
+        });
+    }
+
+    private async getBackendAsync(): Promise<void> {
+
+        const progressOptions = {
+            location: vscode.ProgressLocation.Notification,
+            title: `Starting the backend `,
+            cancellable: true
+        };
+
+        await vscode.window.withProgress(progressOptions, async (progress, token) => {
+
+            try {
+
+                // Starting the backend on a first available port
+                const portNr = await portscanner.findAPortNotInUse(37072, 38000);
+
+                const backendUrl = Settings().backendBaseUrl.replace('{portNr}', portNr.toString());
+                progress.report({ message: backendUrl });
+
+                // Now running func.exe in backend folder
+                await this.startBackendOnPort(portNr, backendUrl, token)
+
+            } catch (err) {
+                
+                // This call is important, without it a typo in connString would persist until vsCode restart
+                this._removeMyselfFromList();
+
+                throw err;
+            }
         });
     }
 }
