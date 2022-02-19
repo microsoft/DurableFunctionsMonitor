@@ -22,10 +22,10 @@ export function Settings(): ISettings {
 }
 
 // Updates a config value stored in VsCode's settings.json
-export function UpdateSetting(name: string, val: any) {
+export function UpdateSetting(name: string, val: any): Thenable<void> {
 
     const config = vscode.workspace.getConfiguration('durableFunctionsMonitor');
-    config.update(name, val, true);
+    return config.update(name, val, true);
 }
 
 interface ISettings

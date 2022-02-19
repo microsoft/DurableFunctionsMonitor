@@ -238,6 +238,7 @@ export class BackendProcess {
                     reject(`Cancelled by the user`);
 
                 } else if (--i <= 0) {
+                    
                     console.log(`Timed out waiting for the backend!`);
                     clearInterval(intervalToken);
                     reject(`No response within ${timeoutInSeconds} seconds. Ensure you have the latest Azure Functions Core Tools installed globally.`);

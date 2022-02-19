@@ -5,9 +5,11 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as assert from 'assert';
+import axios from 'axios';
 
 import { BackendProcess } from '../../BackendProcess';
 import { StorageConnectionSettings } from "../../StorageConnectionSettings";
+import { Settings, UpdateSetting } from "../../Settings";
 
 suite('BackendProcess Test Suite', () => {
 
@@ -155,6 +157,89 @@ suite('BackendProcess Test Suite', () => {
 			return;
 
 		} finally {
+
+			await backendProcess.cleanup();
+
+			// Wait a bit, before removing backend binaries
+			await new Promise<void>((resolve) => setTimeout(resolve, 500));
+
+			await fs.promises.rm(tempBackendFolder, { recursive: true });
+		}
+
+		throw `BackendProcess didn't throw as expected`;
+
+	}).timeout(testTimeoutInMs);
+
+	test('Waits for the backend to start and throws after the predefined timeout', async () => {
+
+		// Arrange
+
+		const tempBackendFolder = await copyBackendProjectToTempFolder('mssql');
+
+		const connSettings = new StorageConnectionSettings(['Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;'], 'my-task-hub');
+
+		var callbackWasCalled = false;
+		var callbackWasCalledTwice = false;
+		var backendWasStarted = false;
+		var backendWasPublished = false;
+
+		const callbackFunc = () => {
+
+			if (!!callbackWasCalled) {
+				callbackWasCalledTwice = true;
+			}
+
+			callbackWasCalled = true;
+		};
+
+		const logFunc = (s: string) => { 
+
+			console.log(s);
+
+			if (`Attempting to start the backend from ${tempBackendFolder} on http://localhost:37072/a/p/i...` === s) {
+				backendWasStarted = true;
+			}
+
+			if (s.startsWith('Microsoft (R) Build Engine version ')) {
+				backendWasPublished = true;
+			}
+		};
+
+		const oldAxiosGet = axios.get;
+		(axios as any).get = (url: string) => {
+			
+			return Promise.reject(new Error());
+		}
+
+		const backendTimeoutInSeconds = 8;
+		const previousBackendTimeoutInSeconds = Settings().backendTimeoutInSeconds;
+		await UpdateSetting('backendTimeoutInSeconds', backendTimeoutInSeconds);
+		
+		// Act
+
+		const backendProcess = new BackendProcess(tempBackendFolder, connSettings, callbackFunc, logFunc);
+
+		try {
+
+			await backendProcess.getBackend();
+				
+		} catch (err) {
+
+			// Assert
+
+			assert.strictEqual(err, `No response within ${backendTimeoutInSeconds} seconds. Ensure you have the latest Azure Functions Core Tools installed globally.`);
+
+			assert.strictEqual(backendWasPublished, true);
+			assert.strictEqual(callbackWasCalled, true);
+			assert.strictEqual(callbackWasCalledTwice, false);
+			assert.strictEqual(backendWasStarted, true);
+
+			return;
+
+		} finally {
+
+			(axios as any).get = oldAxiosGet;
+			await UpdateSetting('backendTimeoutInSeconds', previousBackendTimeoutInSeconds);
 
 			await backendProcess.cleanup();
 
