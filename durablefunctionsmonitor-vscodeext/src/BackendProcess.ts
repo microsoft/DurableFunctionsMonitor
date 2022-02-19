@@ -92,7 +92,7 @@ export class BackendProcess {
 
         return new Promise<void>((resolve, reject) => {
 
-            this._log(`Using Functions host: ${funcExePath}`);
+            this._log(`Using Functions host: ${funcExePath}\n`);
             this._log(`Attempting to start the backend from ${this._binariesFolder} on ${backendUrl}...`);
 
             if (!fs.existsSync(this._binariesFolder)) {
@@ -270,14 +270,24 @@ export class BackendProcess {
             .stdout
             .split('\n')[0];
 
-        const globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func.exe`);
+        var globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func.exe`);
 
-        if (!fs.existsSync(globalFuncPath)) {
+        if (!!fs.existsSync(globalFuncPath)) {
 
-            throw new Error(`Could not Azure Functions host (func.exe). Either install Azure Functions Core Tools globally (npm i -g azure-functions-core-tools) or specify custom path to func.exe via 'customPathToFuncExe' setting.`);
+            BackendProcess._funcExePath = globalFuncPath;
+            return BackendProcess._funcExePath;
         }
 
-        BackendProcess._funcExePath = globalFuncPath;
+        globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func`);
+
+        if (!!fs.existsSync(globalFuncPath)) {
+
+            BackendProcess._funcExePath = globalFuncPath;
+            return BackendProcess._funcExePath;
+        }
+
+        // Defaulting to 'func' command, hopefully it will be properly resolved
+        BackendProcess._funcExePath = 'func';
         return BackendProcess._funcExePath;
     }
 }
