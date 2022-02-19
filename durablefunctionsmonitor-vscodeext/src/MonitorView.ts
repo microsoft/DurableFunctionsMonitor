@@ -57,7 +57,7 @@ export class MonitorView
     }
 
     // Shows or makes active the main view
-    show(messageToWebView: any = undefined): Promise<void> {
+    async show(messageToWebView: any = undefined): Promise<void> {
 
         if (!!this._webViewPanel) {
             // Didn't find a way to check whether the panel still exists. 
@@ -73,61 +73,50 @@ export class MonitorView
                     this._webViewPanel.webview.postMessage(messageToWebView);
                 }
 
-                return Promise.resolve();
+                return;
+
             } catch (err) {
+
                 this._webViewPanel = null;
             }
         }
 
-        return new Promise<void>((resolve, reject) => {
+        await this._backend.getBackend();
 
-            this._backend.getBackend().then(() => {
+        this._webViewPanel = this.showWebView('', messageToWebView);
 
-                try {
-                    this._webViewPanel = this.showWebView('', messageToWebView);
-
-                    this._webViewPanel.onDidDispose(() => {
-                        this._webViewPanel = null;
-                        this._onViewStatusChanged();
-                    });
-
-                    resolve();
-                } catch (err) {
-                    reject(`WebView failed: ${err}`);
-                }
-                
-            }, reject);
+        this._webViewPanel.onDidDispose(() => {
+            this._webViewPanel = null;
+            this._onViewStatusChanged();
         });
     }
 
     // Permanently deletes all underlying Storage resources for this Task Hub
-    deleteTaskHub(): Promise<void> {
+    async deleteTaskHub(): Promise<void> {
 
         if (!this._backend.backendUrl) {
-            return Promise.reject('Backend is not started');
+            throw new Error('Backend is not started');
         }
 
         const headers: any = {};
         headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
 
-        return new Promise<void>((resolve, reject) => {
+        await axios.post(`${this._backend.backendUrl}/--${this._hubName}/delete-task-hub`, {}, { headers });
 
-            const url = `${this._backend.backendUrl}/--${this._hubName}/delete-task-hub`;
-            axios.post(url, {}, { headers }).then(() => {
-                this.cleanup();
-                resolve();
-            }, err => reject(err.message));
-        });
+        this.cleanup();
     }
 
     // Handles 'Goto instanceId...' context menu item
-    gotoInstanceId() {
+    async gotoInstanceId(): Promise<void> {
 
-        this.askForInstanceId().then(instanceId => {
+        const instanceId = await this.askForInstanceId();
 
-            // Opening another WebView
-            this._childWebViewPanels.push(this.showWebView(instanceId));
-        });
+        if (!instanceId) {
+            return;
+        }
+
+        // Opening another WebView
+        this._childWebViewPanels.push(this.showWebView(instanceId));
     }
 
     // Converts script and CSS links
@@ -373,7 +362,11 @@ export class MonitorView
             var instanceId = '';
             const instanceIdPick = vscode.window.createQuickPick();
 
-            instanceIdPick.onDidHide(() => instanceIdPick.dispose());
+            instanceIdPick.onDidHide(() => {
+
+                instanceIdPick.dispose();
+                resolve('');
+            });
 
             instanceIdPick.onDidChangeSelection(items => {
                 if (!!items && !!items.length) {
@@ -399,16 +392,14 @@ export class MonitorView
             });
 
             instanceIdPick.onDidAccept(() => {
-                if (!!instanceId) {
-                    resolve(instanceId);
-                }
+
                 instanceIdPick.hide();
+                resolve(instanceId);
             });
 
             instanceIdPick.title = `(${this.taskHubFullTitle}) instanceId to go to:`;
 
             instanceIdPick.show();
-            // If nothing is selected, leaving the promise unresolved, so nothing more happens
         });
     }
 
