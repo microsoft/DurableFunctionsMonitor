@@ -335,62 +335,72 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> = this._onDidChangeTreeData.event;
 
     // Shows or makes active the main view
-    private createOrActivateMonitorView(alwaysCreateNew: boolean, messageToWebView: any = undefined): Promise<MonitorView | null> {
+    private async createOrActivateMonitorView(alwaysCreateNew: boolean, messageToWebView: any = undefined): Promise<MonitorView | null> {
 
         if (!!this._inProgress) {
             console.log(`Another operation already in progress...`);
-            return Promise.resolve(null);
+            return null;
         }
 
-        return new Promise<MonitorView>((resolve, reject) => {
+        try {
 
-            this._monitorViews.getOrAdd(alwaysCreateNew).then(monitorView => {
+            const monitorView = await this._monitorViews.getOrAdd(alwaysCreateNew);
 
-                this._inProgress = true;
+            if (!monitorView) {
+                return null;
+            }
 
-                monitorView.show(messageToWebView).then(() => {
+            this._inProgress = true;
 
-                    this._storageAccounts.addNodeForMonitorView(monitorView);
-                    this._onDidChangeTreeData.fire();
-                    this._inProgress = false;
+            await monitorView.show(messageToWebView);
 
-                    resolve(monitorView);
+            this._inProgress = false;
+            this._storageAccounts.addNodeForMonitorView(monitorView);
+            this._onDidChangeTreeData.fire();
 
-                }, (err) => {
-                    // .finally() doesn't work here - vscode.window.showErrorMessage() blocks it until user 
-                    // closes the error message. As a result, _inProgress remains true until then, which blocks all commands
-                    this._inProgress = false;
-                    vscode.window.showErrorMessage(!err.message ? err : err.message);
-                });
+            return monitorView;
 
-            }, vscode.window.showErrorMessage);
-        });
+        } catch (err) {
+            
+            // .finally() doesn't work here - vscode.window.showErrorMessage() blocks it until user 
+            // closes the error message. As a result, _inProgress remains true until then, which blocks all commands
+            this._inProgress = false;
+            vscode.window.showErrorMessage(!(err as any).message ? err : (err as any).message);
+        }
+
+        return null;
     }
 
     // Shows the main view upon a debug session
-    private showUponDebugSession(connSettingsFromCurrentProject?: StorageConnectionSettings) {
+    private async showUponDebugSession(connSettingsFromCurrentProject?: StorageConnectionSettings): Promise<void> {
         
         if (!!this._inProgress) {
             console.log(`Another operation already in progress...`);
             return;
         }
 
-        this._monitorViews.showUponDebugSession(connSettingsFromCurrentProject).then(monitorView => {
+        try {
+
+            const monitorView = await this._monitorViews.showUponDebugSession(connSettingsFromCurrentProject);
+
+            if (!monitorView) {
+                return;
+            }
 
             this._inProgress = true;
+            
+            await monitorView.show();
 
-            monitorView.show().then(() => {
+            this._storageAccounts.addNodeForMonitorView(monitorView);
+            this._onDidChangeTreeData.fire();
+            this._inProgress = false;
+            
+        } catch (err) {
 
-                this._storageAccounts.addNodeForMonitorView(monitorView);
-                this._onDidChangeTreeData.fire();
-                this._inProgress = false;
-        
-            }, (err) => {
-                // .finally() doesn't work here - vscode.window.showErrorMessage() blocks it until user 
-                // closes the error message. As a result, _inProgress remains true until then, which blocks all commands
-                this._inProgress = false;
-                vscode.window.showErrorMessage(!err.message ? err : err.message);
-            });
-        }, vscode.window.showErrorMessage);
+            // .finally() doesn't work here - vscode.window.showErrorMessage() blocks it until user 
+            // closes the error message. As a result, _inProgress remains true until then, which blocks all commands
+            this._inProgress = false;
+            vscode.window.showErrorMessage(!(err as any).message ? err : (err as any).message);
+        }
     }
 }

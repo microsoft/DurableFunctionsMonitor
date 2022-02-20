@@ -52,20 +52,16 @@ export class MonitorViewList {
 
     // Gets an existing (first in the list) MonitorView,
     // or initializes a new one by asking user for connection settings
-    getOrAdd(alwaysCreateNew: boolean): Promise<MonitorView> {
+    async getOrAdd(alwaysCreateNew: boolean): Promise<MonitorView | null> {
 
         const keys = Object.keys(this._monitorViews);
         if (!alwaysCreateNew && keys.length > 0) {
-            return Promise.resolve(this._monitorViews[keys[0]]);
+            return this._monitorViews[keys[0]];
         }
 
-        return new Promise<MonitorView>((resolve, reject) => {
-            this.askForStorageConnectionSettings().then(connSettings => {
+        const connSettings = await this.askForStorageConnectionSettings();
 
-                const monitorView = this.getOrCreateFromStorageConnectionSettings(connSettings);
-                resolve(monitorView);
-            }, reject);
-        });
+        return !connSettings ? null : this.getOrCreateFromStorageConnectionSettings(connSettings);
     }
 
     firstOrDefault(): MonitorView | null {
@@ -156,7 +152,7 @@ export class MonitorViewList {
         return !backendProcess ? '' : backendProcess.backendUrl; 
     }
 
-    showUponDebugSession(connSettingsFromCurrentProject?: StorageConnectionSettings): Promise<MonitorView> {
+    showUponDebugSession(connSettingsFromCurrentProject?: StorageConnectionSettings): Promise<MonitorView | null> {
 
         if (!connSettingsFromCurrentProject) {
             return this.getOrAdd(true);
@@ -203,9 +199,9 @@ export class MonitorViewList {
     }
 
     // Obtains Storage Connection String and Hub Name from user
-    private askForStorageConnectionSettings(): Promise<StorageConnectionSettings> {
+    private askForStorageConnectionSettings(): Promise<StorageConnectionSettings | null> {
 
-        return new Promise<StorageConnectionSettings>((resolve, reject) => {
+        return new Promise<StorageConnectionSettings | null>((resolve, reject) => {
 
             // Asking the user for Connection String
             var connStringToShow = '';
@@ -218,7 +214,7 @@ export class MonitorViewList {
             vscode.window.showInputBox({ value: connStringToShow, prompt: 'Storage or MSSQL Connection String' }).then(connString => {
 
                 if (!connString) {
-                    // Leaving the promise unresolved, so nothing more happens
+                    resolve(null);
                     return;
                 }
 
@@ -242,7 +238,10 @@ export class MonitorViewList {
                 var hubName = '';
                 const hubPick = vscode.window.createQuickPick();
 
-                hubPick.onDidHide(() => hubPick.dispose());
+                hubPick.onDidHide(() => {
+                    hubPick.dispose();
+                    resolve(null);
+                });
 
                 hubPick.onDidChangeSelection(items => {
                     if (!!items && !!items.length) {
@@ -256,10 +255,9 @@ export class MonitorViewList {
                 });
 
                 hubPick.onDidAccept(() => {
-                    if (!!hubName) {
-                        resolve(new StorageConnectionSettings([connString!], hubName));
-                    }
+
                     hubPick.hide();
+                    resolve(!hubName ? null : new StorageConnectionSettings([connString!], hubName));
                 });
                 
                 hubPick.title = 'Hub Name';
@@ -286,7 +284,7 @@ export class MonitorViewList {
                 // Loading other hub names directly from Table Storage
                 this.loadHubNamesFromTableStorage(connString).then(hubNames => {
 
-                    if (hubNames.length >= 0) {
+                    if (hubNames.length > 0) {
 
                         // Adding loaded names to the list
                         hubPick.items = hubNames.map(label => {
@@ -298,37 +296,23 @@ export class MonitorViewList {
                 });
 
                 hubPick.show();
-                // If nothing is selected, leaving the promise unresolved, so nothing more happens
 
             }, reject);
         });
     }
 
-    private loadHubNamesFromTableStorage(storageConnString: string): Promise<string[]> {
-        return new Promise<string[]>((resolve) => {
+    private async loadHubNamesFromTableStorage(storageConnString: string): Promise<string[]> {
 
-            const accountName = ConnStringUtils.GetAccountName(storageConnString);
-            const accountKey = ConnStringUtils.GetAccountKey(storageConnString);
-            const tableEndpoint = ConnStringUtils.GetTableEndpoint(storageConnString);
+        const accountName = ConnStringUtils.GetAccountName(storageConnString);
+        const accountKey = ConnStringUtils.GetAccountKey(storageConnString);
+        const tableEndpoint = ConnStringUtils.GetTableEndpoint(storageConnString);
 
-            if (!accountName || !accountKey) {
-                // Leaving the promise unresolved
-                return;
-            }
+        if (!accountName || !accountKey) {
+            return [];
+        }
 
-            getTaskHubNamesFromTableStorage(accountName, accountKey, tableEndpoint).then(hubNames => {
-
-                if (!hubNames || hubNames.length <= 0) {
-                    // Leaving the promise unresolved
-                    return;
-                }
-                resolve(hubNames);
-
-            }, err => {
-                console.log(`Failed to load the list of tables. ${err.message}`);
-                // Leaving the promise unresolved
-            });
-        });
+        const hubNames = await getTaskHubNamesFromTableStorage(accountName, accountKey, tableEndpoint);
+        return hubNames ?? [];
     }
 
     private getValueFromLocalSettings(valueName: string): string {

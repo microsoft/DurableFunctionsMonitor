@@ -103,7 +103,7 @@ suite('MonitorViewList Test Suite', () => {
 			onDidChangeValueHandler(taskHubNames[1]);
 			onDidAcceptHandler();
 
-			monitorView = await monitorViewPromise;
+			monitorView = (await monitorViewPromise)!;
 			
 		} finally {
 			
