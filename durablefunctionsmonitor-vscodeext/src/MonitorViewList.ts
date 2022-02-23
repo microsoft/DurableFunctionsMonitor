@@ -317,15 +317,23 @@ export class MonitorViewList {
 
     private getValueFromLocalSettings(valueName: string): string {
 
-        const ws = vscode.workspace;
-        if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'local.settings.json'))) {
-
-            const localSettings = JSON.parse(fs.readFileSync(path.join(ws.rootPath, 'local.settings.json'), 'utf8'));
-
-            if (!!localSettings.Values && !!localSettings.Values[valueName]) {
-                return localSettings.Values[valueName];
+        try {
+        
+            const ws = vscode.workspace;
+            if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'local.settings.json'))) {
+    
+                const localSettings = JSON.parse(fs.readFileSync(path.join(ws.rootPath, 'local.settings.json'), 'utf8'));
+    
+                if (!!localSettings.Values && !!localSettings.Values[valueName]) {
+                    return localSettings.Values[valueName];
+                }
             }
+                
+        } catch (err) {
+
+            this._log(`Failed to parse local.settings.json: ${!(err as any).message ? err : (err as any).message}\n`);
         }
+
         return '';
     }
 
@@ -338,10 +346,12 @@ export class MonitorViewList {
 
             var hostJson;
             try {
+
                 hostJson = JSON.parse(fs.readFileSync(path.join(ws.rootPath, 'host.json'), 'utf8'));
+                
             } catch (err) {
 
-                console.log(`Failed to parse host.json. ${(err as any).message}`);
+                this._log(`Failed to parse host.json: ${!(err as any).message ? err : (err as any).message}\n`);
                 return result;
             }
 
