@@ -10,6 +10,7 @@ import { CancelToken } from '../../CancelToken';
 
 import { dfmContextInstance } from '../../DfmContext';
 import { DateTimeHelpers } from 'src/DateTimeHelpers';
+import { QueryString } from '../QueryString';
 
 // Represents the state of a tab in the results pane
 export interface IResultsTabState {
@@ -68,43 +69,40 @@ export class ResultsListTabState implements IResultsTabState {
 
     get backendClient(): IBackendClient { return this._backendClient; }
 
-    constructor(private _backendClient: IBackendClient,
-        private _localStorage: ITypedLocalStorage<ResultsListTabState>, private _refresh: () => void) {
+    constructor(private _backendClient: IBackendClient, private _refresh: () => void) {
 
-        const orderByString = this._localStorage.getItem('orderBy');
-        if (!!orderByString) {
-            this._orderBy = orderByString;
-        }
+        const queryString = new QueryString();
+        
+        this._orderBy = queryString.values['orderBy'] ?? '';
 
-        const orderByDirectionString = this._localStorage.getItem('orderByDirection');
+        const orderByDirectionString = queryString.values['orderBy'];
         if (!!orderByDirectionString) {
             this._orderByDirection = orderByDirectionString as 'asc' | 'desc';
         }
 
-        const hiddenColumnsString = this._localStorage.getItem('hiddenColumns');
+        const hiddenColumnsString = queryString.values['hiddenColumns'];
         if (!!hiddenColumnsString) {
             this._hiddenColumns = hiddenColumnsString.split('|');
         }
 
-        const clientFilteredColumnString = this._localStorage.getItem('clientFilteredColumn');
-        if (!!clientFilteredColumnString) {
-            this.clientFilteredColumn = clientFilteredColumnString;
-        }
-
-        const clientFilterValueString = this._localStorage.getItem('clientFilterValue');
-        if (!!clientFilterValueString) {
-            this.clientFilterValue = clientFilterValueString;
-        }
+        this.clientFilteredColumn = queryString.values['clientFilteredColumn'] ?? '';
+        this.clientFilterValue = queryString.values['clientFilterValue'] ?? '';
     }
 
     hideColumn(name: string) {
         this._hiddenColumns.push(name);
-        this._localStorage.setItem('hiddenColumns', this._hiddenColumns.join('|'));
+
+        const queryString = new QueryString();
+        queryString.setValue('hiddenColumns', this._hiddenColumns.join('|'));
+        queryString.apply(true);
     }
 
     unhide() {
         this._hiddenColumns = [];
-        this._localStorage.removeItem('hiddenColumns');
+
+        const queryString = new QueryString();
+        queryString.setValue('hiddenColumns', null);
+        queryString.apply(true);
 
         this._refresh();
     }
@@ -152,24 +150,14 @@ export class ResultsListTabState implements IResultsTabState {
                 return Promise.resolve();
             }
 
-            // persisting state as a batch
-            this._localStorage.setItems([
-                { fieldName: 'orderBy', value: this._orderBy },
-                { fieldName: 'orderByDirection', value: this._orderByDirection }
-            ]);
+            const queryString = new QueryString();
 
-            if (!!this.clientFilteredColumn && !!this.clientFilterValue) {
+            queryString.setValue('orderBy', this._orderBy);
+            queryString.setValue('orderByDirection', this._orderByDirection);
+            queryString.setValue('clientFilteredColumn', this.clientFilteredColumn);
+            queryString.setValue('clientFilterValue', this.clientFilterValue);
 
-                this._localStorage.setItems([
-                    { fieldName: 'clientFilteredColumn', value: this.clientFilteredColumn },
-                    { fieldName: 'clientFilterValue', value: this.clientFilterValue }
-                ]);
-                    
-            } else {
-
-                this._localStorage.removeItem('clientFilteredColumn');
-                this._localStorage.removeItem('clientFilterValue');
-            }
+            queryString.apply(true);
         }
 
         const orderByClause = !!this._orderBy ? `&$orderby=${this._orderBy} ${this.orderByDirection}` : '';

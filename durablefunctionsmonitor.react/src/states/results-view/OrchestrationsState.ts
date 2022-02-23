@@ -180,7 +180,7 @@ export class OrchestrationsState extends ErrorMessageState {
         super();
         
         this._tabStates = [
-            new ResultsListTabState(this._backendClient, this._localStorage, () => this.reloadOrchestrations()),
+            new ResultsListTabState(this._backendClient, () => this.reloadOrchestrations()),
             new ResultsHistogramTabState(this._backendClient, this),
             new ResultsGanttDiagramTabState(this._backendClient)
         ];
