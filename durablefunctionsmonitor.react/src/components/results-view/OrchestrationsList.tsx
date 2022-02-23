@@ -5,8 +5,8 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import {
-    FormHelperText, IconButton, Link, Paper, Table, TableBody, TableCell, TableHead, TableRow,
-    TableSortLabel, Typography
+    FormHelperText, IconButton, InputAdornment, Link, Paper, Table, TableBody, TableCell, TableHead, TableRow,
+    TableSortLabel, TextField, Typography
 } from '@material-ui/core';
 
 import CloseIcon from '@material-ui/icons/Close';
@@ -20,6 +20,7 @@ import { RuntimeStatusToStyle } from '../../theme';
 import { DateTimeHelpers } from '../../DateTimeHelpers';
 import { LongJsonDialog } from '../dialogs/LongJsonDialog';
 import { Theme } from '../../theme';
+import { FunnelIcon } from './FunnelIcon';
 
 // Orchestrations list view
 @observer
@@ -35,43 +36,88 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
         return (<>
             
             <FormHelperText className="items-count-label">
-                {!!state.orchestrations.length && (<>
                     
-                    {state.orchestrations.length} items shown
-                
-                    {!!state.hiddenColumns.length && (<>
+                {state.orchestrations.length} items shown
+            
+                {!!state.hiddenColumns.length && (<>
 
-                        , {state.hiddenColumns.length} columns hidden
+                    , {state.hiddenColumns.length} columns hidden
 
-                        (<Link
-                            color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
-                            className="unhide-button"
-                            component="button"
-                            variant="inherit"
-                            onClick={() => state.unhide()}
-                        >
-                            unhide
-                        </Link>)
-
-                    </>)}
-
-                    {!!state.orderBy && (<>
-
-                        , sorted by <strong>{state.orderBy} {state.orderByDirection}</strong>
-                        
-                        (<Link
-                            color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
-                            className="unhide-button"
-                            component="button"
-                            variant="inherit"
-                            onClick={() => state.resetOrderBy()}
-                        >
-                            reset
-                        </Link>)
-
-                    </>)}
+                    (<Link
+                        color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
+                        className="unhide-button"
+                        component="button"
+                        variant="inherit"
+                        onClick={() => state.unhide()}
+                    >
+                        unhide
+                    </Link>)
 
                 </>)}
+
+                {!!state.orderBy && (<>
+
+                    , sorted by <strong>{state.orderBy} {state.orderByDirection}</strong>
+                    
+                    (<Link
+                        color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
+                        className="unhide-button"
+                        component="button"
+                        variant="inherit"
+                        onClick={() => state.resetOrderBy()}
+                    >
+                        reset
+                    </Link>)
+
+                </>)}
+
+                {!!state.clientFilteredColumn && (<>
+
+                    , filter <strong>{state.clientFilteredColumn}</strong> with:
+                    
+                    <TextField
+                        
+                        className='column-filter-input'
+                        autoFocus
+                        hiddenLabel
+                        variant='outlined'
+                        size='small'
+                        value={state.clientFilterValue}
+                        onChange={(evt) => state.clientFilterValue = evt.target.value as string}
+                        onKeyPress={(evt) => {
+
+                            if (evt.key === 'Enter') {
+                                // Otherwise the event will bubble up and the form will be submitted
+                                evt.preventDefault();
+                    
+                                state.applyFilter();
+                            }
+                        }}
+                        onBlur={(evt) => {
+
+                            // this check is needed, because otherwise .applyFilter() will overshadow the CloseButton's click
+                            if (!evt.relatedTarget) {
+                                
+                                state.applyFilter();
+                            }
+                        }}
+                        
+                        InputProps={{
+                            endAdornment: <InputAdornment position="end">
+
+                                <IconButton
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => state.resetFilter()}
+                                >
+                                    <CloseIcon />
+                                </IconButton>
+
+                            </InputAdornment>,
+                        }}
+                    />
+                </>)}
+                    
             </FormHelperText>
 
             <Paper elevation={0}>
@@ -96,7 +142,7 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
         const visibleColumns = DurableOrchestrationStatusFields
             // hiding artificial 'lastEvent' column, when not used
             .filter(f => this.props.showLastEventColumn ? true : f !== 'lastEvent');
-
+        
         return (
             <Table size="small">
                 <TableHead>
@@ -121,16 +167,29 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
 
                                     </TableSortLabel>
 
-                                    {state.columnUnderMouse === col && !onlyOneVisibleColumnLeft && (
+                                    {state.columnUnderMouse === col && (<>
+                                        
                                         <IconButton
                                             color="inherit"
                                             size="small"
-                                            className="column-hide-button"
-                                            onClick={() => state.hideColumn(col)}
+                                            className="column-filter-button"
+                                            onClick={() => state.clientFilteredColumn = col}
                                         >
-                                            <CloseIcon />
+                                            <FunnelIcon/>
                                         </IconButton>
-                                    )}
+
+                                        {!onlyOneVisibleColumnLeft && (
+                                            <IconButton
+                                                color="inherit"
+                                                size="small"
+                                                className="column-hide-button"
+                                                onClick={() => state.hideColumn(col)}
+                                            >
+                                                <CloseIcon className="columnt-filter-button-img" />
+                                            </IconButton>
+                                        )}
+
+                                    </>)}
 
                                 </TableCell>
                             );

@@ -8,6 +8,9 @@ import { IBackendClient } from '../../services/IBackendClient';
 import { ITypedLocalStorage } from '../ITypedLocalStorage';
 import { CancelToken } from '../../CancelToken';
 
+import { dfmContextInstance } from '../../DfmContext';
+import { DateTimeHelpers } from 'src/DateTimeHelpers';
+
 // Represents the state of a tab in the results pane
 export interface IResultsTabState {
 
@@ -25,11 +28,19 @@ export class ResultsListTabState implements IResultsTabState {
     @observable
     columnUnderMouse: string;
 
+    @observable
+    clientFilteredColumn: string;
+
+    @observable
+    clientFilterValue: string;
+
     @computed
     get hiddenColumns(): string[] { return this._hiddenColumns; }
 
     @computed
-    get orchestrations(): DurableOrchestrationStatus[] { return this._orchestrations; }
+    get orchestrations(): DurableOrchestrationStatus[] {
+        return this._orchestrations;
+    }
 
     @computed
     get orderByDirection(): ('asc' | 'desc') { return this._orderByDirection; }
@@ -74,6 +85,16 @@ export class ResultsListTabState implements IResultsTabState {
         if (!!hiddenColumnsString) {
             this._hiddenColumns = hiddenColumnsString.split('|');
         }
+
+        const clientFilteredColumnString = this._localStorage.getItem('clientFilteredColumn');
+        if (!!clientFilteredColumnString) {
+            this.clientFilteredColumn = clientFilteredColumnString;
+        }
+
+        const clientFilterValueString = this._localStorage.getItem('clientFilterValue');
+        if (!!clientFilterValueString) {
+            this.clientFilterValue = clientFilterValueString;
+        }
     }
 
     hideColumn(name: string) {
@@ -94,10 +115,26 @@ export class ResultsListTabState implements IResultsTabState {
         this._refresh();
     }
 
+    applyFilter() {
+
+        if (this._prevFilterValue !== this.clientFilterValue) {
+           
+            this._refresh();
+        }
+    }
+
+    resetFilter() {
+        this.clientFilteredColumn = '';
+        this.clientFilterValue = '';
+        this._prevFilterValue = '';
+        this._refresh();
+    }
+
     reset() {
 
         this._orchestrations = [];
         this._noMorePagesToLoad = false;
+        this._skip = 0;
     }
 
     load(filterClause: string, cancelToken: CancelToken, isAutoRefresh: boolean = false): Promise<void> {
@@ -105,6 +142,9 @@ export class ResultsListTabState implements IResultsTabState {
         if (isAutoRefresh) { 
 
             this._noMorePagesToLoad = false;
+
+            // With auto-refresh always loading just the first page
+            this._skip = 0;
 
         } else {
 
@@ -115,25 +155,36 @@ export class ResultsListTabState implements IResultsTabState {
             // persisting state as a batch
             this._localStorage.setItems([
                 { fieldName: 'orderBy', value: this._orderBy },
-                { fieldName: 'orderByDirection', value: this._orderByDirection },
-            ]);            
-        }
+                { fieldName: 'orderByDirection', value: this._orderByDirection }
+            ]);
 
-        // In auto-refresh mode only refreshing the first page
-        const skip = isAutoRefresh ? 0 : this._orchestrations.length;
+            if (!!this.clientFilteredColumn && !!this.clientFilterValue) {
+
+                this._localStorage.setItems([
+                    { fieldName: 'clientFilteredColumn', value: this.clientFilteredColumn },
+                    { fieldName: 'clientFilterValue', value: this.clientFilterValue }
+                ]);
+                    
+            } else {
+
+                this._localStorage.removeItem('clientFilteredColumn');
+                this._localStorage.removeItem('clientFilterValue');
+            }
+        }
 
         const orderByClause = !!this._orderBy ? `&$orderby=${this._orderBy} ${this.orderByDirection}` : '';
         const hiddenColumnsClause = !this._hiddenColumns.length ? '' : `&hidden-columns=${this._hiddenColumns.join('|')}`;
+        const uri = `/orchestrations?$top=${this._pageSize}${filterClause}${orderByClause}${hiddenColumnsClause}`;
+        
+        return this.loadFiltered(uri, cancelToken, []).then(response => {
 
-        const uri = `/orchestrations?$top=${this._pageSize}&$skip=${skip}${filterClause}${orderByClause}${hiddenColumnsClause}`;
-
-        return this._backendClient.call('GET', uri).then(response => {
+            this._prevFilterValue = this.clientFilterValue;
 
             if (cancelToken.isCancelled) {
                 return;
             }
             
-            if (isAutoRefresh) {
+            if (!!isAutoRefresh) {
                 this._orchestrations = response;
             } else {
                 this._orchestrations.push(...response);
@@ -144,6 +195,61 @@ export class ResultsListTabState implements IResultsTabState {
                 // Stop the infinite scrolling
                 this._noMorePagesToLoad = true;
             }
+        });
+    }
+
+    private loadFiltered(uri: string, cancelToken: CancelToken, result: DurableOrchestrationStatus[]): Promise<DurableOrchestrationStatus[]> {
+
+        return this._backendClient.call('GET', uri + `&$skip=${this._skip}`).then(response => {
+
+            if (!!cancelToken.isCancelled || !response || !response.length) {
+                
+                return Promise.resolve(result);
+            }
+
+            this._skip += response.length;
+
+            if (!!this.clientFilteredColumn && !!this.clientFilterValue) {
+                
+                // applying client-side filter
+                response = response.filter(item => {
+
+                    const itemValue = item[this.clientFilteredColumn];
+                    if (!itemValue) {
+                        return false;
+                    }
+
+                    var itemValueString;
+                    switch (this.clientFilteredColumn) {
+                        case 'createdTime':
+                        case 'lastUpdatedTime':
+                            itemValueString = dfmContextInstance.formatDateTimeString(itemValue);
+                            break;
+                        case 'duration':
+                            itemValueString = DateTimeHelpers.formatDuration(itemValue);
+                            break;
+                        case 'input':
+                        case 'output':
+                        case 'customStatus':
+                            itemValueString = JSON.stringify(itemValue);
+                            break;
+                        default:
+                            itemValueString = itemValue.toString();
+                    }
+
+                    return itemValueString.toLowerCase().includes(this.clientFilterValue.toLowerCase());
+                });
+            }
+
+            result.push(...response);
+
+            // Keep pulling data until we get at least this._pageSize results
+            if (result.length < this._pageSize) {
+                
+                return this.loadFiltered(uri, cancelToken, result);
+            }
+
+            return Promise.resolve(result);
         });
     }
 
@@ -159,4 +265,6 @@ export class ResultsListTabState implements IResultsTabState {
 
     private _noMorePagesToLoad: boolean = false;
     private readonly _pageSize = 50;
+    private _skip = 0;
+    private _prevFilterValue = '';
 }

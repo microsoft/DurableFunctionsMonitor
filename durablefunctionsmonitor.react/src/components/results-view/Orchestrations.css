@@ -43,7 +43,7 @@
 }
 
 .items-count-label {
-    margin-top: 8px !important;
+    margin-top: 12px !important;
     padding-left: 15px;
     height: 20px;
 }
@@ -112,12 +112,37 @@
     float: right;
 }
 
-.column-hide-button {
+.column-filter-input {
+    padding-left: 5px !important;
+    width: 170px;
+    margin-top: -3px !important; 
+}
+
+.column-filter-input > div > input {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+}
+
+.column-filter-button {
     width: 8px !important;
     padding: 0px !important;
+    margin-top: 4px !important;
     margin-right: -8px !important;
     float: right;
-    opacity: 0.7;
+    opacity: 0.6;
+}
+
+.columnt-filter-button-img {
+    height: 22px !important;
+    padding-top: 2px;
+}
+
+.column-hide-button {
+    width: 6px !important;
+    padding: 0px !important;
+    margin-right: -24px !important;
+    float: right;
+    opacity: 0.6;
 }
 
 .unhide-button {
