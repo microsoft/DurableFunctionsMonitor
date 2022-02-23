@@ -6,7 +6,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.38" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.5.1" />
-    <PackageReference Include="durablefunctionsmonitor.dotnetbackend" Version="5.0.0" />
+    <PackageReference Include="durablefunctionsmonitor.dotnetbackend" Version="5.2.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
