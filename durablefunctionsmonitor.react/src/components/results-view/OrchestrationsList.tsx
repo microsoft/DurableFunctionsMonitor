@@ -84,13 +84,17 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
                         size='small'
                         value={state.clientFilterValue}
                         onChange={(evt) => state.clientFilterValue = evt.target.value as string}
-                        onKeyPress={(evt) => {
+                        onKeyDown={(evt) => {
 
                             if (evt.key === 'Enter') {
                                 // Otherwise the event will bubble up and the form will be submitted
                                 evt.preventDefault();
                     
                                 state.applyFilter();
+
+                            } else if (evt.key === 'Escape') {
+                                
+                                state.resetFilter();
                             }
                         }}
                         onBlur={(evt) => {
