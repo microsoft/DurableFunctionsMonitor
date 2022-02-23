@@ -113,6 +113,12 @@ export class ResultsListTabState implements IResultsTabState {
         this._refresh();
     }
 
+    setClientFilteredColumn(name: string) {
+        
+        this.clientFilteredColumn = name;
+        this.clientFilterValue = '';
+    }
+
     applyFilter() {
 
         if (this._prevFilterValue !== this.clientFilterValue) {

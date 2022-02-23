@@ -177,7 +177,7 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
                                             color="inherit"
                                             size="small"
                                             className="column-filter-button"
-                                            onClick={() => state.clientFilteredColumn = col}
+                                            onClick={() => state.setClientFilteredColumn(col)}
                                         >
                                             <FunnelIcon/>
                                         </IconButton>
