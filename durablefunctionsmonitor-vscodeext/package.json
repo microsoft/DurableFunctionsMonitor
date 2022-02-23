@@ -2,7 +2,7 @@
     "name": "durablefunctionsmonitor",
     "displayName": "Durable Functions Monitor",
     "description": "Monitoring/debugging UI tool for Azure Durable Functions. View->Command Palette...->Durable Functions Monitor",
-    "version": "5.1.0",
+    "version": "5.2.0",
     "engines": {
         "vscode": "^1.39.0"
     },
@@ -10,13 +10,13 @@
         "Other",
         "Debuggers"
     ],
-    "homepage": "https://github.com/scale-tone/DurableFunctionsMonitor",
+    "homepage": "https://github.com/microsoft/DurableFunctionsMonitor",
     "repository": {
         "type": "git",
-        "url": "https://github.com/scale-tone/DurableFunctionsMonitor"
+        "url": "https://github.com/microsoft/DurableFunctionsMonitor"
     },
     "bugs": {
-        "url": "https://github.com/scale-tone/DurableFunctionsMonitor/issues"
+        "url": "https://github.com/microsoft/DurableFunctionsMonitor/issues"
     },
     "icon": "logo.png",
     "keywords": [
