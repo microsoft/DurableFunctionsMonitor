@@ -1,5 +1,17 @@
 # Change Log
 
+## Version 5.2.0
+
+- Mostly technical release (to finalize the move to this new repo), but one useful feature was added - client-side filtering:
+
+    <img width="600px" src="https://user-images.githubusercontent.com/5447190/155412087-792bfdd1-42ac-4610-aff3-3e35a230961f.png"/>
+
+    Use the 'Funnel' button on top of every column to start filtering, then type some text (case-insensitive) and press 'Enter' - only the instances containing that text in their corresponding fields will be shown.
+    
+    NOTE: this is a _client-side_ filter, so it works slower than the main, top-level query tools.
+
+- Minor bugfixes.
+
 ## Version 5.1.0
 
 - Instance execution history can now be filtered by time and other field values:
