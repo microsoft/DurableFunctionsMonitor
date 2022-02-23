@@ -61,7 +61,14 @@ export class StorageAccountTreeItem extends vscode.TreeItem {
 
     // Something to show to the right of this item
     get description(): string {
-        return `${this._taskHubItems.length} Task Hubs`;
+        
+        var desc = `${this._taskHubItems.length} Task Hubs`;
+
+        if (this._fromLocalSettingsJson) {
+            desc += ', current';
+        }
+
+        return desc;
     }
 
     // Item's icon
@@ -88,11 +95,11 @@ export class StorageAccountTreeItem extends vscode.TreeItem {
     }
 
     // Creates or returns existing TaskHubTreeItem by hub name
-    getOrAdd(hubName: string): TaskHubTreeItem {
+    getOrAdd(hubName: string, isFromCurrentProject: boolean = false): TaskHubTreeItem {
 
         var hubItem = this._taskHubItems.find(taskHub => taskHub.hubName.toLowerCase() === hubName.toLowerCase());
         if (!hubItem) {
-            hubItem = new TaskHubTreeItem(this, hubName, this._resourcesFolderPath);
+            hubItem = new TaskHubTreeItem(this, hubName, this._resourcesFolderPath, isFromCurrentProject);
             this._taskHubItems.push(hubItem);
             this._taskHubItems.sort(TaskHubTreeItem.compare);
         }

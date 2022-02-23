@@ -10,7 +10,11 @@ import { StorageAccountTreeItem } from "./StorageAccountTreeItem";
 // Represents the Task Hub item in the TreeView
 export class TaskHubTreeItem extends vscode.TreeItem {
 
-    constructor(private _parentItem: StorageAccountTreeItem, private _hubName: string, private _resourcesFolderPath: string) {
+    constructor(private _parentItem: StorageAccountTreeItem,
+        private _hubName: string,
+        private _resourcesFolderPath: string,
+        private _isCurrent: boolean) {
+        
         super(_hubName);
     }
 
@@ -46,6 +50,11 @@ export class TaskHubTreeItem extends vscode.TreeItem {
 
         const backendUrl = this._parentItem.backendUrl;
         return !backendUrl ? '' : `${backendUrl}/${this._hubName}`;
+    }
+
+    // Something to show to the right of this item
+    get description(): string {
+        return this._isCurrent ? 'current' : '';
     }
 
     // This is what happens when the item is being clicked

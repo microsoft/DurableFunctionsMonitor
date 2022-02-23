@@ -27,6 +27,7 @@ export class StorageAccountTreeItems {
         const storageConnStrings = monitorView.storageConnectionSettings.storageConnStrings;
         const storageName = ConnStringUtils.GetStorageName(storageConnStrings);
         const hubName = monitorView.storageConnectionSettings.hubName;
+        const isFromCurrentProject = monitorView.storageConnectionSettings.isFromLocalSettingsJson;
 
         // Only creating a new tree node, if no node for this account exists so far
         var node = this._storageAccountItems.find(item => item.storageName.toLowerCase() === storageName.toLowerCase());
@@ -38,7 +39,7 @@ export class StorageAccountTreeItems {
             this._storageAccountItems.sort(StorageAccountTreeItem.compare);
         }
 
-        node.getOrAdd(hubName);
+        node.getOrAdd(hubName, isFromCurrentProject);
     }
 
     // Adds a detached node to the tree for the specified storage connection settings
@@ -70,7 +71,7 @@ export class StorageAccountTreeItems {
         node.isV2StorageAccount = isV2StorageAccount;
         node.storageAccountId = storageAccountId;
 
-        node.getOrAdd(hubName);
+        node.getOrAdd(hubName, connSettings.isFromLocalSettingsJson);
     }
     
     private _storageAccountItems: StorageAccountTreeItem[] = [];
