@@ -86,7 +86,7 @@ steps:
   inputs:
     command: 'custom'
     workingDir: 'durablefunctionsmonitor-vscodeext'
-    customCommand: 'test'
+    customCommand: 'run test'
 
 - task: Npm@1
   displayName: 'package durablefunctionsmonitor-vscodeext to VSIX-file'
