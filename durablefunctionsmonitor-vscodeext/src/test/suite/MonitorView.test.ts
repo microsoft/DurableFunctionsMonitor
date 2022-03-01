@@ -240,7 +240,12 @@ suite('MonitorView Test Suite', () => {
 			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend')
 		};
 		
-		const functionGraphList: any = {};
+		const functionGraphList: any = {
+			traverseFunctions: () => Promise.resolve({
+				functions: {},
+				proxies: {}
+			})
+		};
 		const webView: any = {};
 
 		const orchestrationId = new Date().toISOString();
@@ -278,7 +283,12 @@ suite('MonitorView Test Suite', () => {
 
 		const context: any = {};
 		const backend: any = {};
-		const functionGraphList: any = {};
+		const functionGraphList: any = {
+			traverseFunctions: () => Promise.resolve({
+				functions: {},
+				proxies: {}
+			})
+		};
 		const webView: any = {};
 
 		const svgFileName = `dfm-test-svg-${new Date().valueOf().toString()}.svg`;
@@ -346,7 +356,7 @@ suite('MonitorView Test Suite', () => {
 
 		(monitorView as any).handleMessageFromWebView(webView, request);
 
-		await new Promise<void>((resolve) => setTimeout(resolve, 500));
+		await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
 		// Assert
 
