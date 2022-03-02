@@ -82,6 +82,20 @@ steps:
     verbose: false
 
 - task: Npm@1
+  displayName: 'npm install -g azure-functions-core-tools@3'
+  inputs:
+    customCommand: 'npm install -g azure-functions-core-tools@3'
+    verbose: false
+
+- task: Npm@1
+  displayName: 'run tests on durablefunctionsmonitor-vscodeext'
+  inputs:
+    command: custom
+    workingDir: 'durablefunctionsmonitor-vscodeext'
+    verbose: false
+    customCommand: 'run test'
+
+- task: Npm@1
   displayName: 'package durablefunctionsmonitor-vscodeext to VSIX-file'
   inputs:
     command: custom
@@ -106,6 +120,7 @@ steps:
     OverWrite: true
 
 - task: NuGetToolInstaller@1
+  displayName: 'Install latest nuget.exe'
   inputs:
     versionSpec: 
 
