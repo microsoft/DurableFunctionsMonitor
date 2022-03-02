@@ -66,7 +66,7 @@ suite('MonitorView Test Suite', () => {
 		};
 
 		// Waiting for the webView to send a message
-		await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+		await new Promise<void>((resolve) => setTimeout(resolve, 1500));
 
 		assert.strictEqual(monitorView.isVisible, true);
 		assert.strictEqual(iAmReadyMessageSent, true);

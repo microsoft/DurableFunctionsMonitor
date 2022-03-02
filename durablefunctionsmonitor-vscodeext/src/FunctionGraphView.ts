@@ -64,113 +64,8 @@ export class FunctionGraphView
         panel.webview.html = html;
 
         // handle events from WebView
-        panel.webview.onDidReceiveMessage(request => {
-
-            switch (request.method) {
-                case 'SaveAs':
-
-                    // Just to be extra sure...
-                    if (!MonitorView.looksLikeSvg(request.data)) {
-                        vscode.window.showErrorMessage(`Invalid data format. Save failed.`);
-                        return;
-                    }
-                    
-                    // Saving some file to local hard drive
-                    vscode.window.showSaveDialog({ filters: { 'SVG Images': ['svg'] } }).then(filePath => {
-
-                        if (!filePath || !filePath.fsPath) { 
-                            return;
-                        }
-
-                        fs.writeFile(filePath!.fsPath, request.data, err => {
-                            if (!err) {
-                                vscode.window.showInformationMessage(`Saved to ${filePath!.fsPath}`);
-                            } else {
-                                vscode.window.showErrorMessage(`Failed to save. ${err}`);
-                            }
-                        });
-                    });
-                    return;
-                
-                case 'SaveFunctionGraphAsJson':
-
-                    if (!this._traversalResult) {
-                        return;
-                    }
-                    
-                    // Saving some file to local hard drive
-                    vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file('dfm-func-map.json'), filters: { 'JSON': ['json'] } }).then(filePath => {
-
-                        if (!filePath || !filePath.fsPath) { 
-                            return;
-                        }
-
-                        fs.writeFile(filePath!.fsPath, JSON.stringify(this._traversalResult, null, 3), err => {
-                            if (!err) {
-                                vscode.window.showInformationMessage(`Saved to ${filePath!.fsPath}`);
-                            } else {
-                                vscode.window.showErrorMessage(`Failed to save. ${err}`);
-                            }
-                        });
-                    });
-                    return;
-                
-                case 'GotoFunctionCode':
-
-                    if (!this._traversalResult) {
-                        return;
-                    }
-
-                    const functionName = request.url;
-                    var functionOrProxy: any = null;
-
-                    if (functionName.startsWith('proxy.')) {
-                
-                        functionOrProxy = this._traversalResult.proxies[functionName.substr(6)];
+        panel.webview.onDidReceiveMessage(request => this.handleMessageFromWebView(panel.webview, request), undefined, this._context.subscriptions);
         
-                    } else {
-        
-                        functionOrProxy = this._traversalResult.functions[functionName];
-                    }
-        
-                    vscode.window.showTextDocument(vscode.Uri.file(functionOrProxy.filePath)).then(ed => {
-
-                        const pos = ed.document.positionAt(!!functionOrProxy.pos ? functionOrProxy.pos : 0);
-
-                        ed.selection = new vscode.Selection(pos, pos);
-                        ed.revealRange(new vscode.Range(pos, pos));
-                    });
-
-                    return;
-            }
-
-            // Intercepting request for Function Map
-            if (request.method === "GET" && request.url === '/function-map') {
-
-                if (!this._functionProjectPath) {
-                    return;
-                }
-
-                const requestId = request.id;
-                this._functionGraphList.traverseFunctions(this._functionProjectPath).then(result => {
-
-                    this._traversalResult = result;
-
-                    panel.webview.postMessage({
-                        id: requestId, data: {
-                            functions: result.functions,
-                            proxies: result.proxies
-                        }
-                    });
-
-                }, err => {
-                    // err might fail to serialize here, so passing err.message only
-                    panel.webview.postMessage({ id: requestId, err: { message: err.message } });
-                });
-            }
-
-        }, undefined, this._context.subscriptions);
-
         return panel;
     }
 
@@ -194,5 +89,113 @@ export class FunctionGraphView
                 `<script>var DfmViewMode=0</script>`,
                 `<script>var DfmViewMode=1</script>`
             );
+    }
+
+    // Does communication between code in WebView and this class
+    private handleMessageFromWebView(webView: vscode.Webview, request: any): void {
+
+        switch (request.method) {
+            case 'SaveAs':
+
+                // Just to be extra sure...
+                if (!MonitorView.looksLikeSvg(request.data)) {
+                    vscode.window.showErrorMessage(`Invalid data format. Save failed.`);
+                    return;
+                }
+                
+                // Saving some file to local hard drive
+                vscode.window.showSaveDialog({ filters: { 'SVG Images': ['svg'] } }).then(filePath => {
+
+                    if (!filePath || !filePath.fsPath) { 
+                        return;
+                    }
+
+                    fs.writeFile(filePath!.fsPath, request.data, err => {
+                        if (!err) {
+                            vscode.window.showInformationMessage(`Saved to ${filePath!.fsPath}`);
+                        } else {
+                            vscode.window.showErrorMessage(`Failed to save. ${err}`);
+                        }
+                    });
+                });
+                return;
+            
+            case 'SaveFunctionGraphAsJson':
+
+                if (!this._traversalResult) {
+                    return;
+                }
+                
+                // Saving some file to local hard drive
+                vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file('dfm-func-map.json'), filters: { 'JSON': ['json'] } }).then(filePath => {
+
+                    if (!filePath || !filePath.fsPath) { 
+                        return;
+                    }
+
+                    fs.writeFile(filePath!.fsPath, JSON.stringify(this._traversalResult, null, 3), err => {
+                        if (!err) {
+                            vscode.window.showInformationMessage(`Saved to ${filePath!.fsPath}`);
+                        } else {
+                            vscode.window.showErrorMessage(`Failed to save. ${err}`);
+                        }
+                    });
+                });
+                return;
+            
+            case 'GotoFunctionCode':
+
+                if (!this._traversalResult) {
+                    return;
+                }
+
+                const functionName = request.url;
+                var functionOrProxy: any = null;
+
+                if (functionName.startsWith('proxy.')) {
+            
+                    functionOrProxy = this._traversalResult.proxies[functionName.substr(6)];
+    
+                } else {
+    
+                    functionOrProxy = this._traversalResult.functions[functionName];
+                }
+    
+                vscode.window.showTextDocument(vscode.Uri.file(functionOrProxy.filePath)).then(ed => {
+
+                    const pos = ed.document.positionAt(!!functionOrProxy.pos ? functionOrProxy.pos : 0);
+
+                    ed.selection = new vscode.Selection(pos, pos);
+                    ed.revealRange(new vscode.Range(pos, pos));
+
+                });
+
+                return;
+        }
+
+        // Intercepting request for Function Map
+        if (request.method === "GET" && request.url === '/function-map') {
+
+            if (!this._functionProjectPath) {
+                return;
+            }
+
+            const requestId = request.id;
+            this._functionGraphList.traverseFunctions(this._functionProjectPath).then(result => {
+
+                this._traversalResult = result;
+
+                webView.postMessage({
+                    id: requestId, data: {
+                        functions: result.functions,
+                        proxies: result.proxies
+                    }
+                });
+
+            }, err => {
+                // err might fail to serialize here, so passing err.message only
+                webView.postMessage({ id: requestId, err: { message: err.message } });
+            });
+        }
     }
 }
