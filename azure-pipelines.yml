@@ -1,6 +1,6 @@
 pool:
   name: Azure Pipelines
-  vmImage: 'ubuntu-18.04'
+  vmImage: 'windows-2022'
   demands: npm
 
 steps:
@@ -104,6 +104,10 @@ steps:
      LICENSE
     TargetFolder: '$(Build.ArtifactStagingDirectory)/output'
     OverWrite: true
+
+- task: NuGetToolInstaller@1
+  inputs:
+    versionSpec: 
 
 - task: NuGetCommand@2
   displayName: 'package dotnetbackend into a Nuget package'
