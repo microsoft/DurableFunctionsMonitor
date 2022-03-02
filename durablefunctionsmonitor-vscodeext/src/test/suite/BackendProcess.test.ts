@@ -70,7 +70,7 @@ suite('BackendProcess Test Suite', () => {
 
 			// Assert
 
-			assert.strictEqual(err, `Func: Value cannot be null. (Parameter 'provider')\r\n`);
+			assert.strictEqual((err as string).startsWith(`Func: Value cannot be null. (Parameter 'provider')`), true);
 
 			assert.strictEqual(backendWasPublished, true);
 			assert.strictEqual(callbackWasCalled, true);
