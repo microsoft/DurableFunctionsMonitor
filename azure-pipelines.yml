@@ -84,6 +84,8 @@ steps:
 - task: Npm@1
   displayName: 'npm install -g azure-functions-core-tools@3'
   inputs:
+    command: custom
+    workingDir: 'durablefunctionsmonitor-vscodeext'
     customCommand: 'npm install -g azure-functions-core-tools@3'
     verbose: false
 
