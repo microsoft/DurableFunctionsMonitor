@@ -8,9 +8,6 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 import { FunctionGraphView } from '../../FunctionGraphView';
-import { Settings } from "../../Settings";
-import * as SharedConstants from '../../SharedConstants';
-import axios from 'axios';
 
 suite('FunctionGraphView Test Suite', () => {
 
