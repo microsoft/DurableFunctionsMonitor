@@ -231,7 +231,7 @@ export class BackendProcess {
 
             try {
 
-                const funcExePath = await BackendProcess.getFuncExePath();
+                const funcExePath = await this.getFuncExePath();
 
                 // Starting the backend on a first available port
                 const portNr = await portscanner.findAPortNotInUse(37072, 38000);
@@ -252,7 +252,7 @@ export class BackendProcess {
         });
     }
 
-    private static async getFuncExePath(): Promise<string> {
+    private async getFuncExePath(): Promise<string> {
 
         if (!!BackendProcess._funcExePath) {
             return BackendProcess._funcExePath;
@@ -264,11 +264,21 @@ export class BackendProcess {
             return BackendProcess._funcExePath;
         }
 
-        const npmListResult = await execAsync(`npm list -g --depth=0`);
+        // trying to detect the npm global package folder
+        var npmGlobalFolder = '';
+        try {
 
-        const npmGlobalFolder = npmListResult
-            .stdout
-            .split('\n')[0];
+            const npmListResult = await execAsync(`npm list -g --depth=0`);
+
+            npmGlobalFolder = npmListResult
+                .stdout
+                .split('\n')[0];
+            
+        } catch (err) {
+            this._log(`npm list -g failed. ${!(err as any).message ? err : (err as any).message}`)
+        }
+
+        // Trying C:\Users\username\AppData\Roaming\npm\node_modules\azure-functions-core-tools\bin
 
         var globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func.exe`);
 
@@ -279,6 +289,16 @@ export class BackendProcess {
         }
 
         globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func`);
+
+        if (!!fs.existsSync(globalFuncPath)) {
+
+            BackendProcess._funcExePath = globalFuncPath;
+            return BackendProcess._funcExePath;
+        }
+
+        // Trying C:\Program Files\Microsoft\Azure Functions Core Tools
+
+        globalFuncPath = path.resolve(process.env.programfiles ?? '', 'Microsoft', 'Azure Functions Core Tools', 'func.exe');
 
         if (!!fs.existsSync(globalFuncPath)) {
 
