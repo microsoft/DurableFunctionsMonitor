@@ -10,21 +10,26 @@ import { TaskHubTreeItem } from "./TaskHubTreeItem";
 import { MonitorViewList } from "./MonitorViewList";
 
 // Represents the Storage Account item in the TreeView
-export class StorageAccountTreeItem extends vscode.TreeItem {
+export class StorageAccountTreeItem {
 
     constructor(private _connStrings: string[],
         private _resourcesFolderPath: string,
         private _monitorViewList: MonitorViewList,
         private _fromLocalSettingsJson: boolean = false) {
       
-        super(ConnStringUtils.GetStorageName(_connStrings), vscode.TreeItemCollapsibleState.Expanded);
+        this.label = ConnStringUtils.GetStorageName(_connStrings);
+        this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
 
         this.isMsSqlStorage = !!ConnStringUtils.GetSqlServerName(this._connStrings[0]);
     }
 
+    readonly label: string;
+
     readonly isMsSqlStorage: boolean;
     isV2StorageAccount: boolean = false;
     storageAccountId: string = '';
+
+    collapsibleState?: vscode.TreeItemCollapsibleState;
 
     get isAttached(): boolean {
         return !!this.backendUrl;

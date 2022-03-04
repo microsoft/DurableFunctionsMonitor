@@ -8,15 +8,17 @@ import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { StorageAccountTreeItem } from "./StorageAccountTreeItem";
 
 // Represents the Task Hub item in the TreeView
-export class TaskHubTreeItem extends vscode.TreeItem {
+export class TaskHubTreeItem {
 
     constructor(private _parentItem: StorageAccountTreeItem,
         private _hubName: string,
         private _resourcesFolderPath: string,
         private _isCurrent: boolean) {
         
-        super(_hubName);
+        this.label = _hubName;
     }
+
+    readonly label: string;
 
     get storageAccountId(): string {
         return this._parentItem.storageAccountId;
