@@ -99,4 +99,38 @@ suite('ConnStringUtils Test Suite', () => {
 
 	});
 
+	test('Expands emulator shortcut if needed', async () => {
+
+		// Arrange
+		const connString1 = `UseDevelopmentStorage=true;`;
+		const connString2 = `AccountKey=12345;accounTName=mystorageaccount2;defaulTendpointsProtocol=https;`;
+
+		// Act
+		const res1 = ConnStringUtils.ExpandEmulatorShortcutIfNeeded(connString1);
+		const res2 = ConnStringUtils.ExpandEmulatorShortcutIfNeeded(connString2);
+
+		// Assert
+
+		assert.strictEqual(res1, 'AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;');
+		assert.strictEqual(res2, connString2);
+
+	});
+
+	test('Returns storage name', async () => {
+
+		// Arrange
+		const connString1 = `Data Source=my-sql-server;Initial Catalog=my-database;Integrated Security=True`;
+		const connString2 = `AccountKey=12345;accounTName=mystorageaccount3;defaulTendpointsProtocol=https;`;
+
+		// Act
+		const res1 = ConnStringUtils.GetStorageName([connString1]);
+		const res2 = ConnStringUtils.GetStorageName([connString2]);
+
+		// Assert
+
+		assert.strictEqual(res1, `my-sql-server/my-database`);
+		assert.strictEqual(res2, `mystorageaccount3`);
+
+	});
+
 });
