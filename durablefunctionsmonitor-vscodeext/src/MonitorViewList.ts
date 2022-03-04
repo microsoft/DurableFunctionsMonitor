@@ -208,7 +208,7 @@ export class MonitorViewList {
             const connStringFromLocalSettings = this.getValueFromLocalSettings('AzureWebJobsStorage');
 
             if (!!connStringFromLocalSettings) {
-                connStringToShow = StorageConnectionSettings.MaskStorageConnString(connStringFromLocalSettings);
+                connStringToShow = ConnStringUtils.MaskStorageConnString(connStringFromLocalSettings);
             }
 
             vscode.window.showInputBox({ value: connStringToShow, prompt: 'Storage or MSSQL Connection String' }).then(connString => {

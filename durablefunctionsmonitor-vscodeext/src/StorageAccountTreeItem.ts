@@ -61,7 +61,7 @@ export class StorageAccountTreeItem {
             return 'MSSQL Storage Provider';
         }
 
-        return StorageConnectionSettings.MaskStorageConnString(this._connStrings[0]);
+        return ConnStringUtils.MaskStorageConnString(this._connStrings[0]);
     }
 
     // Something to show to the right of this item

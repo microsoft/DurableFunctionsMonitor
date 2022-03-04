@@ -78,4 +78,9 @@ export class ConnStringUtils {
 
         return serverName + (!dbName ? '' : '/' + dbName);
     }
+
+    // Replaces AccountKey with stars
+    static MaskStorageConnString(connString: string): string {
+        return connString.replace(/AccountKey=[^;]+/gi, 'AccountKey=*****');
+    }
 }

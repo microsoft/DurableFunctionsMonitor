@@ -34,10 +34,6 @@ export class StorageConnectionSettings {
         return ConnStringUtils.GetTableEndpoint(connStrings[0]).toLowerCase();
     }
 
-    static MaskStorageConnString(connString: string): string {
-        return connString.replace(/AccountKey=[^;]+/gi, 'AccountKey=*****');
-    }
-
     private readonly _connStringHashKey: string;
     private readonly _hashKey: string;
 }

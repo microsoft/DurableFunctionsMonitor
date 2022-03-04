@@ -133,4 +133,21 @@ suite('ConnStringUtils Test Suite', () => {
 
 	});
 
+	test('Masks AccountKey', async () => {
+
+		// Arrange
+		const connString1 = `AccountName=mystorageaccount1;DefaultEndpointsProtocol=http;AccountKey=890-my-account-key-123`;
+		const connString2 = `acCountKeY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;accounTName=mystorageaccount2;DefaultEndpointsProtocol=https;`;
+
+		// Act
+		const res1 = ConnStringUtils.MaskStorageConnString(connString1);
+		const res2 = ConnStringUtils.MaskStorageConnString(connString2);
+
+		// Assert
+
+		assert.strictEqual(res1, `AccountName=mystorageaccount1;DefaultEndpointsProtocol=http;AccountKey=*****`);
+		assert.strictEqual(res2, `AccountKey=*****;accounTName=mystorageaccount2;DefaultEndpointsProtocol=https;`);
+
+	});
+
 });
