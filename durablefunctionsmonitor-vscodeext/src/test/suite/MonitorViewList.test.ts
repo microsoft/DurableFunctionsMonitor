@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as os from 'os';
-import * as fs from 'fs';
 import * as path from 'path';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
@@ -10,7 +8,6 @@ import * as vscode from 'vscode';
 import { MonitorViewList } from '../../MonitorViewList';
 import { MonitorView } from '../../MonitorView';
 import { Settings } from "../../Settings";
-import * as SharedConstants from '../../SharedConstants';
 import axios from 'axios';
 import { BackendProcess } from '../../BackendProcess';
 
