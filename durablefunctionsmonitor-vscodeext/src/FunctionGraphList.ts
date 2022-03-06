@@ -103,6 +103,7 @@ export class FunctionGraphList {
         for (const view of this._views) {
             view.cleanup();
         }
+        this._views = [];
 
         for (var tempFolder of this._tempFolders) {
 
