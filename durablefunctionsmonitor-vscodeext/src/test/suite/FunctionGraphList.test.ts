@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as os from 'os';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
@@ -95,4 +97,30 @@ suite('FunctionGraphList Test Suite', () => {
 
 	}).timeout(testTimeoutInMs);
 
+	test('Removes temp folders', async () => {
+
+		// Arrange
+
+		const context: any = {};
+
+		const funcGraphList = new FunctionGraphList(context);
+
+        const tempFolder1 = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'temp1-'));
+        const tempFolder2 = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'temp2-'));
+
+		(funcGraphList as any)._tempFolders.push(tempFolder1);
+		(funcGraphList as any)._tempFolders.push(tempFolder2);
+
+		// Act
+
+		funcGraphList.cleanup();
+
+		// Assert
+
+		assert.strictEqual((funcGraphList as any)._tempFolders.length, 0);
+
+		assert.strictEqual(fs.existsSync(tempFolder1), false);
+		assert.strictEqual(fs.existsSync(tempFolder2), false);
+
+	});
 });

@@ -114,6 +114,7 @@ export class FunctionGraphList {
                 this._log(`Failed to remove ${tempFolder}: ${(err as any).message}`);
             }
         }
+        this._tempFolders = [];
     }
 
     private _views: FunctionGraphView[] = [];
