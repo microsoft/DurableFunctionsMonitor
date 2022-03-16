@@ -49,8 +49,8 @@ export class FunctionGraphTabBase<P extends { state: FunctionGraphStateBase }> e
                 const instanceNodeRect = instanceNode.getBoundingClientRect();
                 
                 metricsHintNode.style.visibility = 'visible';
-                metricsHintNode.style.left = `${instanceNodeRect.left + 5}px`;
-                metricsHintNode.style.top = `${instanceNodeRect.top - 17}px`;
+                metricsHintNode.style.left = `${instanceNodeRect.left + window.scrollX + 5}px`;
+                metricsHintNode.style.top = `${instanceNodeRect.top + window.scrollY - 17}px`;
             }
         });
 
