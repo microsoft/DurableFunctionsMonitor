@@ -316,7 +316,9 @@ export class BackendProcess {
 
             const yarnGlobalBinResult = await execAsync(`yarn global bin`);
 
-            yarnGlobalFolder = yarnGlobalBinResult.stdout;
+            yarnGlobalFolder = yarnGlobalBinResult
+                .stdout
+                .split('\n')[0];
             
         } catch (err) {
             this._log(`yarn global bin failed. ${!(err as any).message ? err : (err as any).message}`)
