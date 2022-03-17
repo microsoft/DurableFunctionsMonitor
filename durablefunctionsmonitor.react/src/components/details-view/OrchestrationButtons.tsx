@@ -9,6 +9,8 @@ import {
     FormControlLabel, TextField
 } from '@material-ui/core';
 
+import Autocomplete from '@material-ui/lab/Autocomplete';
+
 import { OrchestrationDetailsState } from '../../states/details-view/OrchestrationDetailsState';
 
 import { PrimaryButtonColor } from '../../theme';
@@ -104,15 +106,26 @@ export class OrchestrationButtons extends React.Component<{ state: Orchestration
                     <DialogContentText>
                         Provide event name and some additional data
                     </DialogContentText>
-
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Event Name"
-                        InputLabelProps={{ shrink: true }}
-                        fullWidth
+                    
+                    <Autocomplete
+                        freeSolo
+                        options={state.eventNames}
                         value={state.eventName}
-                        onChange={(evt) => state.eventName = evt.target.value as string}
+                        onChange={(evt, newValue) => {
+                            state.eventName = newValue ?? '';
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                autoFocus
+                                margin="dense"
+                                label="Event Name"
+                                InputLabelProps={{ shrink: true }}
+                                fullWidth
+                                value={state.eventName}
+                                onChange={(evt) => state.eventName = evt.target.value as string}
+                            />
+                        )}
                     />
 
                     <TextField

@@ -116,6 +116,27 @@ export class OrchestrationDetailsState extends ErrorMessageState {
     get functionNames(): { [name: string]: any } { return this._functionMap; };
 
     @computed
+    get eventNames(): string[] {
+
+        const result: string[] = [];
+
+        for (const name in this._functionMap) {
+            
+            const func = this._functionMap[name];
+
+            if (!!func.isSignalledBy) {
+
+                for (const signalledBy of func.isSignalledBy) {
+                    
+                    result.push(signalledBy.signalName);
+                }                
+            }
+        }
+
+        return result;
+    };
+
+    @computed
     get timeFrom(): moment.Moment { return this._timeFrom; }
     set timeFrom(val: moment.Moment) { this._timeFrom = val; }
 
