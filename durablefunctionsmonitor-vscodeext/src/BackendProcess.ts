@@ -278,22 +278,25 @@ export class BackendProcess {
             this._log(`npm list -g failed. ${!(err as any).message ? err : (err as any).message}`)
         }
 
-        // Trying C:\Users\username\AppData\Roaming\npm\node_modules\azure-functions-core-tools\bin
+        if (!!npmGlobalFolder) {
+            
+            // Trying C:\Users\username\AppData\Roaming\npm\node_modules\azure-functions-core-tools\bin
 
-        var globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func.exe`);
+            var globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func.exe`);
 
-        if (!!fs.existsSync(globalFuncPath)) {
+            if (!!fs.existsSync(globalFuncPath)) {
 
-            BackendProcess._funcExePath = globalFuncPath;
-            return BackendProcess._funcExePath;
-        }
+                BackendProcess._funcExePath = globalFuncPath;
+                return BackendProcess._funcExePath;
+            }
 
-        globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func`);
+            globalFuncPath = path.join(npmGlobalFolder, `node_modules`, `azure-functions-core-tools`, `bin`, `func`);
 
-        if (!!fs.existsSync(globalFuncPath)) {
+            if (!!fs.existsSync(globalFuncPath)) {
 
-            BackendProcess._funcExePath = globalFuncPath;
-            return BackendProcess._funcExePath;
+                BackendProcess._funcExePath = globalFuncPath;
+                return BackendProcess._funcExePath;
+            }
         }
 
         // Trying C:\Program Files\Microsoft\Azure Functions Core Tools
@@ -304,6 +307,38 @@ export class BackendProcess {
 
             BackendProcess._funcExePath = globalFuncPath;
             return BackendProcess._funcExePath;
+        }
+
+        // Trying yarn global bin
+
+        var yarnGlobalFolder = '';
+        try {
+
+            const yarnGlobalBinResult = await execAsync(`yarn global bin`);
+
+            yarnGlobalFolder = yarnGlobalBinResult.stdout;
+            
+        } catch (err) {
+            this._log(`yarn global bin failed. ${!(err as any).message ? err : (err as any).message}`)
+        }
+
+        if (!!yarnGlobalFolder) {
+
+            var globalFuncPath = path.join(yarnGlobalFolder, `func.exe`);
+
+            if (!!fs.existsSync(globalFuncPath)) {
+
+                BackendProcess._funcExePath = globalFuncPath;
+                return BackendProcess._funcExePath;
+            }
+
+            globalFuncPath = path.join(yarnGlobalFolder, `func`);
+
+            if (!!fs.existsSync(globalFuncPath)) {
+
+                BackendProcess._funcExePath = globalFuncPath;
+                return BackendProcess._funcExePath;
+            }
         }
 
         // Defaulting to 'func' command, hopefully it will be properly resolved
