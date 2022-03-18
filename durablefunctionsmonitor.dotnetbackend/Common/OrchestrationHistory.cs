@@ -48,8 +48,21 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 )
             );
 
-            var correlatedEventsTask = tableClient.GetAllAsync($"{hubName}History", correlatedEventsQuery)
-                .ContinueWith(t => t.Result.ToDictionary(e => e.TaskScheduledId));
+            var correlatedEventsTask = tableClient
+                .GetAllAsync($"{hubName}History", correlatedEventsQuery)
+                .ContinueWith(t => {
+
+                    // It turned out that there can be entities with duplicated TaskScheduleId (not sure why).
+                    // So creating this map manually (instead of using .ToDictionary())
+                    var correlatedEventsMap = new Dictionary<int, HistoryEntity>();
+
+                    foreach (var historyEntity in t.Result)
+                    {
+                        correlatedEventsMap[historyEntity.TaskScheduledId.Value] = historyEntity;
+                    }
+
+                    return correlatedEventsMap;
+                });
 
             // Memorizing 'ExecutionStarted' event, to further correlate with 'ExecutionCompleted'
             HistoryEntity executionStartedEvent = null;
