@@ -253,6 +253,12 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                 root: {
                     storageAccountId: taskHubItem.storageAccountId,
+                    // This works with older versions of Azure Storage ext
+                    subscriptionId: taskHubItem.subscriptionId
+                },
+
+                subscription: {
+                    // This works with newer versions of Azure Storage ext
                     subscriptionId: taskHubItem.subscriptionId
                 },
 
