@@ -8,11 +8,13 @@ import {
     Button, Dialog, DialogActions, DialogContent, DialogTitle, InputBase
 } from '@material-ui/core';
 
+import { renderFilteredField } from '../RenderHelpers';
+
 import { PrimaryButtonColor } from '../../theme';
 
 const MaxJsonLengthToShow = 512;
 
-export type LongJsonDialogState = { title?: string, jsonString?: string };
+export type LongJsonDialogState = { title?: string, jsonString?: string, filterValue?: string };
 
 // Dialog to display long JSON strings
 @observer
@@ -34,7 +36,7 @@ export class LongJsonDialog extends React.Component<{ state: LongJsonDialogState
         return (typeof jsonObject === 'string' ? jsonObject : JSON.stringify(jsonObject, null, 3));
     }
 
-    public static renderJson(jsonObject: any, dialogTitle: string, dialogState: LongJsonDialogState): JSX.Element {
+    public static renderJson(jsonObject: any, dialogTitle: string, dialogState: LongJsonDialogState, filterValue?: string): JSX.Element {
 
         if (!jsonObject) {
             return null;
@@ -50,16 +52,15 @@ export class LongJsonDialog extends React.Component<{ state: LongJsonDialogState
         const jsonString = (typeof jsonObject === 'string' ? jsonObject : JSON.stringify(jsonObject));
         const jsonFormattedString = (typeof jsonObject === 'string' ? jsonObject : JSON.stringify(jsonObject, null, 3));
 
-        return (<InputBase
-            color="secondary"
-            className="long-text-cell-input"
-            multiline fullWidth rowsMax={4} readOnly
-            value={jsonString.substr(0, MaxJsonLengthToShow)}
+        return (<div className="long-text-cell-input"
             onClick={() => {
                 dialogState.title = dialogTitle;
                 dialogState.jsonString = jsonFormattedString;
+                dialogState.filterValue = filterValue;
             }}
-        />);
+        >
+            {renderFilteredField(jsonString.substr(0, MaxJsonLengthToShow), filterValue)}
+        </div>);
     }
 
     render(): JSX.Element {
@@ -71,10 +72,16 @@ export class LongJsonDialog extends React.Component<{ state: LongJsonDialogState
                 <DialogTitle>{state.title}</DialogTitle>
 
                 <DialogContent>
-                    <InputBase
-                        multiline fullWidth readOnly
-                        value={state.jsonString}
-                    />                    
+
+                    {!state.filterValue ? (
+
+                        <InputBase multiline fullWidth readOnly value={state.jsonString} />
+                        
+                    ) : 
+                            
+                        renderFilteredField(state.jsonString, state.filterValue)
+                    }
+
                 </DialogContent>
                 
                 <DialogActions>

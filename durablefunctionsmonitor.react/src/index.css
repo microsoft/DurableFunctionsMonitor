@@ -30,13 +30,13 @@ body {
     min-width: 150px;
 }
 
-.long-text-cell {
-    min-width: 160px;
-    max-width: 250px;
-}
-
 .long-text-cell-input {
     font-size: x-small !important;
+    max-height: 48px;
+    overflow: auto;
+    overflow-wrap: break-word;
+    line-height: normal;
+    word-break: break-all;
 }
 
 .long-text-cell-input:hover {

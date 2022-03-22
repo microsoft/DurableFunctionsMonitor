@@ -5,7 +5,6 @@ import { observable, computed } from 'mobx'
 
 import { DurableOrchestrationStatus } from '../DurableOrchestrationStatus';
 import { IBackendClient } from '../../services/IBackendClient';
-import { ITypedLocalStorage } from '../ITypedLocalStorage';
 import { CancelToken } from '../../CancelToken';
 
 import { dfmContextInstance } from '../../DfmContext';

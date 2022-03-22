@@ -56,7 +56,7 @@
 
 .output-cell {
     min-width: 75px;
-    max-width: 200px;
+    max-width: 140px;
 }
 
 .entity-type-radio {
@@ -143,6 +143,10 @@
     margin-right: -24px !important;
     float: right;
     opacity: 0.6;
+}
+
+.instances-list-header-cell {
+    padding-right: 30px !important;
 }
 
 .unhide-button {

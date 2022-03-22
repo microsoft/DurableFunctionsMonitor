@@ -76,3 +76,8 @@
 .history-from-label {
     margin-left: -40px;
 }
+
+.long-text-cell {
+    min-width: 160px;
+    max-width: 200px;
+}
