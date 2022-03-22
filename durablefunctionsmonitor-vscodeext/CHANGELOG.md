@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 5.3.0
+
+- Client-side filter string is now highlighted:
+
+    <img width="500px" src="https://user-images.githubusercontent.com/5447190/159587046-4ab257e6-5a75-45b2-8c04-61f7ef6131c2.png"/>
+
+- Bugfixes.
+
 ## Version 5.2.0
 
 - Mostly technical release (to finalize the move to this new repo), but one useful feature was added - client-side filtering:
