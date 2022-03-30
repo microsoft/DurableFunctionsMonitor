@@ -318,7 +318,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
         internal static Task<ICollection<SecurityKey>> InitGetSigningKeysTask(int cacheTtlInSeconds, int retryCount = 0)
         {
-        // If you ever use this code in Asp.Net, don't forget to wrap this line with Task.Run(), to decouple from SynchronizationContext
+            // If you ever use this code in Asp.Net, don't forget to wrap this line with Task.Run(), to decouple from SynchronizationContext
             var task = GetSigningKeysAsync();
 
             // Adding cache-flushing continuation
