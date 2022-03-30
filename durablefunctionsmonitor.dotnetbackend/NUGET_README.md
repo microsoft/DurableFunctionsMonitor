@@ -47,6 +47,7 @@ Additional optional properties of **DfmSettings** class to further configure you
 * **Mode** - functional mode for this DfMon endpoint. Currently only `DfmMode.Normal` (default) and `DfmMode.ReadOnly` are supported.
 * **AllowedUserNames** - list of users, that are allowed to access this DfMon endpoint. You typically put emails into here. Once set, the incoming access token is expected to contain one of these names in its 'preferred_username' claim.
 * **AllowedAppRoles** - list of App Roles, that are allowed to access DurableFunctionsMonitor endpoint. Users/Groups then need to be assigned one of these roles via AAD Enterprise Applications->[your AAD app]->Users and Groups tab. Once set, the incoming access token is expected to contain one of these in its 'roles' claim.
+* **AllowedGroups** - list of Groups that are allowed to access DurableFunctionsMonitor endpoint. Users then need to be assigned one of these groups.
 * **CustomTemplatesFolderName** - folder where to search for custom tab/html templates. Must be a part of your Functions project and be adjacent to your host.json file.
  
 Alternatively you can call `DfmEndpoint.Setup();` with no parameters and configure your DfMon endpoint with config settings (environment variables). The list of all supported config settings [can be found here](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend#config-setting-reference).
