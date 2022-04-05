@@ -137,8 +137,8 @@ steps:
 - task: az-func-as-a-graph@1
   displayName: 'Generate az-func-as-a-graph diagram of DurableFunctionsMonitor.DotNetBackend'
   inputs:
-    projectFolder: 'durablefunctionsmonitor.dotnetbackend'
-    outputFile: '$(Build.ArtifactStagingDirectory)/$(Build.Repository.Name).diagram.htm'
+    projectFolder: '$(System.DefaultWorkingDirectory)/durablefunctionsmonitor.dotnetbackend'
+    outputFile: '$(Build.ArtifactStagingDirectory)/DurableFunctionsMonitor-DotNetBackend-Diagram.htm'
     repoUri: '$(Build.Repository.Uri)'
     repoName: '$(Build.Repository.Name)'
     branchName: '$(Build.SourceBranchName)'
