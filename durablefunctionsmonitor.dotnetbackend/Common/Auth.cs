@@ -31,7 +31,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public const string PreferredUserNameClaim = "preferred_username";
 
         // Roles claim name
-        private const string RolesClaim = "roles";
+        private const string RolesClaim = ClaimTypes.Role;
 
         // If DFM_NONCE was passed as env variable, validates that the incoming request contains it. Throws UnauthorizedAccessException, if it doesn't.
         public static bool IsNonceSetAndValid(IHeaderDictionary headers)
