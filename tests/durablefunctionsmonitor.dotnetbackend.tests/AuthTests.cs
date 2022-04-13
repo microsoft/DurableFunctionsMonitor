@@ -344,7 +344,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             var principal = new ClaimsPrincipal(new ClaimsIdentity[] { new ClaimsIdentity( new Claim[] {
                 new Claim("preferred_username", userName),
-                new Claim("roles", roleName)
+                new Claim(ClaimTypes.Role, roleName)
             })});
 
             ICollection<SecurityKey> securityKeys = new SecurityKey[0];
