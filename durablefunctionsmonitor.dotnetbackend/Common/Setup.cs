@@ -61,9 +61,16 @@ namespace DurableFunctionsMonitor.DotNetBackend
         /// </summary>
         public string UserNameClaimName { get; set; }
 
+        /// <summary>
+        /// Name of the claim (from ClaimsCredential) to be used as a role name.
+        /// Defaults to "roles"
+        /// </summary>
+        public string RolesClaimName { get; set; }
+
         public DfmSettings()
         {
             this.UserNameClaimName = Auth.PreferredUserNameClaim;
+            this.RolesClaimName = Auth.RolesClaim;
         }
     }
 
@@ -108,6 +115,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 string dfmAllowedAppRoles = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES);
                 string dfmMode = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_MODE);
                 string dfmUserNameClaimName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_USERNAME_CLAIM_NAME);
+                string dfmRolesClaimName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ROLES_CLAIM_NAME);
 
                 _settings = new DfmSettings()
                 {
@@ -117,7 +125,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     Mode = dfmMode == DfmMode.ReadOnly.ToString() ? DfmMode.ReadOnly : DfmMode.Normal,
                     AllowedUserNames = dfmAllowedUserNames == null ? null : dfmAllowedUserNames.Split(','),
                     AllowedAppRoles = dfmAllowedAppRoles == null ? null : dfmAllowedAppRoles.Split(','),
-                    UserNameClaimName = string.IsNullOrEmpty(dfmUserNameClaimName) ? Auth.PreferredUserNameClaim : dfmUserNameClaimName
+                    UserNameClaimName = string.IsNullOrEmpty(dfmUserNameClaimName) ? Auth.PreferredUserNameClaim : dfmUserNameClaimName,
+                    RolesClaimName = string.IsNullOrEmpty(dfmRolesClaimName) ? Auth.RolesClaim : dfmRolesClaimName
                 };
             }
 

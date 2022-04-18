@@ -32,6 +32,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public const string DFM_CLIENT_CONFIG = "DFM_CLIENT_CONFIG";
         public const string DFM_MODE = "DFM_MODE";
         public const string DFM_USERNAME_CLAIM_NAME = "DFM_USERNAME_CLAIM_NAME";
+        public const string DFM_ROLES_CLAIM_NAME = "DFM_ROLES_CLAIM_NAME";
         public const string DFM_ALTERNATIVE_CONNECTION_STRING_PREFIX = "DFM_ALTERNATIVE_CONNECTION_STRING_";
     }
 

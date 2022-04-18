@@ -31,7 +31,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public const string PreferredUserNameClaim = "preferred_username";
 
         // Roles claim name
-        private const string RolesClaim = ClaimTypes.Role;
+        public const string RolesClaim = "roles";
 
         // If DFM_NONCE was passed as env variable, validates that the incoming request contains it. Throws UnauthorizedAccessException, if it doesn't.
         public static bool IsNonceSetAndValid(IHeaderDictionary headers)
@@ -101,7 +101,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             // Also validating App Roles, if set
             if (DfmEndpoint.Settings.AllowedAppRoles != null)
             {
-                var roleClaims = principal.FindAll(RolesClaim);
+                var roleClaims = principal.FindAll(DfmEndpoint.Settings.RolesClaimName);
                 if (!roleClaims.Any(claim => DfmEndpoint.Settings.AllowedAppRoles.Contains(claim.Value)))
                 {
                     throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} config setting. Call is rejected");
