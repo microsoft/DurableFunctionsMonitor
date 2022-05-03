@@ -1,0 +1,14 @@
+{
+  "version": "2.0",
+  "extensions": {
+    "http": {
+      "routePrefix": ""
+    },
+    "durableTask": {
+      "hubName": "perftests",
+      "storageProvider": {
+        "type": "netherite"
+      }
+    }
+  }
+}
