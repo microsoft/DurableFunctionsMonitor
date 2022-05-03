@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 5.4.0
+
+- Bugfixes.
+
 ## Version 5.3.0
 
 - Client-side filter string is now highlighted:
