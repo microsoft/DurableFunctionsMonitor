@@ -334,7 +334,7 @@ export class BackendProcess {
                 return BackendProcess._funcExePath;
             }
 
-            globalFuncPath = path.join(yarnGlobalFolder, `func`);
+            globalFuncPath = path.join(yarnGlobalFolder, process.platform === 'win32' ?  `func.cmd` : `func`);
 
             if (!!fs.existsSync(globalFuncPath)) {
 
