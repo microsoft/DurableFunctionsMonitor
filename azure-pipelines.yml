@@ -1,3 +1,6 @@
+trigger:
+- main
+
 pool:
   name: Azure Pipelines
   vmImage: 'windows-2022'
