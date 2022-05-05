@@ -1,9 +1,0 @@
-{
-  "IsEncrypted": false,
-  "Values": {
-    "DFM_NONCE": "i_sure_know_what_i_am_doing"
-  },
-  "Host": {
-    "LocalHttpPort": 7072
-  }
-}

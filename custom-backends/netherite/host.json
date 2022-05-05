@@ -5,7 +5,7 @@
       "routePrefix": ""
     },
     "durableTask": {
-      "hubName": "perftests",
+      "hubName": "insert-task-hub-name-here",
       "storageProvider": {
         "type": "netherite"
       }

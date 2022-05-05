@@ -8,13 +8,29 @@ This is different than with Azure Storage provider or the Microsoft SQL provider
 
 # How to run locally
 
-To connect to a taskhub, make sure to set the following parameters to match the taskhub name of the app you wish to monitor:
+1. Clone this repo.
 
-1. Specify the *taskhub name* in the file host.json. It must match the taskhub name of the app you wish to monitor.
-2. Specify the *AzureWebJobsStorage* connection string. You can use environment variable, or edit the local.settings.json file.
-3. Specify the *EventHubsConnection* connection string. You can set an environment variable, or edit the local.settings.json file.
+2. In the project's folder create a `local.settings.json` file containing the required connection strings:
+```
+{
+  "IsEncrypted": false,
+  "Values": {
+    "DFM_NONCE": "i_sure_know_what_i_am_doing_with_no_authentication",
+    "AzureWebJobsStorage": "insert-azure-storage-connection-string-here",
+    "EventHubsConnection": "insert-eventhubs-sas-connection-string-here"
+  },
+  "Host": {
+    "LocalHttpPort": 7072
+  }
+}
+```
+If you prefer to no enter the connection strings into a file, you can omit the respective lines and use environment variables (same names) instead. 
 
-Start the monitor with `func start`, then direct your browser to http://localhost:7072/. 
+3. Edit the host.json file, specifying the correct *taskhub name*. It must match the taskhub name of the app you wish to monitor.
 
-CAUTION: the configuration settings in local.settings.json do not protect the endpoint.
+4. Enter the Dfm.Netherite directory from a console, and enter `func start`
+
+5. Direct your browser to http://localhost:7072/. 
+
+CAUTION: the configuration settings as above do not protect this endpoint.
 
