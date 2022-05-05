@@ -1,0 +1,14 @@
+{
+  "version": "2.0",
+  "extensions": {
+    "http": {
+      "routePrefix": ""
+    },
+    "durableTask": {
+      "hubName": "insert-task-hub-name-here",
+      "storageProvider": {
+        "type": "netherite"
+      }
+    }
+  }
+}
