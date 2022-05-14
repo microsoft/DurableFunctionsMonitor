@@ -11,6 +11,11 @@ import { dfmContextInstance } from '../../DfmContext';
 
 type LineTextAndMetadata = { nextLine: string, functionName?: string, instanceId?: string, parentInstanceId?: string, duration?: number, widthPercentage?: number };
 
+const MaxEventsBeforeStartAggregating = 500;
+const TimestampIntervalInMsForAggregating = 500;
+const MaxAggregatedEvents = 100;
+const EventTypesToBeAggregated = ['TaskCompleted', 'TaskFailed', 'TimerFired'];
+
 // State of Gantt Diagram tab on OrchestrationDetails view
 export class GanttDiagramTabState extends MermaidDiagramTabState {
 
@@ -112,6 +117,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
         });
     }
 
+
     private renderOrchestration(orchestrationId: string, orchestrationName: string, historyEvents: HistoryEvent[], isParentOrchestration: boolean):
         Promise<LineTextAndMetadata[]>[] {
 
@@ -138,7 +144,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
 
             var lineName = this.formatDuration(completedEvent.DurationInMs);
             if (!lineName) {
-                lineName = this.formatLineName(orchestrationName);
+                lineName = this.formatLineName(orchestrationName, 0);
             }
 
             nextLine += `${lineName}: ${isParentOrchestration ? '' : 'active,'} ${this.formatDateTime(startedEvent.Timestamp)}, ${this.formatDurationInSeconds(completedEvent.DurationInMs)} \n`;
@@ -153,7 +159,49 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
             results.push(Promise.resolve([{ nextLine }]));
         }
 
-        for (var event of historyEvents) {
+        for (let i = 0; i < historyEvents.length; i++) {
+
+            let event = historyEvents[i];
+            let numOfAggregatedEvents = 0;
+
+            // If too many events, then trying to aggregate
+            if (historyEvents.length > MaxEventsBeforeStartAggregating && EventTypesToBeAggregated.includes(event.EventType)) {
+
+                const scheduledTimeInMs = Date.parse(event.ScheduledTime);
+                let maxDurationInMs = event.DurationInMs;
+
+                let j = i + 1;
+                while (j < historyEvents.length) {
+
+                    const nextScheduledTimeInMs = Date.parse(historyEvents[j].ScheduledTime);
+
+                    if (
+                        (MaxAggregatedEvents <= j - i)
+                        ||
+                        (historyEvents[j].EventType !== event.EventType)
+                        ||
+                        (historyEvents[j].Name !== event.Name)
+                        ||
+                        (TimestampIntervalInMsForAggregating < nextScheduledTimeInMs - scheduledTimeInMs)
+                    ) {
+                        break;
+                    }
+
+                    const nextDurationInMs = (nextScheduledTimeInMs - scheduledTimeInMs) + historyEvents[j].DurationInMs;
+                    if (nextDurationInMs > maxDurationInMs) {
+                        maxDurationInMs = nextDurationInMs;
+                    }
+
+                    j++;
+                }
+
+                if (j > i + 1) {
+
+                    numOfAggregatedEvents = j - i;
+                    event.DurationInMs = maxDurationInMs;
+                    i = j - 1;
+                }
+            }
 
             var eventTimestamp = event.ScheduledTime;
 
@@ -184,7 +232,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                             }, err => {
 
                                 console.log(`Failed to load ${subOrchestrationName}. ${err.message}`);
-                                resolve([{ nextLine: `%% Failed to load ${this.formatLineName(subOrchestrationName)}. ${err.message} \n` }]);
+                                resolve([{ nextLine: `%% Failed to load ${this.formatLineName(subOrchestrationName, numOfAggregatedEvents)}. ${err.message} \n` }]);
                             });
                         }));
 
@@ -195,7 +243,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                     break;
                 case 'TaskCompleted':
 
-                    nextLine = `${this.formatLineName(event.Name)} ${this.formatDuration(event.DurationInMs)}: done, ${this.formatDateTime(eventTimestamp)}, ${this.formatDurationInSeconds(event.DurationInMs)} \n`;
+                    nextLine = `${this.formatLineName(event.Name, numOfAggregatedEvents)} ${this.formatDuration(event.DurationInMs)}: done, ${this.formatDateTime(eventTimestamp)}, ${this.formatDurationInSeconds(event.DurationInMs)} \n`;
                     results.push(Promise.resolve([{
                         nextLine,
                         functionName: event.Name,
@@ -207,7 +255,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                     break;
                 case 'TaskFailed':
 
-                    nextLine = `${this.formatLineName(event.Name)} ${this.formatDuration(event.DurationInMs)}: crit, ${this.formatDateTime(eventTimestamp)}, ${this.formatDurationInSeconds(event.DurationInMs)} \n`;
+                    nextLine = `${this.formatLineName(event.Name, numOfAggregatedEvents)} ${this.formatDuration(event.DurationInMs)}: crit, ${this.formatDateTime(eventTimestamp)}, ${this.formatDurationInSeconds(event.DurationInMs)} \n`;
                     results.push(Promise.resolve([{
                         nextLine,
                         functionName: event.Name,
@@ -217,18 +265,16 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                     }]));
 
                     break;
-                    case 'TimerFired':
+                case 'TimerFired':
 
-                        nextLine = `[TimerFired]: done, ${this.formatDateTime(event.Timestamp)}, 1s \n`;
-                        results.push(Promise.resolve([{
-                            nextLine,
-                            functionName: orchestrationName,
-                            parentInstanceId: orchestrationId,
-                            duration: 1,
-                            widthPercentage: 0.0001
-                        }]));
-    
-                        break;
+                    nextLine = `[TimerFired]: milestone, ${this.formatDateTime(event.Timestamp)}, 0s \n`;
+                    results.push(Promise.resolve([{
+                        nextLine,
+                        functionName: orchestrationName,
+                        parentInstanceId: orchestrationId
+                    }]));
+
+                    break;
                 }
         }
 
@@ -244,8 +290,14 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
         return moment(utcDateTimeString).format('YYYY-MM-DDTHH:mm:ss.SSS')
     }
 
-    private formatLineName(name: string): string {
+    private formatLineName(name: string, numOfTimes: number): string {
 
-        return name.replace(/:/g, '-');
+        name = name.replace(/:/g, '-');
+
+        if (numOfTimes > 0) {
+            name += ` <<${numOfTimes} events>>`
+        }
+
+        return name;
     }
 }

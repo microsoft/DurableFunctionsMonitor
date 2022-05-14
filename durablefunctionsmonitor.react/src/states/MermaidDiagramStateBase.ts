@@ -21,6 +21,8 @@ export abstract class MermaidDiagramStateBase {
 
         mermaid.initialize({
             startOnLoad: true,
+
+            maxTextSize: 500000,
             
             sequence: {
                 noteMargin: 0,
