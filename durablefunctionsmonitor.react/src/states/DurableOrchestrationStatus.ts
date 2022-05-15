@@ -14,6 +14,11 @@ export class HistoryEvent {
     Details: any;
 }
 
+// Extends HistoryEvent with history for a suborchestration
+export class EventWithHistory extends HistoryEvent {
+    history: EventWithHistory[];
+}
+
 // Could instead just iterate through field names of HistoryEvent, but reflection in TypeScript still looks tricky
 export const HistoryEventFields = [
     'Timestamp',

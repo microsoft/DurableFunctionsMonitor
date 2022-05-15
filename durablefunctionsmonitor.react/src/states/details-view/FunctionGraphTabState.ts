@@ -5,7 +5,7 @@ import { observable, computed } from 'mobx';
 import mermaid from 'mermaid';
 
 import { IBackendClient } from '../../services/IBackendClient';
-import { DurableOrchestrationStatus, HistoryEvent, RuntimeStatus } from '../DurableOrchestrationStatus';
+import { DurableOrchestrationStatus, HistoryEvent, EventWithHistory, RuntimeStatus } from '../DurableOrchestrationStatus';
 import { ICustomTabState, CustomTabTypeEnum } from './ICustomTabState';
 import { FunctionGraphStateBase, TraversalResult } from '../FunctionGraphStateBase';
 import { buildFunctionDiagramCode } from '../az-func-as-a-graph/buildFunctionDiagramCode';
@@ -53,23 +53,22 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
 
         const metrics: MetricsMap = {};
 
-        return this.render().then(() => {
-
-            return this._loadHistory(details.instanceId).then(history => {
+        return this._loadHistory(details.instanceId)
+            .then(history => this.loadSubOrchestrations(details.name, history as EventWithHistory[]))
+            // render() should happen after loadSubOrchestrations(), because loadSubOrchestrations() updates function map
+            .then(history => this.render().then(() => history))
+            .then(history => {
 
                 if (cancelToken.isCancelled) {
                     return;
                 }
 
-                return this.updateMetricsForInstance(metrics, DurableOrchestrationStatus.getFunctionName(details),
-                        details.runtimeStatus, new Date(details.lastUpdatedTime).getTime() - new Date(details.createdTime).getTime(),
-                        history, cancelToken)
-                    .then(() => {
-
-                        this._metrics = metrics;
-                    });
+                this.updateMetricsForInstance(metrics, DurableOrchestrationStatus.getFunctionName(details),
+                    details.runtimeStatus, new Date(details.lastUpdatedTime).getTime() - new Date(details.createdTime).getTime(),
+                    history, cancelToken);
+                
+                this._metrics = metrics;
             });
-        })
     }
 
     @observable
@@ -79,8 +78,8 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
         funcName: string,
         runtimeStatus: RuntimeStatus,
         durationInMs: number,
-        history: HistoryEvent[],
-        cancelToken: CancelToken): Promise<void> {
+        history: EventWithHistory[],
+        cancelToken: CancelToken) {
         
         if (!metrics[funcName]) {
             metrics[funcName] = new MetricsItem();
@@ -107,8 +106,6 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
             metrics[funcName].duration = durationInMs;
         }
 
-        const promises: Promise<void>[] = [];
-
         for (var event of history) {
 
             const subFuncName = event.Name;
@@ -116,44 +113,29 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
             switch (event.EventType) {
                 case 'SubOrchestrationInstanceCreated':
 
-                    if (!!event.SubOrchestrationId) {
+                    if (!!event.SubOrchestrationId && !!event.history) {
 
-                        promises.push(this._loadHistory(event.SubOrchestrationId).then(subHistory => {
-
-                            if (!cancelToken.isCancelled) {
-                                return this.updateMetricsForInstance(metrics, subFuncName, "Running", 0, subHistory, cancelToken);
-                            }
-                        }));
+                        this.updateMetricsForInstance(metrics, subFuncName, "Running", 0, event.history, cancelToken);
                     }
 
                     break;
                 case 'SubOrchestrationInstanceCompleted':
 
-                    if (!!event.SubOrchestrationId) {
+                    if (!!event.SubOrchestrationId && !!event.history) {
 
                         const durationInMs = new Date(event.Timestamp).getTime() - new Date(event.ScheduledTime).getTime();
 
-                        promises.push(this._loadHistory(event.SubOrchestrationId).then(subHistory => {
-
-                            if (!cancelToken.isCancelled) {
-                                return this.updateMetricsForInstance(metrics, subFuncName, "Completed", durationInMs, subHistory, cancelToken);
-                            }
-                        }));
+                        this.updateMetricsForInstance(metrics, subFuncName, "Completed", durationInMs, event.history, cancelToken);
                     }
                     
                     break;
                 case 'SubOrchestrationInstanceFailed':
 
-                    if (!!event.SubOrchestrationId) {
+                    if (!!event.SubOrchestrationId && !!event.history) {
 
                         const durationInMs = new Date(event.Timestamp).getTime() - new Date(event.ScheduledTime).getTime();
 
-                        promises.push(this._loadHistory(event.SubOrchestrationId).then(subHistory => {
-
-                            if (!cancelToken.isCancelled) {
-                                return this.updateMetricsForInstance(metrics, subFuncName, "Failed", durationInMs, subHistory, cancelToken);
-                            }
-                        }));
+                        this.updateMetricsForInstance(metrics, subFuncName, "Failed", durationInMs, event.history, cancelToken);
                     }
                 
                     break;
@@ -194,8 +176,6 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
                     break;
             }                   
         }
-
-        return Promise.all(promises) as any;
     }
     
     private render(): Promise<void> {
@@ -230,5 +210,62 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
                 reject(err);
             }
         });
+    }
+
+    // Loads the full hierarchy of orchestrations/suborchestrations
+    private loadSubOrchestrations(orchName: string, history: EventWithHistory[]): Promise<EventWithHistory[]> {
+
+        const promises: Promise<void>[] = [];
+
+        for (const event of history) {
+
+            switch (event.EventType) {
+                case "SubOrchestrationInstanceCompleted":
+                case "SubOrchestrationInstanceFailed":
+
+                    promises.push(
+
+                        this._loadHistory(event.SubOrchestrationId)
+                            .then(subHistory => this.loadSubOrchestrations(event.Name, subHistory as any))
+                            .then(subHistory => {
+    
+                                event.history = subHistory;
+    
+                            })
+                            .catch(err => {
+    
+                                console.log(`Failed to load ${event.SubOrchestrationId}. ${err.message}`);
+                            })
+                    );
+                        
+                    break;
+                
+                case 'TaskCompleted':
+                case 'TaskFailed':
+                case 'TaskScheduled':
+
+                    // Also fixing FunctionMap
+                    
+                    if (!!this._traversalResult && !!this._traversalResult.functions) {
+                        
+                        const func = this._traversalResult.functions[event.Name];
+                        if (!!func) {
+
+                            if (!func.isCalledBy) {
+                                func.isCalledBy = [];
+                            }
+
+                            if (!func.isCalledBy.includes(orchName)) {
+                                
+                                func.isCalledBy.push(orchName);
+                            }
+                        }
+                    }
+                    
+                    break;
+            }           
+        }
+
+        return Promise.all(promises).then(() => history);
     }
 }

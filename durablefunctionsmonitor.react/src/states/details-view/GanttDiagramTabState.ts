@@ -4,7 +4,7 @@
 import mermaid from 'mermaid';
 import moment from 'moment';
 
-import { DurableOrchestrationStatus, HistoryEvent } from '../DurableOrchestrationStatus';
+import { DurableOrchestrationStatus, HistoryEvent, EventWithHistory } from '../DurableOrchestrationStatus';
 import { MermaidDiagramTabState } from './MermaidDiagramTabState';
 import { CancelToken } from '../../CancelToken';
 import { dfmContextInstance } from '../../DfmContext';
@@ -15,11 +15,6 @@ const MaxEventsBeforeStartAggregating = 500;
 const TimestampIntervalInMsForAggregating = 500;
 const MaxAggregatedEvents = 100;
 const EventTypesToBeAggregated = ['TaskCompleted', 'TaskFailed', 'TimerFired'];
-const SubOrchestrationEventTypes = ['SubOrchestrationInstanceCompleted', 'SubOrchestrationInstanceFailed'];
-
-class EventWithHistory extends HistoryEvent {
-    history: EventWithHistory[];
-}
 
 // State of Gantt Diagram tab on OrchestrationDetails view
 export class GanttDiagramTabState extends MermaidDiagramTabState {
@@ -28,10 +23,10 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
 
     protected buildDiagram(details: DurableOrchestrationStatus, history: HistoryEvent[], cancelToken: CancelToken): Promise<void> {
 
-        return this.loadSubOrchestrations(history as any)
+        return this.loadSubOrchestrations(history as EventWithHistory[])
             .then(history => { 
 
-                return this.renderOrchestration(details.instanceId, details.name, history as any, true);
+                return this.renderOrchestration(details.instanceId, details.name, history, true);
             })
             .then(lines => {
 
@@ -76,31 +71,6 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                 reject(err);
             }
         });
-    }
-
-    // Loads the full hierarchy of orchestrations/suborchestrations
-    private loadSubOrchestrations(history: EventWithHistory[]): Promise<EventWithHistory[]> {
-
-        const promises: Promise<void>[] = [];
-
-        for (const event of history) {
-            
-            if (SubOrchestrationEventTypes.includes(event.EventType)) {
-
-                promises.push(
-
-                    this._loadHistory(event.SubOrchestrationId)
-                        .then(subHistory => this.loadSubOrchestrations(subHistory as any))
-                        .then(subHistory => {
-
-                            event.history = subHistory;
-
-                        })
-                );
-            }
-        }
-
-        return Promise.all(promises).then(() => { return history as EventWithHistory[]; })
     }
 
     // Adds data-function-name attributes to diagram lines, so that Function names can be further used by rendering
@@ -160,10 +130,6 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
     private renderOrchestration(orchestrationId: string, orchestrationName: string, historyEvents: EventWithHistory[], isParentOrchestration: boolean): LineTextAndMetadata[] {
 
         const results: LineTextAndMetadata[] = [];
-
-        if (!historyEvents) {
-            return results;
-        }
 
         const startedEvent = historyEvents.find(event => event.EventType === 'ExecutionStarted');
         const completedEvent = historyEvents.find(event => event.EventType === 'ExecutionCompleted');
@@ -258,7 +224,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                 case 'SubOrchestrationInstanceCompleted':
                 case 'SubOrchestrationInstanceFailed':
 
-                    if (!!event.SubOrchestrationId) {
+                    if (!!event.SubOrchestrationId && !!event.history) {
 
                         const subOrchestrationId = event.SubOrchestrationId;
                         const subOrchestrationName = event.Name;
@@ -308,6 +274,39 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
         }
 
         return results;
+    }
+
+    // Loads the full hierarchy of orchestrations/suborchestrations
+    private loadSubOrchestrations(history: EventWithHistory[]): Promise<EventWithHistory[]> {
+
+        const promises: Promise<void>[] = [];
+
+        for (const event of history) {
+            
+            switch (event.EventType) {
+                case "SubOrchestrationInstanceCompleted":
+                case "SubOrchestrationInstanceFailed":
+
+                    promises.push(
+
+                        this._loadHistory(event.SubOrchestrationId)
+                            .then(subHistory => this.loadSubOrchestrations(subHistory as any))
+                            .then(subHistory => {
+    
+                                event.history = subHistory;
+    
+                            })
+                            .catch(err => {
+    
+                                console.log(`Failed to load ${event.SubOrchestrationId}. ${err.message}`);
+                            })
+                    );
+                            
+                break;
+            }            
+        }
+
+        return Promise.all(promises).then(() => { return history as EventWithHistory[]; })
     }
 
     private formatDateTime(utcDateTimeString: string): string {
