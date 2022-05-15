@@ -15,6 +15,11 @@ const MaxEventsBeforeStartAggregating = 500;
 const TimestampIntervalInMsForAggregating = 500;
 const MaxAggregatedEvents = 100;
 const EventTypesToBeAggregated = ['TaskCompleted', 'TaskFailed', 'TimerFired'];
+const SubOrchestrationEventTypes = ['SubOrchestrationInstanceCompleted', 'SubOrchestrationInstanceFailed'];
+
+class EventWithHistory extends HistoryEvent {
+    history: EventWithHistory[];
+}
 
 // State of Gantt Diagram tab on OrchestrationDetails view
 export class GanttDiagramTabState extends MermaidDiagramTabState {
@@ -23,16 +28,18 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
 
     protected buildDiagram(details: DurableOrchestrationStatus, history: HistoryEvent[], cancelToken: CancelToken): Promise<void> {
 
-        return new Promise<void>((resolve, reject) => {
-            Promise.all(this.renderOrchestration(details.instanceId, details.name, history, true)).then(arrayOfArrays => {
+        return this.loadSubOrchestrations(history as any)
+            .then(history => { 
+
+                return this.renderOrchestration(details.instanceId, details.name, history as any, true);
+            })
+            .then(lines => {
 
                 if (cancelToken.isCancelled) {
 
-                    resolve();
                     return;
                 }
 
-                const lines = arrayOfArrays.flat();
                 const linesWithMetadata = lines.filter(l => !!l.functionName);
 
                 this._diagramCode = 'gantt \n' +
@@ -40,27 +47,60 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                     'dateFormat YYYY-MM-DDTHH:mm:ss.SSS \n' +
                     lines.map(item => item.nextLine).join('');
 
-                // Very much unknown, why this line is needed. Without it sometimes the diagrams fail to re-render
-                this._diagramSvg = '';
+                return this.renderDiagram(linesWithMetadata);
+            }
+        );
+    }
 
-                try {
+    // Promisifies diagram rendering
+    private renderDiagram(linesWithMetadata: LineTextAndMetadata[]): Promise<void> {
 
-                    mermaid.render('mermaidSvgId', this._diagramCode, (svg) => {
+        // Very much unknown, why this line is needed. Without it sometimes the diagrams fail to re-render
+        this._diagramSvg = '';
 
-                        svg = this.injectFunctionNameAttributes(svg, linesWithMetadata);
-                        svg = this.adjustIntervalsSmallerThanOneSecond(svg, linesWithMetadata);
+        return new Promise<void>((resolve, reject) => {
 
-                        this._diagramSvg = svg;
+            try {
 
-                        resolve();
-                    });
-                    
-                } catch (err) {
-                    reject(err);
-                }
+                mermaid.render('mermaidSvgId', this._diagramCode, (svg) => {
 
-            }, reject);
+                    svg = this.injectFunctionNameAttributes(svg, linesWithMetadata);
+                    svg = this.adjustIntervalsSmallerThanOneSecond(svg, linesWithMetadata);
+
+                    this._diagramSvg = svg;
+
+                    resolve();
+                });
+                
+            } catch (err) {
+                reject(err);
+            }
         });
+    }
+
+    // Loads the full hierarchy of orchestrations/suborchestrations
+    private loadSubOrchestrations(history: EventWithHistory[]): Promise<EventWithHistory[]> {
+
+        const promises: Promise<void>[] = [];
+
+        for (const event of history) {
+            
+            if (SubOrchestrationEventTypes.includes(event.EventType)) {
+
+                promises.push(
+
+                    this._loadHistory(event.SubOrchestrationId)
+                        .then(subHistory => this.loadSubOrchestrations(subHistory as any))
+                        .then(subHistory => {
+
+                            event.history = subHistory;
+
+                        })
+                );
+            }
+        }
+
+        return Promise.all(promises).then(() => { return history as EventWithHistory[]; })
     }
 
     // Adds data-function-name attributes to diagram lines, so that Function names can be further used by rendering
@@ -117,11 +157,13 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
         });
     }
 
+    private renderOrchestration(orchestrationId: string, orchestrationName: string, historyEvents: EventWithHistory[], isParentOrchestration: boolean): LineTextAndMetadata[] {
 
-    private renderOrchestration(orchestrationId: string, orchestrationName: string, historyEvents: HistoryEvent[], isParentOrchestration: boolean):
-        Promise<LineTextAndMetadata[]>[] {
+        const results: LineTextAndMetadata[] = [];
 
-        const results: Promise<LineTextAndMetadata[]>[] = [];
+        if (!historyEvents) {
+            return results;
+        }
 
         const startedEvent = historyEvents.find(event => event.EventType === 'ExecutionStarted');
         const completedEvent = historyEvents.find(event => event.EventType === 'ExecutionCompleted');
@@ -134,9 +176,10 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
 
             if (needToAddAxisFormat) {
 
+                // Axis format should always appear on top, prior to all other lines - this is why it looks a bit complicated.
                 const longerThanADay = completedEvent.DurationInMs > 86400000;
                 nextLine = longerThanADay ? 'axisFormat %Y-%m-%d %H:%M \n' : 'axisFormat %H:%M:%S \n';
-                results.push(Promise.resolve([{ nextLine }]));
+                results.push({ nextLine });
                 needToAddAxisFormat = false;
             }
             
@@ -148,7 +191,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
             }
 
             nextLine += `${lineName}: ${isParentOrchestration ? '' : 'active,'} ${this.formatDateTime(startedEvent.Timestamp)}, ${this.formatDurationInSeconds(completedEvent.DurationInMs)} \n`;
-            results.push(Promise.resolve([{ nextLine, functionName: orchestrationName, instanceId: orchestrationId }]));
+            results.push({ nextLine, functionName: orchestrationName, instanceId: orchestrationId });
             
             orchDuration = completedEvent.DurationInMs;
         }
@@ -156,7 +199,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
         if (needToAddAxisFormat) {
 
             nextLine = 'axisFormat %H:%M:%S \n';
-            results.push(Promise.resolve([{ nextLine }]));
+            results.push({ nextLine });
         }
 
         for (let i = 0; i < historyEvents.length; i++) {
@@ -219,60 +262,46 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
 
                         const subOrchestrationId = event.SubOrchestrationId;
                         const subOrchestrationName = event.Name;
+
+                        results.push(...this.renderOrchestration(subOrchestrationId, subOrchestrationName, event.history, false));
                         
-                        results.push(new Promise<LineTextAndMetadata[]>((resolve, reject) => {
-                            this._loadHistory(subOrchestrationId).then(history => {
-
-                                Promise.all(this.renderOrchestration(subOrchestrationId, subOrchestrationName, history, false)).then(sequenceLines => {
-
-                                    resolve(sequenceLines.flat());
-
-                                }, reject);
-
-                            }, err => {
-
-                                console.log(`Failed to load ${subOrchestrationName}. ${err.message}`);
-                                resolve([{ nextLine: `%% Failed to load ${this.formatLineName(subOrchestrationName, numOfAggregatedEvents)}. ${err.message} \n` }]);
-                            });
-                        }));
-
                         nextLine = `section ${orchestrationName}(${this.escapeTitle(orchestrationId)}) \n`;
-                        results.push(Promise.resolve([{ nextLine }]));
+                        results.push({ nextLine });
                     }
 
                     break;
                 case 'TaskCompleted':
 
                     nextLine = `${this.formatLineName(event.Name, numOfAggregatedEvents)} ${this.formatDuration(event.DurationInMs)}: done, ${this.formatDateTime(eventTimestamp)}, ${this.formatDurationInSeconds(event.DurationInMs)} \n`;
-                    results.push(Promise.resolve([{
+                    results.push({
                         nextLine,
                         functionName: event.Name,
                         parentInstanceId: orchestrationId,
                         duration: event.DurationInMs,
                         widthPercentage: orchDuration ? event.DurationInMs / orchDuration : 0
-                    }]));
+                    });
 
                     break;
                 case 'TaskFailed':
 
                     nextLine = `${this.formatLineName(event.Name, numOfAggregatedEvents)} ${this.formatDuration(event.DurationInMs)}: crit, ${this.formatDateTime(eventTimestamp)}, ${this.formatDurationInSeconds(event.DurationInMs)} \n`;
-                    results.push(Promise.resolve([{
+                    results.push({
                         nextLine,
                         functionName: event.Name,
                         parentInstanceId: orchestrationId,
                         duration: event.DurationInMs,
                         widthPercentage: orchDuration ? event.DurationInMs / orchDuration : 0
-                    }]));
+                    });
 
                     break;
                 case 'TimerFired':
 
                     nextLine = `[TimerFired]: milestone, ${this.formatDateTime(event.Timestamp)}, 0s \n`;
-                    results.push(Promise.resolve([{
+                    results.push({
                         nextLine,
                         functionName: orchestrationName,
                         parentInstanceId: orchestrationId
-                    }]));
+                    });
 
                     break;
                 }
