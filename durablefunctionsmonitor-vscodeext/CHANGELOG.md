@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 5.4.1
+
+- Updated instance diagrams to make them work better for orchestrations with large amounts of activities. 
+
 ## Version 5.4.0
 
 - Bugfixes.
