@@ -4,17 +4,14 @@
 import * as vscode from 'vscode';
 
 import { StorageManagementClient } from "@azure/arm-storage";
-import { StorageAccount } from "@azure/arm-storage/src/models";
+import { StorageAccount, StorageAccountKey } from "@azure/arm-storage/src/models";
 
 import { SubscriptionTreeItem, DefaultSubscriptionTreeItem } from "./SubscriptionTreeItem";
 import { StorageAccountTreeItems } from "./StorageAccountTreeItems";
-import { getTaskHubNamesFromTableStorage } from './MonitorViewList';
+import { getTaskHubNamesFromTableStorage, getTaskHubNamesFromTableStorageWithUserToken } from './MonitorViewList';
 import { ConnStringUtils } from "./ConnStringUtils";
 import { Settings } from './Settings';
-import { StorageConnectionSettings } from "./StorageConnectionSettings";
-
-// Full typings for this can be found here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
-type AzureSubscription = { session: { credentials2: any }, subscription: { subscriptionId: string, displayName: string } };
+import { StorageConnectionSettings, AzureSubscription } from "./StorageConnectionSettings";
 
 // Represents the list of Azure Subscriptions in the TreeView
 export class SubscriptionTreeItems {
@@ -98,7 +95,7 @@ export class SubscriptionTreeItems {
         });
     }
 
-    private async tryLoadingTaskHubsForSubscription(storageManagementClient: StorageManagementClient, storageAccounts: StorageAccount[]): Promise<boolean> {
+    private async tryLoadingTaskHubsForSubscription(storageManagementClient: StorageManagementClient, storageAccounts: StorageAccount[], subscription: AzureSubscription): Promise<boolean> {
 
         const v2AccountNames: string[] = [];
         var taskHubsAdded = false;
@@ -111,26 +108,49 @@ export class SubscriptionTreeItems {
             }
             const resourceGroupName = match[1];
 
-            const storageKeys = await storageManagementClient.storageAccounts.listKeys(resourceGroupName, storageAccount.name!);
-            if (!storageKeys.keys || storageKeys.keys.length <= 0) {
-                return;
-            }
-
-            // Choosing the key that looks best
-            var storageKey = storageKeys.keys.find(k => !k.permissions || k.permissions.toLowerCase() === "full");
-            if (!storageKey) {
-                storageKey = storageKeys.keys.find(k => !k.permissions || k.permissions.toLowerCase() === "read");
-            }
-            if (!storageKey) {
-                return;
-            }
-
-            var tableEndpoint = '';
+            let tableEndpoint = '';
             if (!!storageAccount.primaryEndpoints) {
                 tableEndpoint = storageAccount.primaryEndpoints.table!;
             }
+            
+            let storageKey: StorageAccountKey | undefined = undefined;
+            const storageKeys = await storageManagementClient.storageAccounts.listKeys(resourceGroupName, storageAccount.name!);
 
-            const hubNames = await getTaskHubNamesFromTableStorage(storageAccount.name!, storageKey.value!, tableEndpoint);
+            if (!!storageKeys.keys?.length) {
+
+                // Choosing the key that looks best
+                storageKey = storageKeys.keys.find(k => !k.permissions || k.permissions.toLowerCase() === "full");
+                if (!storageKey) {
+                    storageKey = storageKeys.keys.find(k => !k.permissions || k.permissions.toLowerCase() === "read");
+                }
+            }
+
+            let hubNames: string[] | null = null;
+
+            if (!storageKey?.value) {
+                
+                // If no keys found, just trying user's Azure login.
+                hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription);
+
+            } else {
+
+                try {
+
+                    hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, storageAccount.name!, storageKey.value, true);
+
+                } catch (err) {
+
+                    storageKey = undefined;
+
+                    // This might indicate that storage keys are being disabled for this account. So trying user's Azure login.
+                    if ((err as any).response?.status === 403) {
+            
+                        hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription);
+                    }
+
+                }
+            }
+
             if (!hubNames || !hubNames.length) {
                 return;
             }
@@ -144,9 +164,10 @@ export class SubscriptionTreeItems {
             for (const hubName of hubNames) {
 
                 this._storageAccounts.addNodeForConnectionSettings(
-                    new StorageConnectionSettings([this.getConnectionStringForStorageAccount(storageAccount, storageKey.value!)], hubName, false),
+                    new StorageConnectionSettings([this.getConnectionStringForStorageAccount(storageAccount, storageKey?.value)], hubName, false),
                     isV2StorageAccount,
-                    storageAccount.id
+                    storageAccount.id,
+                    !storageKey
                 );
                 
                 taskHubsAdded = true;
@@ -167,7 +188,7 @@ export class SubscriptionTreeItems {
         const accountKey = ConnStringUtils.GetAccountKey(emulatorConnString);
         const tableEndpoint = ConnStringUtils.GetTableEndpoint(emulatorConnString);
 
-        const hubNames = await getTaskHubNamesFromTableStorage(accountName, accountKey, tableEndpoint);
+        const hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey);
         if (!hubNames) {
             return;
         }
@@ -181,13 +202,17 @@ export class SubscriptionTreeItems {
         }
     }
 
-    private getConnectionStringForStorageAccount(account: StorageAccount, storageKey: string): string {
+    private getConnectionStringForStorageAccount(account: StorageAccount, storageKey?: string): string {
 
         var endpoints = ''; 
         if (!!account.primaryEndpoints) {
             endpoints = `BlobEndpoint=${account.primaryEndpoints!.blob};QueueEndpoint=${account.primaryEndpoints!.queue};TableEndpoint=${account.primaryEndpoints!.table};FileEndpoint=${account.primaryEndpoints!.file};`;
         } else {
             endpoints = `BlobEndpoint=https://${account.name}.blob.core.windows.net/;QueueEndpoint=https://${account.name}.queue.core.windows.net/;TableEndpoint=https://${account.name}.table.core.windows.net/;FileEndpoint=https://${account.name}.file.core.windows.net/;`;
+        }
+
+        if (!storageKey) {
+            return `DefaultEndpointsProtocol=https;AccountName=${account.name};${endpoints}`;
         }
 
         return `DefaultEndpointsProtocol=https;AccountName=${account.name};AccountKey=${storageKey};${endpoints}`;
@@ -206,7 +231,7 @@ export class SubscriptionTreeItems {
 
                 // Now let's try to detect and load TaskHubs in this subscription.
                 // Many things can go wrong there, that is why we're doing it so asynchronously
-                this.tryLoadingTaskHubsForSubscription(storageManagementClient, storageAccounts)
+                this.tryLoadingTaskHubsForSubscription(storageManagementClient, storageAccounts, s)
                     .then(anyMoreTaskHubsAdded => {
                         if (anyMoreTaskHubsAdded) {
                             this._onStorageAccountsChanged();

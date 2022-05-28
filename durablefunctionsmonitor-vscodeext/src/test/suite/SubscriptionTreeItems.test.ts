@@ -3,8 +3,10 @@
 
 import * as path from 'path';
 import * as assert from 'assert';
+import axios from 'axios';
 
 import { SubscriptionTreeItems } from '../../SubscriptionTreeItems';
+import { StorageConnectionSettings, SequentialDeviceTokenCredentials } from '../../StorageConnectionSettings';
 
 suite('SubscriptionTreeItems Test Suite', () => {
 
@@ -151,4 +153,167 @@ suite('SubscriptionTreeItems Test Suite', () => {
 
 	}).timeout(testTimeoutInMs);
 
+	test('Loads Task Hubs for a Subscription', async () => {
+
+		// Arrange
+
+		const context: any = {
+
+			globalState: {
+				get: () => { return true; }
+			}
+		};
+
+		const token = {
+			accessToken: 'my-token-1'
+		};
+
+		(SequentialDeviceTokenCredentials as any).executeSequentially = () => Promise.resolve(token);
+			
+		const subscription1 = {
+			subscriptionId: '10000000-0000-0000-0000-000000000001',
+			displayName: 'my-subscription-name-1',
+
+			session: {
+				credentials2: {
+					environment: {
+						name: 'AzureCloud',
+						portalUrl: 'https://portal.azure.com',
+						managementEndpointUrl: 'https://management.core.windows.net',
+						resourceManagerEndpointUrl: 'https://management.azure.com/',
+						activeDirectoryEndpointUrl: 'https://login.microsoftonline.com/'
+					}
+				}
+			}
+		};
+
+		const azureAccount: any = {};
+
+		const taskHubNames = ['my-hub-1', 'my-hub-2'];
+
+		const resourceGroupName: string = 'my-rg';
+		const storageKeyValue: string = 'my-key-value';
+
+		const storageAccount1 = {
+			id: `/subscriptions/10000000-0000-0000-0000-000000000001/resourceGroups/${resourceGroupName}/providers/Microsoft.Storage/storageAccounts/my-storage-account-1`,
+			name: 'my-storage-account-1'
+		};
+
+		const storageAccount2 = {
+			id: `/subscriptions/20000000-0000-0000-0000-000000000002/resourceGroups/${resourceGroupName}/providers/Microsoft.Storage/storageAccounts/my-storage-account-2`,
+			name: 'my-storage-account-2'
+		};
+
+		let addNodeForConnectionSettingsCallCount = 0;
+
+		const storageAccountTreeItems: any = {
+
+			addNodeForConnectionSettings: (
+				connSettings: StorageConnectionSettings,
+				isV2StorageAccount: boolean,
+				storageAccountId: string,
+				noStorageKey: boolean
+			) => {
+
+				addNodeForConnectionSettingsCallCount++;
+
+				switch (storageAccountId) {
+					case storageAccount1.id:
+
+						assert.strictEqual(
+							connSettings.storageConnStrings[0],
+							`DefaultEndpointsProtocol=https;AccountName=${storageAccount1.name};BlobEndpoint=https://${storageAccount1.name}.blob.core.windows.net/;QueueEndpoint=https://${storageAccount1.name}.queue.core.windows.net/;TableEndpoint=https://${storageAccount1.name}.table.core.windows.net/;FileEndpoint=https://${storageAccount1.name}.file.core.windows.net/;`
+						);
+						
+						break;
+					case storageAccount2.id:
+
+						assert.strictEqual(
+							connSettings.storageConnStrings[0],
+							`DefaultEndpointsProtocol=https;AccountName=${storageAccount2.name};BlobEndpoint=https://${storageAccount2.name}.blob.core.windows.net/;QueueEndpoint=https://${storageAccount2.name}.queue.core.windows.net/;TableEndpoint=https://${storageAccount2.name}.table.core.windows.net/;FileEndpoint=https://${storageAccount2.name}.file.core.windows.net/;`
+						);
+						
+						break;
+					default:
+						
+						assert.fail('invalid storageAccountId');
+				}
+
+				assert.strictEqual(taskHubNames.includes(connSettings.hubName), true);
+				assert.strictEqual(noStorageKey, true);
+			}
+		};
+
+		const resourcesFolder = path.join(__dirname, '..', '..', '..', 'resources');
+
+		const storageManagementClient: any = {
+
+			storageAccounts: {
+
+				listKeys: (rgName: string, accName: string) => {
+
+					assert.strictEqual(rgName, resourceGroupName);
+					assert.strictEqual((accName === storageAccount1.name || accName === storageAccount2.name), true);
+
+					return Promise.resolve({
+						keys: [{
+							value: storageKeyValue
+						}]
+					});
+				}
+			}
+		};
+
+		const items = new SubscriptionTreeItems(context, azureAccount, storageAccountTreeItems, () => { }, resourcesFolder, () => { });
+
+		const tableNames = ['some-other-table-1'];
+		tableNames.push(...taskHubNames.map(n => n + 'Instances'));
+		tableNames.push('some-other-table-2');
+		tableNames.push(...taskHubNames.map(n => n + 'History'));
+		tableNames.push('some-other-table-3');
+
+		let axiosGetCallCount = 0;
+
+		const oldAxiosGet = axios.get;
+		(axios as any).get = (url: string, options: any) => {
+
+			axiosGetCallCount++;
+
+			assert.strictEqual((url === `https://${storageAccount1.name}.table.core.windows.net/Tables` || url === `https://${storageAccount2.name}.table.core.windows.net/Tables`), true);
+
+			assert.strictEqual(options.headers.Accept, 'application/json;odata=nometadata');
+
+			// The code is expected to first try with storage key and receive a 403...
+			if (!!options.headers.Authorization.startsWith('SharedKeyLite ')) {
+				
+				throw {	response: { status: 403 } };
+			}
+
+			// .. and then try with accessToken
+			assert.strictEqual(options.headers.Authorization, `Bearer ${token.accessToken}`);
+
+			return Promise.resolve({
+				data: {
+					value: tableNames.map(n => { return { TableName: n }; })
+				}
+			});
+		}
+
+		// Act
+
+		try {
+
+			await (items as any).tryLoadingTaskHubsForSubscription(storageManagementClient, [storageAccount1, storageAccount2], subscription1);
+			
+		} finally {
+
+			(axios as any).get = oldAxiosGet;
+		}
+
+		// Assert
+
+		assert.strictEqual(axiosGetCallCount, 4);
+		assert.strictEqual(addNodeForConnectionSettingsCallCount, 4);
+		
+	}).timeout(testTimeoutInMs);
 });

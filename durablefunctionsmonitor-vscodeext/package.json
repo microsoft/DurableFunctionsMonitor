@@ -312,6 +312,7 @@
         "vscode-test": "^1.2.0"
     },
     "dependencies": {
+        "@azure/ms-rest-nodeauth": "^3.1.0",
         "@azure/arm-storage": "^15.1.0",
         "@types/crypto-js": "^3.1.47",
         "@types/rimraf": "^3.0.0",
