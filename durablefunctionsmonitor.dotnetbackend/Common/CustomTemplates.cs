@@ -68,13 +68,18 @@ namespace DurableFunctionsMonitor.DotNetBackend
             if (string.IsNullOrEmpty(connectionString))
             {
                 // Trying with Managed Identity/local Azure login
-                string accountName = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + "__accountName");
+
+                string blobServiceUri = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + "__blobServiceUri");
+                if (string.IsNullOrEmpty(blobServiceUri))
+                {
+                    string accountName = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + "__accountName");
+                    blobServiceUri = $"https://{accountName}.blob.core.windows.net";
+                }
+
                 var identityBasedToken = await IdentityBasedTokenSource.GetTokenAsync();
-
                 var credentials = new StorageCredentials(new TokenCredential(identityBasedToken));
-                var baseUri = new Uri($"https://{accountName}.blob.core.windows.net");
 
-                return new CloudBlobClient(baseUri, credentials);
+                return new CloudBlobClient(new Uri(blobServiceUri), credentials);
             }
             else
             {

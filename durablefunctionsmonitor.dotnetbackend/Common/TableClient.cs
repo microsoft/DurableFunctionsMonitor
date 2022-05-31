@@ -45,13 +45,18 @@ namespace DurableFunctionsMonitor.DotNetBackend
             if (string.IsNullOrEmpty(connectionString))
             {
                 // Trying with Managed Identity/local Azure login
-                string accountName = Environment.GetEnvironmentVariable(connStringName + "__accountName");
+                
+                string tableServiceUri = Environment.GetEnvironmentVariable(connStringName + "__tableServiceUri");
+                if (string.IsNullOrEmpty(tableServiceUri))
+                {
+                    string accountName = Environment.GetEnvironmentVariable(connStringName + "__accountName");
+                    tableServiceUri = $"https://{accountName}.table.core.windows.net";
+                }
+                
                 var identityBasedToken = await IdentityBasedTokenSource.GetTokenAsync();
-
                 var credentials = new StorageCredentials(new TokenCredential(identityBasedToken));
-                var baseUri = new Uri($"https://{accountName}.table.core.windows.net");
 
-                return new TableClient(new CloudTableClient(baseUri, credentials));
+                return new TableClient(new CloudTableClient(new Uri(tableServiceUri), credentials));
             }
             else
             {
@@ -64,7 +69,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             this._client = client;
         }
-        
+
         /// <inheritdoc/>
         public async Task<IEnumerable<string>> ListTableNamesAsync()
         {
