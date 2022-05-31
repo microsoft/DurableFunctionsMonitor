@@ -534,7 +534,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, "invalid-issuer");
 
             // Act
-            Thread.Sleep(2000);
+            Thread.Sleep(3000);
             var finalTask = Auth.GetSigningKeysTask;
 
             // Assert

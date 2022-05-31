@@ -19,7 +19,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         /// </summary>
         public static IEnumerable<HistoryEvent> GetHistoryDirectlyFromTable(IDurableClient durableClient, string connName, string hubName, string instanceId)
         {
-            var tableClient = TableClient.GetTableClient(connName);
+            var tableClient = TableClient.GetTableClient(connName).Result;
 
             // Need to fetch executionId first
 

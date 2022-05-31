@@ -111,7 +111,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
         private static async Task<HashSet<string>> GetTaskHubNamesFromStorage(string connStringName)
         {
-            var tableNames = await TableClient.GetTableClient(connStringName).ListTableNamesAsync();
+            var tableClient = await TableClient.GetTableClient(connStringName);
+            var tableNames = await tableClient.ListTableNamesAsync();
 
             var hubNames = new HashSet<string>(tableNames
                 .Where(n => n.EndsWith("Instances"))

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
@@ -33,22 +34,37 @@ namespace DurableFunctionsMonitor.DotNetBackend
         // so just leaving this as an internal static variable.
         internal static ITableClient MockedTableClient = null;
 
-        public static ITableClient GetTableClient(string connStringName)
+         public static async Task<ITableClient> GetTableClient(string connStringName)
         {
             if (MockedTableClient != null)
             {
                 return MockedTableClient;
             }
 
-            return new TableClient(connStringName);
-        }
-
-        private TableClient(string connStringName)
-        {
             string connectionString = Environment.GetEnvironmentVariable(connStringName);
-            this._client = CloudStorageAccount.Parse(connectionString).CreateCloudTableClient();
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                // Trying with Managed Identity/local Azure login
+                string accountName = Environment.GetEnvironmentVariable(connStringName + "__accountName");
+                var identityBasedToken = await IdentityBasedTokenSource.GetTokenAsync();
+
+                var credentials = new StorageCredentials(new TokenCredential(identityBasedToken));
+                var baseUri = new Uri($"https://{accountName}.table.core.windows.net");
+
+                return new TableClient(new CloudTableClient(baseUri, credentials));
+            }
+            else
+            {
+                // Using classic connection string
+                return new TableClient(CloudStorageAccount.Parse(connectionString).CreateCloudTableClient());
+            }
         }
 
+        private TableClient(CloudTableClient client)
+        {
+            this._client = client;
+        }
+        
         /// <inheritdoc/>
         public async Task<IEnumerable<string>> ListTableNamesAsync()
         {

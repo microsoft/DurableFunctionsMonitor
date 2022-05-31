@@ -203,7 +203,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     case "set-custom-status":
 
                         // Updating the table directly, as there is no other known way
-                        var tableClient = TableClient.GetTableClient(Globals.GetFullConnectionStringEnvVariableName(connName));
+                        var tableClient = await TableClient.GetTableClient(Globals.GetFullConnectionStringEnvVariableName(connName));
                         string tableName = $"{durableClient.TaskHubName}Instances";
 
                         var orcEntity = (await tableClient.ExecuteAsync(tableName, TableOperation.Retrieve(instanceId, string.Empty))).Result as DynamicTableEntity;

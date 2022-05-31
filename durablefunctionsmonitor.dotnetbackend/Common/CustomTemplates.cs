@@ -10,6 +10,8 @@ using System.IO;
 using System.Text;
 using System.Collections.Concurrent;
 using System.Reflection;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Auth;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
@@ -59,14 +61,35 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
         private static Task<FunctionMapsMap> FunctionMapsTask;
 
+        private static async Task<CloudBlobClient> GetCloudBlobClient()
+        {
+            string connectionString = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage);
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                // Trying with Managed Identity/local Azure login
+                string accountName = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + "__accountName");
+                var identityBasedToken = await IdentityBasedTokenSource.GetTokenAsync();
+
+                var credentials = new StorageCredentials(new TokenCredential(identityBasedToken));
+                var baseUri = new Uri($"https://{accountName}.blob.core.windows.net");
+
+                return new CloudBlobClient(baseUri, credentials);
+            }
+            else
+            {
+                // Using classic connection string
+                return CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
+            }
+        }
+
         // Tries to load liquid templates from underlying Azure Storage
         private static async Task<LiquidTemplatesMap> GetTabTemplatesFromStorageAsync()
         {
             var result = new LiquidTemplatesMap();
             try
             {
-                string connectionString = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage);
-                var blobClient = CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
+                var blobClient = await GetCloudBlobClient();
 
                 // Listing all blobs in durable-functions-monitor/tab-templates folder
                 var container = blobClient.GetContainerReference(Globals.TemplateContainerName);
@@ -141,7 +164,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             try
             {
-                var blobClient = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage)).CreateCloudBlobClient();
+                var blobClient = await GetCloudBlobClient();
                 var container = blobClient.GetContainerReference(Globals.TemplateContainerName);
                 var blob = container.GetBlobReference(Globals.CustomMetaTagBlobName);
 
@@ -183,8 +206,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             var result = new FunctionMapsMap();
             try
             {
-                string connectionString = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage);
-                var blobClient = CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
+                var blobClient = await GetCloudBlobClient();
 
                 // Listing all blobs in durable-functions-monitor/function-maps folder
                 var container = blobClient.GetContainerReference(Globals.TemplateContainerName);
