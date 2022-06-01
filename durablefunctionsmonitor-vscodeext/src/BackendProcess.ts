@@ -172,39 +172,6 @@ export class BackendProcess {
     
                 this._eventualBinariesFolder = publishFolder;
             }
-
-/*            
-            // Important to inherit the context from VsCode, so that globally installed tools can be found
-            const env = process.env;
-    
-            env[SharedConstants.NonceEnvironmentVariableName] = this._backendCommunicationNonce;
-
-            // Also setting AzureWebJobsSecretStorageType to 'files', so that the backend doesn't need Azure Storage
-            env['AzureWebJobsSecretStorageType'] = 'files';
-
-            if (this._storageConnectionSettings.isMsSql) {
-
-                env[SharedConstants.MsSqlConnStringEnvironmentVariableName] = this._storageConnectionSettings.storageConnStrings[0];
-
-                // For MSSQL just need to set DFM_HUB_NAME to something, doesn't matter what it is so far
-                env[SharedConstants.HubNameEnvironmentVariableName] = this._storageConnectionSettings.hubName;
-
-            } else {
-
-                // Need to unset this, in case it was set previously
-                delete env[SharedConstants.HubNameEnvironmentVariableName];
-                
-                if (!!this._storageConnectionSettings.isIdentityBasedConnection) {
-                    
-                    const storageAccountName = ConnStringUtils.GetAccountName(this._storageConnectionSettings.storageConnStrings[0]);
-                    env['AzureWebJobsStorage__accountName'] = storageAccountName;
-
-                } else {
-
-                    env['AzureWebJobsStorage'] = this._storageConnectionSettings.storageConnStrings[0];
-                }
-            }
-*/
             
             this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString(), '--csharp'], {
                 cwd: this._eventualBinariesFolder,
