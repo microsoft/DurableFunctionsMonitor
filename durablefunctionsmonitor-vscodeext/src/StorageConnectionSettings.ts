@@ -20,10 +20,13 @@ export class StorageConnectionSettings {
     get hashKey(): string { return this._hashKey; }
     get isFromLocalSettingsJson(): boolean { return this._fromLocalSettingsJson; }
     get isMsSql(): boolean { return !!ConnStringUtils.GetSqlServerName(this._connStrings[0]); }
+    get isIdentityBasedConnection(): boolean { return this._isIdentityBasedConnection; }
 
     constructor(private _connStrings: string[],
         private _hubName: string,
-        private _fromLocalSettingsJson: boolean = false) {
+        private _fromLocalSettingsJson: boolean = false,
+        private _isIdentityBasedConnection: boolean = false
+    ) {
 
         this._connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(this._connStrings);
         this._hashKey = this._connStringHashKey + this._hubName.toLowerCase();

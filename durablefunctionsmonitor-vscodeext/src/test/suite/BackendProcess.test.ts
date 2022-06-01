@@ -281,6 +281,80 @@ suite('BackendProcess Test Suite', () => {
 
 	}).timeout(testTimeoutInMs);
 
+	test('Prepares environment variables for default backend', () => {
+
+		// Arrange
+
+		const connSettings = new StorageConnectionSettings(['my-conn-string'], 'my-task-hub');
+
+		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
+
+		// Act
+
+		const env = (backendProcess as any).getEnvVariables();
+
+		// Assert
+
+		assert.strictEqual((!!env.Path) || (!!env.PATH), true);
+
+		assert.strictEqual(env.DFM_NONCE, (backendProcess as any)._backendCommunicationNonce);
+		assert.strictEqual(env.AzureWebJobsSecretStorageType, 'files');
+
+		assert.strictEqual(env.AzureWebJobsStorage, connSettings.storageConnStrings[0]);
+		assert.strictEqual(!env.DFM_HUB_NAME, true);
+		assert.strictEqual(!env.AzureWebJobsStorage__accountName, true);
+		assert.strictEqual(!env.DFM_SQL_CONNECTION_STRING, true);
+	});
+
+	test('Prepares environment variables for SQL backend', () => {
+
+		// Arrange
+
+		const connSettings = new StorageConnectionSettings(['Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;'], 'my-task-hub');
+
+		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
+
+		// Act
+
+		const env = (backendProcess as any).getEnvVariables();
+
+		// Assert
+
+		assert.strictEqual((!!env.Path) || (!!env.PATH), true);
+
+		assert.strictEqual(env.DFM_NONCE, (backendProcess as any)._backendCommunicationNonce);
+		assert.strictEqual(env.AzureWebJobsSecretStorageType, 'files');
+
+		assert.strictEqual(env.DFM_SQL_CONNECTION_STRING, connSettings.storageConnStrings[0]);
+		assert.strictEqual(env.DFM_HUB_NAME, connSettings.hubName);
+		assert.strictEqual(!env.AzureWebJobsStorage, true);
+		assert.strictEqual(!env.AzureWebJobsStorage__accountName, true);
+	});	
+
+	test('Prepares environment variables for identity-based backend', () => {
+
+		// Arrange
+
+		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub', false, true);
+
+		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
+
+		// Act
+
+		const env = (backendProcess as any).getEnvVariables();
+
+		// Assert
+
+		assert.strictEqual((!!env.Path) || (!!env.PATH), true);
+
+		assert.strictEqual(env.DFM_NONCE, (backendProcess as any)._backendCommunicationNonce);
+		assert.strictEqual(env.AzureWebJobsSecretStorageType, 'files');
+
+		assert.strictEqual(env.AzureWebJobsStorage__accountName, 'mystorageaccount1');
+		assert.strictEqual(!env.AzureWebJobsStorage, true);
+		assert.strictEqual(!env.DFM_SQL_CONNECTION_STRING, true);
+		assert.strictEqual(!env.DFM_HUB_NAME, true);
+	});		
 });
 
 async function copyBackendProjectToTempFolder(customBackendName: string): Promise<string>{

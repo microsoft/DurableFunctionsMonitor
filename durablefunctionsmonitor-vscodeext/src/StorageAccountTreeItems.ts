@@ -38,7 +38,7 @@ export class StorageAccountTreeItems {
     }
 
     // Adds a detached node to the tree for the specified storage connection settings
-    addNodeForConnectionSettings(connSettings: StorageConnectionSettings, isV2StorageAccount: boolean = false, storageAccountId: string = '', noStorageKey: boolean = false): void {
+    addNodeForConnectionSettings(connSettings: StorageConnectionSettings, isV2StorageAccount: boolean = false, storageAccountId: string = ''): void {
 
         const storageConnStrings = connSettings.storageConnStrings;
         const hubName = connSettings.hubName;
@@ -64,7 +64,7 @@ export class StorageAccountTreeItems {
         }
 
         node.isV2StorageAccount = isV2StorageAccount;
-        node.noStorageKey = noStorageKey;
+        node.isIdentityBasedConnection = connSettings.isIdentityBasedConnection;
         node.storageAccountId = storageAccountId;
 
         node.getOrAdd(hubName, connSettings.isFromLocalSettingsJson);

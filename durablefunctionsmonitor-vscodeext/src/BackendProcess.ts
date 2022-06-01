@@ -16,6 +16,7 @@ const execAsync = util.promisify(cp.exec);
 import * as SharedConstants from './SharedConstants';
 import { Settings } from './Settings';
 import { StorageConnectionSettings } from "./StorageConnectionSettings";
+import { ConnStringUtils } from './ConnStringUtils';
 
 // Responsible for running the backend process
 export class BackendProcess {
@@ -87,6 +88,47 @@ export class BackendProcess {
     // Path to Functions host
     private static _funcExePath: string = '';
 
+    // Prepares a set of environment variables for the backend process
+    private getEnvVariables(): {} {
+
+        // Important to inherit the context from VsCode, so that globally installed tools can be found
+        const env = process.env;
+
+        env[SharedConstants.NonceEnvironmentVariableName] = this._backendCommunicationNonce;
+
+        // Also setting AzureWebJobsSecretStorageType to 'files', so that the backend doesn't need Azure Storage
+        env['AzureWebJobsSecretStorageType'] = 'files';
+
+        delete env['AzureWebJobsStorage'];
+        delete env['AzureWebJobsStorage__accountName'];
+        delete env[SharedConstants.MsSqlConnStringEnvironmentVariableName];
+
+        if (this._storageConnectionSettings.isMsSql) {
+
+            env[SharedConstants.MsSqlConnStringEnvironmentVariableName] = this._storageConnectionSettings.storageConnStrings[0];
+
+            // For MSSQL just need to set DFM_HUB_NAME to something, doesn't matter what it is so far
+            env[SharedConstants.HubNameEnvironmentVariableName] = this._storageConnectionSettings.hubName;
+
+        } else {
+
+            // Need to unset this, in case it was set previously
+            delete env[SharedConstants.HubNameEnvironmentVariableName];
+            
+            if (!!this._storageConnectionSettings.isIdentityBasedConnection) {
+
+                const storageAccountName = ConnStringUtils.GetAccountName(this._storageConnectionSettings.storageConnStrings[0]);
+                env['AzureWebJobsStorage__accountName'] = storageAccountName;
+
+            } else {
+
+                env['AzureWebJobsStorage'] = this._storageConnectionSettings.storageConnStrings[0];
+            }
+        }
+
+        return env;
+    }
+
     // Runs the backend Function instance on some port
     private startBackendOnPort(funcExePath: string, portNr: number, backendUrl: string, cancelToken: vscode.CancellationToken): Promise<void> {
 
@@ -131,6 +173,7 @@ export class BackendProcess {
                 this._eventualBinariesFolder = publishFolder;
             }
 
+/*            
             // Important to inherit the context from VsCode, so that globally installed tools can be found
             const env = process.env;
     
@@ -151,12 +194,21 @@ export class BackendProcess {
                 // Need to unset this, in case it was set previously
                 delete env[SharedConstants.HubNameEnvironmentVariableName];
                 
-                env['AzureWebJobsStorage'] = this._storageConnectionSettings.storageConnStrings[0];
+                if (!!this._storageConnectionSettings.isIdentityBasedConnection) {
+                    
+                    const storageAccountName = ConnStringUtils.GetAccountName(this._storageConnectionSettings.storageConnStrings[0]);
+                    env['AzureWebJobsStorage__accountName'] = storageAccountName;
+
+                } else {
+
+                    env['AzureWebJobsStorage'] = this._storageConnectionSettings.storageConnStrings[0];
+                }
             }
+*/
             
             this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString(), '--csharp'], {
                 cwd: this._eventualBinariesFolder,
-                env
+                env: this.getEnvVariables()
             });
     
             this._funcProcess.stdout?.on('data', (data) => {

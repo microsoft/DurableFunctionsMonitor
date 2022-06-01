@@ -39,7 +39,7 @@ export class TaskHubTreeItem {
 
     // Gets associated storage connection settings
     get storageConnectionSettings(): StorageConnectionSettings {
-        return new StorageConnectionSettings(this._parentItem.storageConnStrings, this._hubName);
+        return new StorageConnectionSettings(this._parentItem.storageConnStrings, this._hubName, false, this._parentItem.isIdentityBasedConnection);
     }
 
     // Item's icon

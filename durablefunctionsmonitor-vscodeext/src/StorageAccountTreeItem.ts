@@ -27,7 +27,7 @@ export class StorageAccountTreeItem {
 
     readonly isMsSqlStorage: boolean;
     isV2StorageAccount: boolean = false;
-    noStorageKey: boolean = false;
+    isIdentityBasedConnection: boolean = false;
     storageAccountId: string = '';
 
     collapsibleState?: vscode.TreeItemCollapsibleState;
@@ -54,7 +54,7 @@ export class StorageAccountTreeItem {
 
     get tooltip(): string {
 
-        if (!!this.noStorageKey) {
+        if (!!this.isIdentityBasedConnection) {
             return `identity-based`;
         }
 
