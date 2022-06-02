@@ -52,6 +52,13 @@ namespace DurableFunctionsMonitor.DotNetBackend
         // Constant, that defines the /a/p/i/{connName}-{hubName} route prefix, to let Functions Host distinguish api methods from statics
         public const string ApiRoutePrefix = "a/p/i/{connName}-{hubName}";
 
+        public const string IdentityBasedConnectionSettingAccountNameSuffix = "__accountName";
+        public const string IdentityBasedConnectionSettingTableServiceUriSuffix = "__tableServiceUri";
+        public const string IdentityBasedConnectionSettingBlobServiceUriSuffix = "__blobServiceUri";
+        public const string IdentityBasedConnectionSettingCredentialSuffix = "__credential";
+        public const string IdentityBasedConnectionSettingClientIdSuffix = "__clientId";
+        public const string IdentityBasedConnectionSettingCredentialValue = "managedidentity";
+
         public static void SplitConnNameAndHubName(string connAndHubName, out string connName, out string hubName)
         {
             int pos = connAndHubName.LastIndexOf("-");

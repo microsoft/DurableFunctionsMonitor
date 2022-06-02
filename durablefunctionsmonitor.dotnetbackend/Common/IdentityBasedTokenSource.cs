@@ -27,7 +27,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             try
             {
                 // Obtaining a new token
-                var tokenCredential = MockedTokenCredential ?? new DefaultAzureCredential();
+                var tokenCredential = MockedTokenCredential ?? GetTokenCredential();
                 var tokenRequestContext = new TokenRequestContext(new string[] { "https://storage.azure.com" });
                 CachedToken = await tokenCredential.GetTokenAsync(tokenRequestContext, CancellationToken.None);
             }
@@ -39,6 +39,21 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
 
             return CachedToken.Token;
+        }
+
+        internal static TokenCredential GetTokenCredential()
+        {
+            // Supporting user-assigned Managed Identities as well
+
+            if (Globals.IdentityBasedConnectionSettingCredentialValue == Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + Globals.IdentityBasedConnectionSettingCredentialSuffix))
+            {
+                string clientId = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + Globals.IdentityBasedConnectionSettingClientIdSuffix);
+                return new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId });
+            }
+            else
+            {
+                return new DefaultAzureCredential();
+            }
         }
 
         private const int TokenExpirationHandicapInSeconds = 10;

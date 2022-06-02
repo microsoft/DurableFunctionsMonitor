@@ -69,10 +69,10 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 // Trying with Managed Identity/local Azure login
 
-                string blobServiceUri = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + "__blobServiceUri");
+                string blobServiceUri = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + Globals.IdentityBasedConnectionSettingBlobServiceUriSuffix);
                 if (string.IsNullOrEmpty(blobServiceUri))
                 {
-                    string accountName = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + "__accountName");
+                    string accountName = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + Globals.IdentityBasedConnectionSettingAccountNameSuffix);
                     blobServiceUri = $"https://{accountName}.blob.core.windows.net";
                 }
 

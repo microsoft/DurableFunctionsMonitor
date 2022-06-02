@@ -87,5 +87,22 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                 IdentityBasedTokenSource.MockedTokenCredential = null;
             }
         }
+
+        [TestMethod]
+        public void ReturnsDefaultAzureCredential()
+        {
+            var tokenCredential = IdentityBasedTokenSource.GetTokenCredential();
+
+            // This is the only thing we can check
+            Assert.IsNotNull(tokenCredential);
+
+            Environment.SetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + Globals.IdentityBasedConnectionSettingCredentialSuffix, Globals.IdentityBasedConnectionSettingCredentialValue);
+            Environment.SetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + Globals.IdentityBasedConnectionSettingClientIdSuffix, "10000000-0000-0000-0000-000000000001");
+
+            var tokenCredential2 = IdentityBasedTokenSource.GetTokenCredential();
+
+            // This is the only thing we can check
+            Assert.IsNotNull(tokenCredential2);
+        }
     }
 }

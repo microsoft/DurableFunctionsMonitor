@@ -46,10 +46,10 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 // Trying with Managed Identity/local Azure login
                 
-                string tableServiceUri = Environment.GetEnvironmentVariable(connStringName + "__tableServiceUri");
+                string tableServiceUri = Environment.GetEnvironmentVariable(connStringName + Globals.IdentityBasedConnectionSettingTableServiceUriSuffix);
                 if (string.IsNullOrEmpty(tableServiceUri))
                 {
-                    string accountName = Environment.GetEnvironmentVariable(connStringName + "__accountName");
+                    string accountName = Environment.GetEnvironmentVariable(connStringName + Globals.IdentityBasedConnectionSettingAccountNameSuffix);
                     tableServiceUri = $"https://{accountName}.table.core.windows.net";
                 }
                 
