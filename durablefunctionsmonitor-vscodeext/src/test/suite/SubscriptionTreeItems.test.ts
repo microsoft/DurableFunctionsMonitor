@@ -211,8 +211,7 @@ suite('SubscriptionTreeItems Test Suite', () => {
 			addNodeForConnectionSettings: (
 				connSettings: StorageConnectionSettings,
 				isV2StorageAccount: boolean,
-				storageAccountId: string,
-				noStorageKey: boolean
+				storageAccountId: string
 			) => {
 
 				addNodeForConnectionSettingsCallCount++;
@@ -240,7 +239,7 @@ suite('SubscriptionTreeItems Test Suite', () => {
 				}
 
 				assert.strictEqual(taskHubNames.includes(connSettings.hubName), true);
-				assert.strictEqual(noStorageKey, true);
+				assert.strictEqual(connSettings.isIdentityBasedConnection, true);
 			}
 		};
 
