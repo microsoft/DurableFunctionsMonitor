@@ -1,6 +1,6 @@
 {
   "name": "durablefunctionsmonitor.react",
-  "version": "5.4.1",
+  "version": "5.5.0",
   "private": true,
   "homepage": "http://localhost:7072",
   "dependencies": {
