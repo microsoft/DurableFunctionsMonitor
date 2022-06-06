@@ -3,6 +3,7 @@
 ## Version 5.5
 
 - Support for identity-based connections (#40). When [storage keys are disabled](https://docs.microsoft.com/en-us/azure/storage/common/shared-key-authorization-prevent?tabs=portal#remediate-authorization-via-shared-key) for some Storage account, DfMon will try to connect to it on *your* behalf (using your VsCode Azure login). Accounts like that will be marked as `identity-based` in the tree:
+
     ![image](https://user-images.githubusercontent.com/5447190/172019768-4a04553b-5804-4c11-bd7c-182f34cb4bdb.png)
     
     NOTE: you will need to have all the required role assignments to that Storage account, [as described here](https://docs.microsoft.com/en-gb/azure/azure-functions/functions-reference?tabs=blob#connecting-to-host-storage-with-an-identity-preview).
