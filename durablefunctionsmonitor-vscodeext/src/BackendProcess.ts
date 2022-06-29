@@ -172,6 +172,11 @@ export class BackendProcess {
     
                 this._eventualBinariesFolder = publishFolder;
             }
+
+            // check for func exe
+            if (!funcExePath){
+                reject('Ensure you have the latest Azure Functions Core Tools installed globally.');
+            }
             
             this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString(), '--csharp'], {
                 cwd: this._eventualBinariesFolder,
@@ -272,7 +277,7 @@ export class BackendProcess {
     }
 
     private async getFuncExePath(): Promise<string> {
-
+        
         if (!!BackendProcess._funcExePath) {
             return BackendProcess._funcExePath;
         }
@@ -362,8 +367,6 @@ export class BackendProcess {
             }
         }
 
-        // Defaulting to 'func' command, hopefully it will be properly resolved
-        BackendProcess._funcExePath = 'func';
-        return BackendProcess._funcExePath;
+        return "";
     }
 }
