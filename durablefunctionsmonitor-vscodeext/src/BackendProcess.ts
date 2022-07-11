@@ -12,6 +12,7 @@ import * as cp from 'child_process';
 import * as util from 'util';
 
 const execAsync = util.promisify(cp.exec);
+const { execSync } = require("child_process");
 
 import * as SharedConstants from './SharedConstants';
 import { Settings } from './Settings';
@@ -173,11 +174,13 @@ export class BackendProcess {
                 this._eventualBinariesFolder = publishFolder;
             }
 
-            // check for func exe
-            if (!funcExePath){
-                reject('Ensure you have the latest Azure Functions Core Tools installed globally.');
+            try {
+                const cmd = `"${funcExePath}" --version`;
+                execSync(cmd);
+            } catch (error) {
+                reject(`Azure Functions Core Tools not found. Ensure that you have the latest Azure Functions Core Tools installed globally.`);
             }
-            
+
             this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString(), '--csharp'], {
                 cwd: this._eventualBinariesFolder,
                 env: this.getEnvVariables()
@@ -367,6 +370,8 @@ export class BackendProcess {
             }
         }
 
-        return "";
+        // Defaulting to 'func' command, hopefully it will be properly resolved
+        BackendProcess._funcExePath = 'func';
+        return BackendProcess._funcExePath;
     }
 }
