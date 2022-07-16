@@ -10,6 +10,7 @@ steps:
 - task: Npm@1
   displayName: 'npm install durablefunctionsmonitor.react'
   inputs:
+    command: custom
     workingDir: durablefunctionsmonitor.react
     verbose: false
     customCommand: 'install -legacy-peer-deps'
