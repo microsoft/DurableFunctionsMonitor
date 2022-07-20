@@ -89,6 +89,9 @@ export class BackendProcess {
     // Path to Functions host
     private static _funcExePath: string = '';
 
+    // True if Azure Functions Core Tools is installed
+    private static _coreToolsInstalled: boolean = false;
+
     // Prepares a set of environment variables for the backend process
     private getEnvVariables(): {} {
 
@@ -175,8 +178,11 @@ export class BackendProcess {
             }
 
             try {
-                const cmd = `"${funcExePath}" --version`;
-                execSync(cmd);
+                if (!BackendProcess._coreToolsInstalled){
+                    const cmd = `"${funcExePath}" --version`;
+                    execSync(cmd);
+                    BackendProcess._coreToolsInstalled = true;
+                }
             } catch (error) {
                 reject(`Azure Functions Core Tools not found. Ensure that you have the latest Azure Functions Core Tools installed globally.`);
             }
