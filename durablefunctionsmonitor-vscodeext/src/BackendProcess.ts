@@ -12,6 +12,7 @@ import * as cp from 'child_process';
 import * as util from 'util';
 
 const execAsync = util.promisify(cp.exec);
+const { execSync } = require("child_process");
 
 import * as SharedConstants from './SharedConstants';
 import { Settings } from './Settings';
@@ -87,6 +88,9 @@ export class BackendProcess {
 
     // Path to Functions host
     private static _funcExePath: string = '';
+
+    // True if Azure Functions Core Tools is installed
+    private static _coreToolsInstalled: boolean = false;
 
     // Prepares a set of environment variables for the backend process
     private getEnvVariables(): {} {
@@ -172,7 +176,17 @@ export class BackendProcess {
     
                 this._eventualBinariesFolder = publishFolder;
             }
-            
+
+            try {
+                if (!BackendProcess._coreToolsInstalled){
+                    const cmd = `"${funcExePath}" --version`;
+                    execSync(cmd);
+                    BackendProcess._coreToolsInstalled = true;
+                }
+            } catch (error) {
+                reject(`Azure Functions Core Tools not found. Ensure that you have the latest Azure Functions Core Tools installed globally.`);
+            }
+
             this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString(), '--csharp'], {
                 cwd: this._eventualBinariesFolder,
                 env: this.getEnvVariables()
@@ -272,7 +286,7 @@ export class BackendProcess {
     }
 
     private async getFuncExePath(): Promise<string> {
-
+        
         if (!!BackendProcess._funcExePath) {
             return BackendProcess._funcExePath;
         }
