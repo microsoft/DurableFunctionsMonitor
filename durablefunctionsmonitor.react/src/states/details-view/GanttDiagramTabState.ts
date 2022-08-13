@@ -96,7 +96,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
     // Workaround for mermaid being unable to render intervals shorter than 1 second
     private adjustIntervalsSmallerThanOneSecond(svg: string, linesWithMetadata: LineTextAndMetadata[]): string {
 
-        return svg.replace(new RegExp(`<rect id="task([0-9]+)" [^>]+ width="([0-9]+)"`, 'gi'), (match, taskIndex, activityWidth) => {
+        return svg.replace(new RegExp(`<rect[^>]+ width="([0-9]+)"[^>]+ id="task([0-9]+)"`, 'gi'), (match, activityWidth, taskIndex) => {
 
             const oneBasedLineIndex = parseInt(taskIndex);
 
@@ -115,7 +115,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                 return match;
             }
 
-            const orchMatch = new RegExp(`<rect id="task${orchIndex + 1}" [^>]+ width="([0-9]+)"`, 'i').exec(svg);
+            const orchMatch = new RegExp(`<rect[^>]+ width="([0-9]+)"[^>]+ id="task${orchIndex + 1}"`, 'i').exec(svg);
             if (!orchMatch) {
                 return match;
             }

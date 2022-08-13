@@ -86,7 +86,7 @@ export class FunctionGraphStateBase extends MermaidDiagramStateBase {
         svg = svg.replace(`><style>`, `>\n<defs>\n${iconsSvgElement.innerHTML}</defs>\n<style>`);
 
         // Adding <use> blocks referencing relevant icons
-        svg = svg.replace(/<g class="node (\w+).*?<g class="label" transform="translate\([0-9,.-]+\)"><g transform="translate\([0-9,.-]+\)">/g,
+        svg = svg.replace(/<g style="opacity: [0-9.]+;" transform="translate\([0-9,.-]+\)" id="[^"]+" class="node (\w+).*?<g transform="translate\([0-9,.-]+\)" class="label"><g transform="translate\([0-9,.-]+\)">/g,
             `$&<use href="#az-icon-$1" width="20px" height="20px"/>`);
 
         return svg;
