@@ -9,19 +9,40 @@ function getTriggerBindingText(binding: any): string {
 
     switch (binding.type) {
         case 'httpTrigger':
+
             return `${binding.authLevel === 'anonymous' ? '#127760;' : '#128274;'} http${!binding.methods ? '' : ':[' + binding.methods.join(',') + ']'}${!binding.route ? '' : ':' + binding.route}`;
+
         case 'blobTrigger':
-            return `${space}blob:${binding.path ?? ''}`;
+
+            const blobPath = binding.blobPath ?? (binding.path ?? '');
+            
+            return `${space}blob:${blobPath}`;
+
         case 'cosmosDBTrigger':
+            
             return `${space}cosmosDB:${binding.databaseName ?? ''}:${binding.collectionName ?? ''}`;
+
         case 'eventHubTrigger':
+            
             return `${space}eventHub:${binding.eventHubName ?? ''}`;
+
         case 'serviceBusTrigger':
-            return `${space}serviceBus:${!binding.queueName ? (binding.topicName ?? '') : binding.queueName}${!binding.subscriptionName ? '' : ':' + binding.subscriptionName}`;
+            
+            const queueOrTopicName =
+                binding.queueOrTopicName ?? (
+                    binding.queueName ?? (
+                        binding.topicName ?? ''));
+            
+            return `${space}serviceBus:${queueOrTopicName}${!binding.subscriptionName ? '' : ':' + binding.subscriptionName}`;
+
         case 'queueTrigger':
+
             return `${space}queue:${binding.queueName ?? ''}`;
+
         case 'timerTrigger':
+
             return `${space}timer:${binding.schedule ?? ''}`;
+
         default:
             return `${space}${binding.type}`;
     }
@@ -31,17 +52,40 @@ function getBindingText(binding: any): string {
 
     switch (binding.type) {
         case 'table':
+
             return `${space}table:${binding.tableName ?? ''}`;
+        
         case 'blob':
-            return `${space}blob:${binding.path ?? ''}`;
+            
+            const blobPath = binding.blobPath ?? (binding.path ?? '');
+            
+            return `${space}blob:${blobPath}`;
+        
         case 'cosmosDB':
+            
             return `${space}cosmosDB:${binding.databaseName ?? ''}:${binding.collectionName ?? ''}`;
+        
         case 'eventHub':
+            
             return `${space}eventHub:${binding.eventHubName ?? ''}`;
+        
+        case 'eventGrid':
+            
+            return `${space}eventGrid:${binding.topicEndpointUri ?? ''}`;
+        
         case 'serviceBus':
-            return `${space}serviceBus:${!binding.queueName ? (binding.topicName ?? '') : binding.queueName}${!binding.subscriptionName ? '' : ':' + binding.subscriptionName}`;
+            
+            const queueOrTopicName =
+                binding.queueOrTopicName ?? (
+                    binding.queueName ?? (
+                        binding.topicName ?? ''));
+            
+            return `${space}serviceBus:${queueOrTopicName}${!binding.subscriptionName ? '' : ':' + binding.subscriptionName}`;
+        
         case 'queue':
+
             return `${space}queue:${binding.queueName ?? ''}`;
+
         default:
             return `${space}${binding.type}`;
     }
