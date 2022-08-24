@@ -45,7 +45,7 @@ suite('BackendProcess Test Suite', () => {
 				backendWasStarted = true;
 			}
 
-			if (s.startsWith('Microsoft (R) Build Engine version ')) {
+			if (/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s)) {
 				backendWasPublished = true;
 			}
 		};
@@ -121,7 +121,7 @@ suite('BackendProcess Test Suite', () => {
 				backendWasStarted = true;
 			}
 
-			if (s.startsWith('Microsoft (R) Build Engine version ')) {
+			if (/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s)) {
 				backendWasPublished = true;
 			}
 		};
@@ -200,7 +200,7 @@ suite('BackendProcess Test Suite', () => {
 				backendWasStarted = true;
 			}
 
-			if (s.startsWith('Microsoft (R) Build Engine version ')) {
+			if (/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s)) {
 				backendWasPublished = true;
 			}
 		};
