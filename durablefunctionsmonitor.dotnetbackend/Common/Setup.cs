@@ -44,7 +44,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public IEnumerable<string> AllowedAppRoles { get; set; }
 
         /// <summary>
-        /// List of App Roles, that are allowed rad only access DurableFunctionsMonitor endpoint. Users/Groups then need 
+        /// List of App Roles, that are allowed read only access to the DurableFunctionsMonitor endpoint. Users/Groups then need 
         /// to be assigned one of these roles via AAD Enterprise Applications->[your AAD app]->Users and Groups tab.
         /// Once set, the incoming access token is expected to contain one of these in its 'roles' claim.
         /// </summary>

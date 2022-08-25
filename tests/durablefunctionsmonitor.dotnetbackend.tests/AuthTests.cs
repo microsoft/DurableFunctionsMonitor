@@ -300,12 +300,52 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                 {
                     // Ensuring the correct type of exception was raised internally
                     Assert.IsInstanceOfType(ex, typeof(UnauthorizedAccessException));
-                    Assert.AreEqual($"User {userName} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} config setting. Call is rejected", ex.Message);
+                    Assert.AreEqual($"User {userName} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected", ex.Message);
                 });
 
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, "role1,role2");
+
+            // Need to reset DfmEndpoint.Settings
+            DfmEndpoint.Setup();
+
+            request.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity[] { new ClaimsIdentity( new Claim[] {
+                new Claim("preferred_username", userName)})
+            });
+
+            // Act
+            var result = await About.DfmAboutFunction(request, "-", "TestHub", logMoq.Object);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
+        }
+
+        [TestMethod]
+        public async Task ReturnsUnauthorizedResultIfUserIsNotInReadOnlyRole()
+        {
+            // Arrange
+            var request = new DefaultHttpContext().Request;
+
+            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
+            request.Headers.Add("Cookie", new CookieHeaderValue(Globals.XsrfTokenCookieAndHeaderName, xsrfToken).ToString());
+            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+
+            var logMoq = new Mock<ILogger>();
+
+            string userName = "tino@contoso.com";
+
+            logMoq.Setup(log => log.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()))
+                .Callback((LogLevel l, EventId i, object s, Exception ex, object o) =>
+                {
+                    // Ensuring the correct type of exception was raised internally
+                    Assert.IsInstanceOfType(ex, typeof(UnauthorizedAccessException));
+                    Assert.AreEqual($"User {userName} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected", ex.Message);
+                });
+
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, "role1,role2");
 
             // Need to reset DfmEndpoint.Settings
             DfmEndpoint.Setup();
