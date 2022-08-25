@@ -48,12 +48,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 }
                 else
                 {
-                    // Checking that we're not in ReadOnly mode
-                    if (DfmEndpoint.Settings.Mode == DfmMode.ReadOnly)
-                    {
-                        log.LogError("Endpoint is in ReadOnly mode");
-                        return new StatusCodeResult(403);
-                    }
+                    Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
 
                     dynamic bodyObject = JObject.Parse(await req.ReadAsStringAsync());
 

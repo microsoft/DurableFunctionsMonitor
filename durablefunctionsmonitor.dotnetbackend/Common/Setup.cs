@@ -44,6 +44,13 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public IEnumerable<string> AllowedAppRoles { get; set; }
 
         /// <summary>
+        /// List of App Roles, that are allowed rad only access DurableFunctionsMonitor endpoint. Users/Groups then need 
+        /// to be assigned one of these roles via AAD Enterprise Applications->[your AAD app]->Users and Groups tab.
+        /// Once set, the incoming access token is expected to contain one of these in its 'roles' claim.
+        /// </summary>
+        public IEnumerable<string> AllowedReadOnlyAppRoles { get; set; }
+
+        /// <summary>
         /// List of users, that are allowed to access DurableFunctionsMonitor endpoint. You typically put emails into here.
         /// Once set, the incoming access token is expected to contain one of these names in its 'preferred_username' claim.
         /// </summary>
@@ -113,6 +120,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 string dfmAllowedUserNames = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES);
                 string dfmAllowedAppRoles = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES);
+                string dfmAllowedreadOnlyAppRoles = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES);
                 string dfmMode = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_MODE);
                 string dfmUserNameClaimName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_USERNAME_CLAIM_NAME);
                 string dfmRolesClaimName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ROLES_CLAIM_NAME);
@@ -125,6 +133,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     Mode = dfmMode == DfmMode.ReadOnly.ToString() ? DfmMode.ReadOnly : DfmMode.Normal,
                     AllowedUserNames = dfmAllowedUserNames == null ? null : dfmAllowedUserNames.Split(','),
                     AllowedAppRoles = dfmAllowedAppRoles == null ? null : dfmAllowedAppRoles.Split(','),
+                    AllowedReadOnlyAppRoles = dfmAllowedreadOnlyAppRoles == null ? null : dfmAllowedreadOnlyAppRoles.Split(','),
                     UserNameClaimName = string.IsNullOrEmpty(dfmUserNameClaimName) ? Auth.PreferredUserNameClaim : dfmUserNameClaimName,
                     RolesClaimName = string.IsNullOrEmpty(dfmRolesClaimName) ? Auth.RolesClaim : dfmRolesClaimName
                 };

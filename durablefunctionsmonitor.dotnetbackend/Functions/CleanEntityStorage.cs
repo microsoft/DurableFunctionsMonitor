@@ -36,13 +36,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
             ILogger log)
         {
             return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
-
-                // Checking that we're not in ReadOnly mode
-                if (DfmEndpoint.Settings.Mode == DfmMode.ReadOnly)
-                {
-                    log.LogError("Endpoint is in ReadOnly mode");
-                    return new StatusCodeResult(403);
-                }
+             
+                Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
 
                 var request = JsonConvert.DeserializeObject<CleanEntityStorageRequest>(await req.ReadAsStringAsync());
 

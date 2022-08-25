@@ -27,6 +27,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public const string WEBSITE_AUTH_UNAUTHENTICATED_ACTION = "WEBSITE_AUTH_UNAUTHENTICATED_ACTION";
         public const string DFM_ALLOWED_USER_NAMES = "DFM_ALLOWED_USER_NAMES";
         public const string DFM_ALLOWED_APP_ROLES = "DFM_ALLOWED_APP_ROLES";
+        public const string DFM_ALLOWED_READ_ONLY_APP_ROLES = "DFM_ALLOWED_READ_ONLY_APP_ROLES";
         public const string DFM_HUB_NAME = "DFM_HUB_NAME";
         public const string DFM_NONCE = "DFM_NONCE";
         public const string DFM_CLIENT_CONFIG = "DFM_CLIENT_CONFIG";
@@ -123,6 +124,11 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 log.LogError(ex, $"DFM failed to authenticate request");
                 return new UnauthorizedResult();
+            }
+            catch (AccessViolationException)
+            {
+                log.LogError("Endpoint is in ReadOnly mode");
+                return new StatusCodeResult(403);
             }
             catch (Exception ex)
             {

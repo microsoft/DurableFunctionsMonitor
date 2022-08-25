@@ -90,21 +90,23 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 throw new UnauthorizedAccessException($"'{DfmEndpoint.Settings.UserNameClaimName}' claim is missing in the incoming identity. Call is rejected.");
             }
 
-            if (DfmEndpoint.Settings.AllowedUserNames != null)
-            {
-                if (!DfmEndpoint.Settings.AllowedUserNames.Contains(userNameClaim.Value))
-                {
-                    throw new UnauthorizedAccessException($"User {userNameClaim.Value} is not mentioned in {EnvVariableNames.DFM_ALLOWED_USER_NAMES} config setting. Call is rejected");
-                }
-            }
-
             // Also validating App Roles, if set
-            if (DfmEndpoint.Settings.AllowedAppRoles != null)
+            var allowedAppRoles = DfmEndpoint.Settings.AllowedAppRoles;
+            var allowedReadOnlyAppRoles = DfmEndpoint.Settings.AllowedReadOnlyAppRoles;
+
+            if (allowedAppRoles != null || allowedReadOnlyAppRoles != null)
             {
                 var roleClaims = principal.FindAll(DfmEndpoint.Settings.RolesClaimName);
-                if (!roleClaims.Any(claim => DfmEndpoint.Settings.AllowedAppRoles.Contains(claim.Value)))
+
+                if (!roleClaims.Any(claim => (allowedAppRoles != null && allowedAppRoles.Contains(claim.Value)) ||
+                                             (allowedReadOnlyAppRoles != null && allowedReadOnlyAppRoles.Contains(claim.Value))))
                 {
-                    throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} config setting. Call is rejected");
+                    throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected");
+                }
+
+                if (roleClaims.Any(claim => allowedReadOnlyAppRoles != null && allowedReadOnlyAppRoles.Contains(claim.Value)))
+                {
+                    DfmEndpoint.Settings.Mode = DfmMode.ReadOnly;
                 }
             }
         }
@@ -223,6 +225,14 @@ namespace DurableFunctionsMonitor.DotNetBackend
             if (tokenFromCookies != tokenFromHeaders)
             {
                 throw new UnauthorizedAccessException("XSRF tokens do not match.");
+            }
+        }
+
+        public static void ThrowIfInReadOnlyMode(ClaimsPrincipal principal)
+        {
+            if (DfmEndpoint.Settings.Mode == DfmMode.ReadOnly)
+            {
+                throw new AccessViolationException();
             }
         }
 

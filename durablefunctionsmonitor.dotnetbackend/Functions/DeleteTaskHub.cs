@@ -31,12 +31,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (_) => {
 
-                // Checking that we're not in ReadOnly mode
-                if (DfmEndpoint.Settings.Mode == DfmMode.ReadOnly)
-                {
-                    log.LogError("Endpoint is in ReadOnly mode");
-                    return new StatusCodeResult(403);
-                }
+                Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
 
                 string connectionString = Environment.GetEnvironmentVariable(Globals.GetFullConnectionStringEnvVariableName(connName));
 
