@@ -4,14 +4,18 @@
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
+import * as util from 'util';
+import { exec } from 'child_process';
+const execAsync = util.promisify(exec);
+
+const gitCloneTimeoutInSeconds = 60;
 
 // Does a git clone into a temp folder and returns info about that cloned code
 export async function cloneFromGitHub(url: string): Promise<{gitTempFolder: string, projectFolder: string}> {
 
-    var repoName = '', branchName = '', relativePath = '', gitTempFolder = '';
+    let repoName = '', branchName = '', relativePath = '', gitTempFolder = '';
 
-    var restOfUrl: string[] = [];
+    let restOfUrl: string[] = [];
     const match = /(https:\/\/github.com\/.*?)\/([^\/]+)(\/tree\/)?(.*)/i.exec(url);
 
     if (!match || match.length < 5) {
@@ -37,14 +41,23 @@ export async function cloneFromGitHub(url: string): Promise<{gitTempFolder: stri
 
     gitTempFolder = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'git-clone-'));
 
+    let getGitTimeoutPromise = () => {
+
+        return new Promise<void>((resolve, reject) => setTimeout(() => reject(new Error(`git clone timed out after ${gitCloneTimeoutInSeconds} sec.`)), gitCloneTimeoutInSeconds * 1000));
+    };
+
     // The provided URL might contain both branch name and relative path. The only way to separate one from another
     // is to repeatedly try cloning assumed branch names, until we finally succeed.
-    for (var i = restOfUrl.length; i > 0; i--) {
+    for (let i = restOfUrl.length; i > 0; i--) {
 
         try {
 
             const assumedBranchName = restOfUrl.slice(0, i).join('/');
-            execSync(`git clone ${url} --branch ${assumedBranchName}`, { cwd: gitTempFolder });
+
+            const clonePromise = execAsync(`git clone ${url} --branch ${assumedBranchName}`, { cwd: gitTempFolder });
+    
+            // It turned out that the above command can hang forever for unknown reason. So need to put a timeout.
+            await Promise.race([clonePromise, getGitTimeoutPromise()]);
 
             branchName = assumedBranchName;
             relativePath = path.join(...restOfUrl.slice(i, restOfUrl.length));
@@ -58,7 +71,10 @@ export async function cloneFromGitHub(url: string): Promise<{gitTempFolder: stri
     if (!branchName) {
 
         // Just doing a normal git clone
-        execSync(`git clone ${url}`, { cwd: gitTempFolder });
+        const clonePromise = execAsync(`git clone ${url}`, { cwd: gitTempFolder });
+
+        // It turned out that the above command can hang forever for unknown reason. So need to put a timeout.
+        await Promise.race([clonePromise, getGitTimeoutPromise()]);
     }
 
     return { gitTempFolder, projectFolder: path.join(gitTempFolder, repoName, relativePath) };
@@ -304,5 +320,5 @@ export class DotNetBindingsParser {
     static readonly signalRConnInfoParamsRegex = new RegExp(`"([^"]+)"`);
     static readonly eventGridParamsRegex = new RegExp(`"([^"]+)"(.|\r|\n)+?"([^"]+)"`);
 
-    static readonly isOutRegex = new RegExp(`\\]\\s*(out |ICollector|IAsyncCollector).*?(,|\\()`, 'g');
+    static readonly isOutRegex = new RegExp(`^\\s*\\]\\s*(out |ICollector|IAsyncCollector).*?(,|\\()`, 'g');
 }
