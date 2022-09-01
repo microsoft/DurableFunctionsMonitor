@@ -4,7 +4,9 @@
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
+import * as util from 'util';
+import { exec } from 'child_process';
+const execAsync = util.promisify(exec);
 
 import { FunctionsMap, ProxiesMap, TraverseFunctionResult } from './FunctionsMap';
 import {
@@ -51,7 +53,7 @@ export async function traverseFunctionProject(projectFolder: string, log: (s: an
         tempFolders.push(publishTempFolder);
 
         log(`>>> Publishing ${hostJsonFolder} to ${publishTempFolder}...`);
-        execSync(`dotnet publish -o ${publishTempFolder}`, { cwd: hostJsonFolder });
+        await execAsync(`dotnet publish -o ${publishTempFolder}`, { cwd: hostJsonFolder });
         hostJsonFolder = publishTempFolder;
     }
 
@@ -276,10 +278,36 @@ async function mapOrchestratorsAndActivitiesAsync(functions: FunctionsMap, proje
     if (isDotNet) {
         
         // Trying to extract extra binding info from C# code
-        for (const func of otherFunctions) {
+        for (const func of activities.concat(otherFunctions)) {
 
-            const moreBindings = DotNetBindingsParser.tryExtractBindings(func.code);
-            functions[func.name].bindings.push(...moreBindings);
+            const bindingsFromFunctionJson = functions[func.name].bindings as { type: string, direction: string }[];
+            const bindingsFromCode = DotNetBindingsParser.tryExtractBindings(func.code);
+
+            const existingBindingTypes: string[] = bindingsFromFunctionJson.map(b => b.type);
+
+            for (let binding of bindingsFromCode) {
+
+                // Only pushing extracted binding, if a binding with that type doesn't exist yet in function.json,
+                // so that no duplicates are produced
+                if (!existingBindingTypes.includes(binding.type)) {
+                 
+                    bindingsFromFunctionJson.push(binding);
+                }
+            }
+
+            // Also setting default direction
+            for (let binding of bindingsFromFunctionJson) {
+                
+                if (!binding.direction) {
+
+                    const bindingsOfThisTypeFromCode = bindingsFromCode.filter(b => b.type === binding.type);
+                    // If we were able to unambiguosly detect the binding of this type
+                    if (bindingsOfThisTypeFromCode.length === 1) {
+                        
+                        binding.direction = bindingsOfThisTypeFromCode[0].direction;
+                    }
+                }
+            }
         }
     }
 

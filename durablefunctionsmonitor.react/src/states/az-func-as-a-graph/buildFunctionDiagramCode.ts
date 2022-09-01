@@ -9,19 +9,40 @@ function getTriggerBindingText(binding: any): string {
 
     switch (binding.type) {
         case 'httpTrigger':
+
             return `${binding.authLevel === 'anonymous' ? '#127760;' : '#128274;'} http${!binding.methods ? '' : ':[' + binding.methods.join(',') + ']'}${!binding.route ? '' : ':' + binding.route}`;
+
         case 'blobTrigger':
-            return `${space}blob:${binding.path ?? ''}`;
+
+            const blobPath = binding.blobPath ?? (binding.path ?? '');
+            
+            return `${space}blob:${blobPath}`;
+
         case 'cosmosDBTrigger':
+            
             return `${space}cosmosDB:${binding.databaseName ?? ''}:${binding.collectionName ?? ''}`;
+
         case 'eventHubTrigger':
+            
             return `${space}eventHub:${binding.eventHubName ?? ''}`;
+
         case 'serviceBusTrigger':
-            return `${space}serviceBus:${!binding.queueName ? (binding.topicName ?? '') : binding.queueName}${!binding.subscriptionName ? '' : ':' + binding.subscriptionName}`;
+            
+            const queueOrTopicName =
+                binding.queueOrTopicName ?? (
+                    binding.queueName ?? (
+                        binding.topicName ?? ''));
+            
+            return `${space}serviceBus:${queueOrTopicName}${!binding.subscriptionName ? '' : ':' + binding.subscriptionName}`;
+
         case 'queueTrigger':
+
             return `${space}queue:${binding.queueName ?? ''}`;
+
         case 'timerTrigger':
+
             return `${space}timer:${binding.schedule ?? ''}`;
+
         default:
             return `${space}${binding.type}`;
     }
@@ -31,17 +52,40 @@ function getBindingText(binding: any): string {
 
     switch (binding.type) {
         case 'table':
+
             return `${space}table:${binding.tableName ?? ''}`;
+        
         case 'blob':
-            return `${space}blob:${binding.path ?? ''}`;
+            
+            const blobPath = binding.blobPath ?? (binding.path ?? '');
+            
+            return `${space}blob:${blobPath}`;
+        
         case 'cosmosDB':
+            
             return `${space}cosmosDB:${binding.databaseName ?? ''}:${binding.collectionName ?? ''}`;
+        
         case 'eventHub':
+            
             return `${space}eventHub:${binding.eventHubName ?? ''}`;
+        
+        case 'eventGrid':
+            
+            return `${space}eventGrid:${binding.topicEndpointUri ?? ''}`;
+        
         case 'serviceBus':
-            return `${space}serviceBus:${!binding.queueName ? (binding.topicName ?? '') : binding.queueName}${!binding.subscriptionName ? '' : ':' + binding.subscriptionName}`;
+            
+            const queueOrTopicName =
+                binding.queueOrTopicName ?? (
+                    binding.queueName ?? (
+                        binding.topicName ?? ''));
+            
+            return `${space}serviceBus:${queueOrTopicName}${!binding.subscriptionName ? '' : ':' + binding.subscriptionName}`;
+        
         case 'queue':
+
             return `${space}queue:${binding.queueName ?? ''}`;
+
         default:
             return `${space}${binding.type}`;
     }
@@ -55,7 +99,7 @@ export type GraphSettings = {
 // Translates functions and their bindings into a Mermaid Flowchart diagram code
 export function buildFunctionDiagramCode(functionsMap: FunctionsMap, proxiesMap: ProxiesMap, settings: GraphSettings = {}): string {
 
-    var code = '';
+    let code = '';
 
     if (!settings.doNotRenderFunctions) {
         
@@ -65,10 +109,13 @@ export function buildFunctionDiagramCode(functionsMap: FunctionsMap, proxiesMap:
         for (const name in functionsMap) {
             const func = functionsMap[name];
     
-            var triggerBinding = undefined, inputBindings = [], outputBindings = [], otherBindings = [];
-            var nodeCode = `${name}{{"${space}${name}"}}:::function`;
+            let triggerBinding = undefined, inputBindings = [], outputBindings = [], otherBindings = [];
+            let nodeCode = `${name}{{"${space}${name}"}}:::function`;
     
-            for (const binding of func.bindings) {
+            for (let i = 0; i < func.bindings.length; i++) {
+                
+                const binding = func.bindings[i];
+                binding.index = i;
     
                 if (binding.type === 'orchestrationTrigger') {
                     nodeCode = `${name}[["${space}${name}"]]:::orchestrator`;
@@ -95,14 +142,14 @@ export function buildFunctionDiagramCode(functionsMap: FunctionsMap, proxiesMap:
         // Sorting by trigger type, then by name. Moving the ones that are being called to the bottom.
         const getFunctionHash = (f) => {
     
-            var hash = (!!f.isCalledBy?.length || !f.triggerBinding || !f.triggerBinding.type) ? '' : f.triggerBinding.type;
+            let hash = (!!f.isCalledBy?.length || !f.triggerBinding || !f.triggerBinding.type) ? '' : f.triggerBinding.type;
             hash += '~' + f.name;
             return hash;
         }
         functions.sort((f1, f2) => {
             
-            var s1 = getFunctionHash(f1);
-            var s2 = getFunctionHash(f2);
+            let s1 = getFunctionHash(f1);
+            let s2 = getFunctionHash(f2);
     
             return (s1 > s2) ? 1 : ((s2 > s1) ? -1 : 0);
         });
@@ -122,22 +169,19 @@ export function buildFunctionDiagramCode(functionsMap: FunctionsMap, proxiesMap:
     
             } else if (!!func.triggerBinding) {
     
-                code += `${func.name}.${func.triggerBinding.type}>"${getTriggerBindingText(func.triggerBinding)}"]:::${func.triggerBinding.type} --> ${func.name}\n`;
+                code += `${func.name}.binding${func.triggerBinding.index}.${func.triggerBinding.type}>"${getTriggerBindingText(func.triggerBinding)}"]:::${func.triggerBinding.type} --> ${func.name}\n`;
             }
     
-            for (var i = 0; i < func.inputBindings.length; i++) {
-                const inputBinding = func.inputBindings[i];
-                code += `${func.name}.${i}.${inputBinding.type}(["${getBindingText(inputBinding)}"]):::${inputBinding.type} -.-> ${func.name}\n`;
+            for (const inputBinding of func.inputBindings) {
+                code += `${func.name}.binding${inputBinding.index}.${inputBinding.type}(["${getBindingText(inputBinding)}"]):::${inputBinding.type} -.-> ${func.name}\n`;
             }
     
-            for (var i = 0; i < func.outputBindings.length; i++) {
-                const outputBinding = func.outputBindings[i];
-                code += `${func.name} -.-> ${func.name}.${i}.${outputBinding.type}(["${getBindingText(outputBinding)}"]):::${outputBinding.type}\n`;
+            for (const outputBinding of func.outputBindings) {
+                code += `${func.name} -.-> ${func.name}.binding${outputBinding.index}.${outputBinding.type}(["${getBindingText(outputBinding)}"]):::${outputBinding.type}\n`;
             }
     
-            for (var i = 0; i < func.otherBindings.length; i++) {
-                const otherBinding = func.otherBindings[i];
-                code += `${func.name} -.- ${func.name}.${i}.${otherBinding.type}(["${getBindingText(otherBinding)}"]):::${otherBinding.type}\n`;
+            for (const otherBinding of func.otherBindings) {
+                code += `${func.name} -.- ${func.name}.binding${otherBinding.index}.${otherBinding.type}(["${getBindingText(otherBinding)}"]):::${otherBinding.type}\n`;
             }
     
             if (!!func.isSignalledBy?.length) {
@@ -159,8 +203,8 @@ export function buildFunctionDiagramCode(functionsMap: FunctionsMap, proxiesMap:
         
         const proxyNodesColor = '#FFE6C8';
 
-        var nodeTitle = ``;
-        var notAddedToCsProjFile = false;
+        let nodeTitle = ``;
+        let notAddedToCsProjFile = false;
 
         for (const name in proxiesMap) {
             const proxy = proxiesMap[name];
@@ -183,7 +227,7 @@ export function buildFunctionDiagramCode(functionsMap: FunctionsMap, proxiesMap:
                 nodeTitle = name;
             }
 
-            var nodeName = `proxy.${proxyPurifiedName}`;
+            let nodeName = `proxy.${proxyPurifiedName}`;
 
             code += `proxies.json -. "${name}" .-> ${nodeName}(["${space}${nodeTitle}"]):::proxy\n`;
             code += `style ${nodeName} fill:${proxyNodesColor}\n`;
@@ -207,7 +251,7 @@ export function buildFunctionDiagramCode(functionsMap: FunctionsMap, proxiesMap:
         }
 
         nodeTitle = `proxies.json`;
-        var nodeColor = proxyNodesColor;
+        let nodeColor = proxyNodesColor;
         if (notAddedToCsProjFile) {
             nodeTitle += ` #9888; Not added to .CSPROJ file!`;
             nodeColor = `#FF8080`;
@@ -228,7 +272,7 @@ function getRequestOverridesArrowCode(requestOverrides: any): string {
         return `-->`
     }
 
-    var arrowText = JSON.stringify(requestOverrides)
+    let arrowText = JSON.stringify(requestOverrides)
         .replace(/"/g, `'`)
         .replace(/'backend.request./g, `'`);
     
@@ -249,7 +293,7 @@ function getResponseOverridesArrowCode(responseOverrides: any): string {
         responseOverrides['response.body'] = '...';
     }
 
-    var arrowText = JSON.stringify(responseOverrides)
+    let arrowText = JSON.stringify(responseOverrides)
         .replace(/"/g, `'`)
         .replace(/'response./g, `'`);
     
