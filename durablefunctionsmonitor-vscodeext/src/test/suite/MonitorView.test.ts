@@ -417,7 +417,7 @@ suite('MonitorView Test Suite', () => {
 		await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
 		// Assert
-		assert.strictEqual(errorMessageThrown, `Failed to navigate to binding. ${errorMessageToThrow}`);
+		assert.strictEqual(errorMessageThrown, `Failed to navigate to binding. ${errorMessageToThrow}\n`);
 
 	}).timeout(testTimeoutInMs);
 
