@@ -12,12 +12,22 @@ export class SubscriptionTreeItem extends vscode.TreeItem {
 
     get isSubscriptionTreeItem(): boolean { return true; }
 
+    get subscriptionId(): string {
+        return this._subscriptionId;
+    }
+
+    get storageAccountNames(): string[] {
+        return this._storageAccountNames;
+    }
+
     // Returns storage account nodes, that belong to this subscription
     get storageAccountNodes(): StorageAccountTreeItem[] {
         return this._storageAccounts.nodes.filter(a => this.isMyStorageAccount(a));
     }
 
-    constructor(subscriptionName: string,
+    constructor(
+        private _subscriptionId: string,
+        subscriptionName: string,
         private _storageAccounts: StorageAccountTreeItems,
         private _storageAccountNames: string[],
         protected _resourcesFolderPath: string
@@ -43,7 +53,7 @@ export class DefaultSubscriptionTreeItem extends SubscriptionTreeItem {
         private _otherSubscriptionNodes: SubscriptionTreeItem[],
         resourcesFolderPath: string
     ) {
-        super('Storages', storageAccounts, [], resourcesFolderPath);
+        super('', 'Storages', storageAccounts, [], resourcesFolderPath);
         this.iconPath = path.join(this._resourcesFolderPath, 'storageAccounts.svg');
     }
 

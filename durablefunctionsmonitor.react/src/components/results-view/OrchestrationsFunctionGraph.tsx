@@ -41,12 +41,15 @@ export class OrchestrationsFunctionGraph extends FunctionGraphTabBase<{ state: R
         const svgElement = document.getElementById('mermaidSvgId');
         if (!!svgElement) {
 
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('function'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('activity'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('entity'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('proxy'));
+            for (const className of ['function', 'activity', 'entity', 'proxy']) {
+                this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName(className));
+            }
 
             this.mountClickEventToOrchestrationNodes(svgElement.getElementsByClassName('orchestrator'));
+
+            for (const className of FunctionGraphTabBase.clickableBindingTypes) {
+                this.mountClickEventToBindingNodes(svgElement.getElementsByClassName(className));
+            }
         }
     }
 

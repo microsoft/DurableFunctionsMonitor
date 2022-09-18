@@ -17,6 +17,47 @@ export class FunctionGraphTabBase<P extends { state: FunctionGraphStateBase }> e
 
     protected static nodeTypesToHighlight: Array<'orchestrator' | 'entity' | 'activity'> = ['orchestrator', 'entity'];
 
+    protected static readonly clickableBindingTypes = [
+        'blobTrigger',
+        'eventHubTrigger',
+        'serviceBusTrigger',
+        'queueTrigger',
+        'table',
+        'blob',
+        'queue',
+        'eventHub',
+        'serviceBus',
+    ];
+
+    // Detects graph nodes that look like bindings and executes an action against them
+    protected forEachBindingNode(nodes: HTMLCollectionOf<Element> | Array<Element>, action: (node: HTMLElement, functionName: string, bindingIndex: number) => void) {
+        
+        for (var i = 0; i < nodes.length; i++) {
+            const el = nodes[i] as HTMLElement;
+
+            const match = /flowchart-(.+).binding(\d+)\./.exec(el.id);
+            if (!!match) {
+                action(el, match[1], parseInt(match[2]));
+            }
+        }
+    }
+
+    protected mountClickEventToBindingNodes(nodes: HTMLCollection): void {
+
+        const state = this.props.state;
+
+        // Navigating to bindings is only supported in VsCode ext
+        if (!!state.backendClient.isVsCode) {
+            
+            this.forEachBindingNode(nodes, (el, functionName, bindingIndex) => {
+
+                el.onclick = () => state.gotoBinding(functionName, bindingIndex);
+    
+                this.showAsClickable(el);
+            })
+        }
+    }
+
     // Handles window and graph resize. Must remain static and shouldn't use 'this'.
     protected static repositionMetricHints() {
 
@@ -32,11 +73,11 @@ export class FunctionGraphTabBase<P extends { state: FunctionGraphStateBase }> e
             return;
         }
 
-        // Selecting graph node elements that should be decorated with metrich chips
+        // Selecting graph node elements that should be decorated with metric chips
         const instanceNodes = FunctionGraphTabBase.nodeTypesToHighlight.map(nodeType => Array.from(svgElement.getElementsByClassName(nodeType))).flat();
         var isHighlightedAttributeName = '';
   
-        FunctionGraphTabBase.forEachFunctionNode(instanceNodes, (instanceNode, functionName) => {
+        FunctionGraphBase.forEachFunctionNode(instanceNodes, (instanceNode, functionName) => {
 
             const metricsHintNode = document.getElementById(`metrics-hint-${functionName.toLowerCase()}`);
             if (!!metricsHintNode) {

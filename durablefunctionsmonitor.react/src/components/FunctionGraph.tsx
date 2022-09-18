@@ -35,11 +35,9 @@ export class FunctionGraph extends FunctionGraphBase<{ state: FunctionGraphState
 
         if (!!svgElement) {
 
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('function'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('orchestrator'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('activity'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('entity'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('proxy'));
+            for (const className of ['function', 'orchestrator', 'activity', 'entity', 'proxy']) {
+                this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName(className));
+            }
         }
     }
     

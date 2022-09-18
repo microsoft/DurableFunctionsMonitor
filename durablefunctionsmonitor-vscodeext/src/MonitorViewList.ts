@@ -8,18 +8,18 @@ import axios from 'axios';
 
 import { ConnStringUtils } from "./ConnStringUtils";
 
-import { MonitorView } from "./MonitorView";
+import { AzureConnectionInfo, MonitorView } from "./MonitorView";
 import { BackendProcess } from './BackendProcess';
 import { StorageConnectionSettings, CreateAuthHeadersForTableStorage, CreateIdentityBasedAuthHeadersForTableStorage, AzureSubscription } from "./StorageConnectionSettings";
 import { Settings } from './Settings';
 import { FunctionGraphList } from './FunctionGraphList';
-import { table } from 'console';
 
 // Represents all MonitorViews created so far
 export class MonitorViewList {
 
     constructor(private _context: vscode.ExtensionContext,
         private _functionGraphList: FunctionGraphList,
+        private _getTokenCredentialsForGivenConnectionString: (connString: string) => AzureConnectionInfo | undefined,
         private _onViewStatusChanged: () => void,
         private _log: (line: string) => void) {
     }
@@ -45,7 +45,9 @@ export class MonitorViewList {
             this.getOrAddBackend(connSettings),
             connSettings.hubName,
             this._functionGraphList,
-            this._onViewStatusChanged);
+            this._getTokenCredentialsForGivenConnectionString,
+            this._onViewStatusChanged,
+            this._log);
         
         this._monitorViews[connSettings.hashKey] = monitorView;
         return monitorView;

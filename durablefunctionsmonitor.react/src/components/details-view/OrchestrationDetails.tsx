@@ -44,12 +44,9 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
 
         if (!!svgElement) {
 
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('actor'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('messageText'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('task'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('taskText'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('taskTextOutsideLeft'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('taskTextOutsideRight'));
+            for (const className of ['actor', 'messageText', 'task', 'taskText', 'taskTextOutsideLeft', 'taskTextOutsideRight']) {
+                this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName(className));
+            }
         }
     }
 

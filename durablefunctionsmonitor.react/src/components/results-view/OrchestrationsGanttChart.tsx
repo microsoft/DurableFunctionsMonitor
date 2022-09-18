@@ -27,10 +27,9 @@ export class OrchestrationsGanttChart extends React.Component<{ state: ResultsGa
 
         if (!!svgElement) {
 
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('task'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('taskText'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('taskTextOutsideLeft'));
-            this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName('taskTextOutsideRight'));
+            for (const className of ['task', 'taskText', 'taskTextOutsideLeft', 'taskTextOutsideRight']) {
+                this.mountClickEventToFunctionNodes(svgElement.getElementsByClassName(className));
+            }
         }
     }
 

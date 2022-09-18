@@ -24,6 +24,11 @@ export class SubscriptionTreeItems {
         private _log: (l: string) => void)
     { }
 
+    get nodes(): SubscriptionTreeItem[] {
+
+        return this._nodes ?? [];
+    }
+
     // Returns subscription nodes, but only those that have some TaskHubs in them
     async getNonEmptyNodes(): Promise<SubscriptionTreeItem[]> {
 
@@ -257,6 +262,7 @@ export class SubscriptionTreeItems {
         return results
             .filter(r => r !== null)
             .map(r => new SubscriptionTreeItem(
+                r!.subscriptionId,
                 r!.subscriptionName,
                 this._storageAccounts,
                 r!.storageAccountNames,

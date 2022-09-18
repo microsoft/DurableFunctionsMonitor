@@ -3,7 +3,7 @@
 
 import * as vscode from 'vscode';
 
-import { MonitorView } from "./MonitorView";
+import { AzureConnectionInfo, MonitorView } from "./MonitorView";
 import { MonitorViewList } from "./MonitorViewList";
 import { StorageAccountTreeItem } from './StorageAccountTreeItem';
 import { StorageAccountTreeItems } from './StorageAccountTreeItems';
@@ -13,25 +13,27 @@ import { SubscriptionTreeItem } from './SubscriptionTreeItem';
 import { FunctionGraphList } from './FunctionGraphList';
 import { Settings, UpdateSetting } from './Settings';
 import { StorageConnectionSettings } from "./StorageConnectionSettings";
+import { ConnStringUtils } from './ConnStringUtils';
 
 // Root object in the hierarchy. Also serves data for the TreeView.
 export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> { 
 
     constructor(private _context: vscode.ExtensionContext, functionGraphList: FunctionGraphList, logChannel?: vscode.OutputChannel) {
 
-        this._monitorViews = new MonitorViewList(this._context,
-            functionGraphList,
-            () => this._onDidChangeTreeData.fire(),
-            !logChannel ? () => { } : (l) => logChannel.append(l));
-
-        const resourcesFolderPath = this._context.asAbsolutePath('resources');
-        this._storageAccounts = new StorageAccountTreeItems(resourcesFolderPath, this._monitorViews);
-
         // Using Azure Account extension to connect to Azure, get subscriptions etc.
         const azureAccountExtension = vscode.extensions.getExtension('ms-vscode.azure-account');
 
         // Typings for azureAccount are here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
         const azureAccount = !!azureAccountExtension ? azureAccountExtension.exports : undefined;
+
+        this._monitorViews = new MonitorViewList(this._context,
+            functionGraphList,
+            (connString) => this.getTokenCredentialsForGivenConnectionString(azureAccount, connString),
+            () => this._onDidChangeTreeData.fire(),
+            !logChannel ? () => { } : (l) => logChannel.append(l));
+
+        const resourcesFolderPath = this._context.asAbsolutePath('resources');
+        this._storageAccounts = new StorageAccountTreeItems(resourcesFolderPath, this._monitorViews);
         
         if (!!azureAccount && !!azureAccount.onFiltersChanged) {
 
@@ -408,5 +410,39 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             this._inProgress = false;
             vscode.window.showErrorMessage(!(err as any).message ? err : (err as any).message);
         }
+    }
+
+    // Tries to map a Storage connection string to some Azure credentials
+    private getTokenCredentialsForGivenConnectionString(azureAccount: any, connString: string): AzureConnectionInfo | undefined {
+
+        const storageAccountName = ConnStringUtils.GetAccountName(connString);
+        if (!storageAccountName) {
+            return;
+        }
+
+        const subscription = azureAccount.filters.find((s: any) => { 
+
+            const subscriptionNode = this._subscriptions.nodes.find(n => n.subscriptionId === s.subscription.subscriptionId);
+            if (!subscriptionNode) {
+                return false;
+            }
+
+            for (const accountName of subscriptionNode.storageAccountNames) {
+                if (accountName.toLowerCase() === storageAccountName.toLowerCase()) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        if (!subscription) {
+            return;
+        }
+
+        return {
+            credentials: subscription.session.credentials2,
+            subscriptionId: subscription.subscription.subscriptionId,
+            tenantId: subscription.session.tenantId
+        };
     }
 }

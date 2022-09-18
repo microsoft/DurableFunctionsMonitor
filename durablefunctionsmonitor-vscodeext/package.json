@@ -303,7 +303,7 @@
         "@types/glob": "^7.1.1",
         "@types/mocha": "^5.2.6",
         "@types/node": "^14.6.4",
-        "@types/vscode": "^1.39.0",
+        "@types/vscode": "^1.62.0",
         "glob": "^7.1.4",
         "mocha": "^8.2.0",
         "tslint": "^5.12.1",
@@ -312,12 +312,14 @@
         "vscode-test": "^1.2.0"
     },
     "dependencies": {
-        "@azure/ms-rest-nodeauth": "^3.1.0",
+        "@azure/arm-resourcegraph": "^4.2.1",
         "@azure/arm-storage": "^15.1.0",
+        "@azure/ms-rest-nodeauth": "^3.1.0",
         "@types/crypto-js": "^3.1.47",
         "@types/rimraf": "^3.0.0",
         "axios": "^0.21.2",
         "crypto-js": "^4.0.0",
+        "open": "^8.4.0",
         "portscanner": "^2.2.0",
         "rimraf": "^3.0.2"
     },

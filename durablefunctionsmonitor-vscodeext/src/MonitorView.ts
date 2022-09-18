@@ -5,6 +5,9 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
+import * as open from 'open';
+import { ResourceGraphClient } from '@azure/arm-resourcegraph';
+import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
 import * as SharedConstants from './SharedConstants';
 
@@ -13,6 +16,8 @@ import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { ConnStringUtils } from './ConnStringUtils';
 import { Settings } from './Settings';
 import { FunctionGraphList } from './FunctionGraphList';
+
+export type AzureConnectionInfo = { credentials: DeviceTokenCredentials, subscriptionId: string, tenantId: string };
 
 // Represents the main view, along with all detailed views
 export class MonitorView
@@ -35,7 +40,9 @@ export class MonitorView
         private _backend: BackendProcess,
         private _hubName: string,
         private _functionGraphList: FunctionGraphList,
-        private _onViewStatusChanged: () => void) {
+        private _getTokenCredentialsForGivenConnectionString: (connString: string) => AzureConnectionInfo | undefined,
+        private _onViewStatusChanged: () => void,
+        private _log: (line: string) => void) {
         
         const ws = vscode.workspace;
         if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
@@ -150,7 +157,7 @@ export class MonitorView
     private _childWebViewPanels: vscode.WebviewPanel[] = [];
 
     // Functions and proxies currently shown
-    private _functionsAndProxies: { [name: string]: { filePath?: string, pos?: number } } = {};
+    private _functionsAndProxies: { [name: string]: { filePath?: string, pos?: number, bindings?: any[] } } = {};
 
     private _functionProjectPath: string = '';
 
@@ -239,7 +246,7 @@ export class MonitorView
                     });
                 });
                 return;
-            case 'GotoFunctionCode':
+            case 'GotoFunctionCode': {
 
                 const func = this._functionsAndProxies[request.url];
                 if (!!func && !!func.filePath) {
@@ -254,6 +261,20 @@ export class MonitorView
                 }
 
                 return;
+            }
+            case 'GotoBinding': {
+
+                const func = this._functionsAndProxies[request.url];
+                if (!!func && !!func.bindings) {
+
+                    const binding = func.bindings[request.data];
+
+                    this.navigateToBinding(binding)
+                        .catch(err => this._log(`Failed to navigate to binding. ${err.message ?? err}\n`));
+                }
+
+                return;
+            }
             case 'VisualizeFunctionsAsAGraph':
 
                 const ws = vscode.workspace;
@@ -419,5 +440,258 @@ export class MonitorView
             .then(response => {
                 return response.data as string[];
             });
+    }
+
+    private async navigateToBinding(binding: any): Promise<void> {
+
+        const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionStrings[0]);
+        if (!storageAccountName) {
+            return;
+        }
+        
+        const creds = this._getTokenCredentialsForGivenConnectionString(this._backend.storageConnectionStrings[0]);
+        if (!creds) {
+            return;
+        }
+        
+        switch (binding.type) {
+
+            case 'blob':
+            case 'blobTrigger': {
+
+                const blobPath = binding.blobPath ?? (binding.path ?? '');
+
+                await this.navigateToStorageBlob(creds, storageAccountName, blobPath);
+            }
+            break;
+            case 'queue':
+            case 'queueTrigger': {
+
+                await this.navigateToStorageQueue(creds, storageAccountName, binding.queueName);
+            }
+            break;
+            case 'table': {
+
+                await this.navigateToStorageTable(creds, storageAccountName, binding.tableName);
+            }
+            break;
+            case 'serviceBus':
+            case 'serviceBusTrigger': {
+
+                const queueOrTopicName =
+                    binding.queueOrTopicName ?? (
+                        binding.queueName ?? (
+                            binding.topicName ?? ''));
+                
+                await this.navigateToServiceBusQueueOrTopic(creds, queueOrTopicName);
+            }
+            break;
+            case 'eventHub':
+            case 'eventHubTrigger': {
+
+                await this.navigateToEventHub(creds, binding.eventHubName);
+            }
+            break;
+        }
+    }
+
+    private async navigateToStorageBlob(creds: AzureConnectionInfo, storageAccountName: string, blobPath: string): Promise<void> {
+
+        const storageAccounts = await this.getAzureResources(creds, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        if (storageAccounts.length !== 1) {
+            return;
+        }
+
+        const portalUrl = `https://ms.portal.azure.com/#view/Microsoft_Azure_Storage/ContainerMenuBlade/~/overview/storageAccountId/${encodeURIComponent(storageAccounts[0].id)}/path/${blobPath}`;
+
+        await open(portalUrl);
+    }
+
+    private async navigateToStorageQueue(creds: AzureConnectionInfo, storageAccountName: string, queueName: string): Promise<void> {
+
+        const storageAccounts = await this.getAzureResources(creds, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        if (storageAccounts.length !== 1) {
+            return;
+        }
+
+        const portalUrl = `https://ms.portal.azure.com/#view/Microsoft_Azure_Storage/QueueMenuBlade/~/overview/storageAccountId/${encodeURIComponent(storageAccounts[0].id)}/queueName/${queueName}`;
+
+        await open(portalUrl);
+    }
+
+    private async navigateToStorageTable(creds: AzureConnectionInfo, storageAccountName: string, tableName: string): Promise<void> {
+
+        const storageAccounts = await this.getAzureResources(creds, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        if (storageAccounts.length !== 1) {
+            return;
+        }
+
+        // Using Azure Storage extension for this, since it is not (yet) possible to navigate to a Storage Table in portal
+        var storageExt = vscode.extensions.getExtension('ms-azuretools.vscode-azurestorage');
+        if (!storageExt) {
+            return;
+        }
+
+        if (!storageExt.isActive) {
+            await storageExt.activate();
+        }
+        
+        await vscode.commands.executeCommand('azureStorage.openTable', {
+
+            root: {
+                storageAccountId: storageAccounts[0].id,
+                // This works with older versions of Azure Storage ext
+                subscriptionId: creds.subscriptionId
+            },
+
+            subscription: {
+                // This works with newer versions of Azure Storage ext
+                subscriptionId: creds.subscriptionId
+            },
+
+            tableName
+        });
+    }
+
+
+    private async navigateToServiceBusQueueOrTopic(creds: AzureConnectionInfo, queueOrTopicName: string): Promise<void> {
+
+        const namespaces = await this.getAzureResources(creds, 'microsoft.servicebus/namespaces') as { id: string, name: string, sku: any, location: string }[];
+        if (!namespaces.length) {
+            return;
+        }
+
+        const accessToken = (await creds.credentials.getToken()).accessToken;
+
+        const promises = namespaces.map(async ns => {
+
+            const queuesUri = `https://management.azure.com${ns.id}/queues?api-version=2017-04-01`;
+            const queuesPromise = axios.get(queuesUri, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+
+            const topicsUri = `https://management.azure.com${ns.id}/topics?api-version=2017-04-01`;
+            const topicsPromise = axios.get(topicsUri, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+
+            const queues: { id: string, name: string }[] = ((await queuesPromise).data?.value) ?? [];
+            const topics: { id: string, name: string }[] = ((await topicsPromise).data?.value) ?? [];
+
+            const matchedQueue = queues.find(q => q.name.toLowerCase() === queueOrTopicName.toLowerCase());
+            const matchedTopic = topics.find(t => t.name.toLowerCase() === queueOrTopicName.toLowerCase());
+
+            return {
+                name: ns.name,
+                location: ns.location,
+                sku: ns.sku,
+                matchedQueueId: !!matchedQueue ? matchedQueue.id : '',
+                matchedTopicId: !!matchedTopic ? matchedTopic.id : '',
+            };
+        });
+
+        const namespacesContainingThisName = (await Promise.all(promises))
+            .filter(i => !!i.matchedQueueId || !!i.matchedTopicId);
+        
+        let namespace: { matchedQueueId: string, matchedTopicId: string } | undefined;
+        
+        if (namespacesContainingThisName.length > 1) {
+            
+           // Asking user to resolve namespace ambiguity
+           namespace = await vscode.window.showQuickPick(namespacesContainingThisName.map(ns => {
+            
+                return {
+                    label: ns.name,
+                    description: `location: ${ns.location}, SKU: ${ns.sku?.name}`,
+                    matchedQueueId: ns.matchedQueueId,
+                    matchedTopicId: ns.matchedTopicId,
+                }
+               
+            }), { title: `"${queueOrTopicName}" is present in multiple Service Bus namespaces. Pick up the namespace to navigate to.`} );
+            
+            if (!namespace) {
+                return;
+            }
+
+        } else if (namespacesContainingThisName.length === 1) {
+
+            namespace = namespacesContainingThisName[0];
+            
+        } else {
+            return;
+        }
+
+        const resourceId = namespace.matchedQueueId ?? namespace.matchedTopicId;
+        const portalUrl = `https://ms.portal.azure.com/#@${creds.tenantId}/resource/${resourceId}`;
+
+        await open(portalUrl);
+    }
+
+    private async navigateToEventHub(creds: AzureConnectionInfo, hubName: string): Promise<void> {
+
+        const namespaces = await this.getAzureResources(creds, 'microsoft.eventhub/namespaces') as { id: string, name: string, sku: any, location: string }[];
+        if (!namespaces.length) {
+            return;
+        }
+
+        const accessToken = (await creds.credentials.getToken()).accessToken;
+
+        const promises = namespaces.map(async ns => {
+
+            const hubsUri = `https://management.azure.com${ns.id}/eventhubs?api-version=2017-04-01`;
+            const hubsResponse = await axios.get(hubsUri, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+
+            const hubs: { id: string, name: string }[] = (hubsResponse.data?.value) ?? [];
+
+            const matchedHub = hubs.find(q => q.name.toLowerCase() === hubName.toLowerCase());
+
+            return {
+                name: ns.name,
+                location: ns.location,
+                sku: ns.sku,
+                matchedHubId: !!matchedHub ? matchedHub.id : '',
+            };
+        });
+
+        const namespacesContainingThisName = (await Promise.all(promises))
+            .filter(i => !!i.matchedHubId);
+        
+        let namespace: { matchedHubId: string } | undefined;
+        
+        if (namespacesContainingThisName.length > 1) {
+            
+           // Asking user to resolve namespace ambiguity
+           namespace = await vscode.window.showQuickPick(namespacesContainingThisName.map(ns => {
+            
+                return {
+                    label: ns.name,
+                    description: `location: ${ns.location}, SKU: ${ns.sku?.name}`,
+                    matchedHubId: ns.matchedHubId,
+                }
+               
+            }), { title: `"${hubName}" is present in multiple Event Hub namespaces. Pick up the namespace to navigate to.`} );
+            
+            if (!namespace) {
+                return;
+            }
+
+        } else if (namespacesContainingThisName.length === 1) {
+
+            namespace = namespacesContainingThisName[0];
+            
+        } else {
+            return;
+        }
+
+        const portalUrl = `https://ms.portal.azure.com/#@${creds.tenantId}/resource/${namespace.matchedHubId}`;
+
+        await open(portalUrl);
+    }
+
+    private async getAzureResources(creds: AzureConnectionInfo, resourceType: string, resourceName?: string): Promise<any[]>{
+
+        const resourceGraphClient = new ResourceGraphClient(creds.credentials);
+        const response = await resourceGraphClient.resources({
+            subscriptions: [creds.subscriptionId],
+            query: `resources | where type == "${resourceType}"${ !!resourceName ? ` and name == "${resourceName}"` : '' }`
+        });
+
+        return response.data ?? [];
     }
 }

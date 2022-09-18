@@ -61,6 +61,16 @@ export class FunctionGraphStateBase extends MermaidDiagramStateBase {
         }
     }
 
+    gotoBinding(functionName: string, bindingIndex: number): void {
+
+        if (this.backendClient.isVsCode) {
+            
+            this.backendClient.call('GotoBinding', functionName, bindingIndex).then(() => { }, err => {
+                console.log(`Failed to goto binding: ${err.message}`);
+            });
+        }
+    }
+
     saveAsJson(): void {
 
         this.backendClient.call('SaveFunctionGraphAsJson', '').then(() => { }, err => {
