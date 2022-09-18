@@ -444,11 +444,6 @@ export class MonitorView
 
     private async navigateToBinding(binding: any): Promise<void> {
 
-        const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionStrings[0]);
-        if (!storageAccountName) {
-            return;
-        }
-        
         const creds = this._getTokenCredentialsForGivenConnectionString(this._backend.storageConnectionStrings[0]);
         if (!creds) {
             return;
@@ -459,6 +454,11 @@ export class MonitorView
             case 'blob':
             case 'blobTrigger': {
 
+                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionStrings[0]);
+                if (!storageAccountName) {
+                    return;
+                }
+        
                 const blobPath = binding.blobPath ?? (binding.path ?? '');
 
                 await this.navigateToStorageBlob(creds, storageAccountName, blobPath);
@@ -467,10 +467,20 @@ export class MonitorView
             case 'queue':
             case 'queueTrigger': {
 
+                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionStrings[0]);
+                if (!storageAccountName) {
+                    return;
+                }
+
                 await this.navigateToStorageQueue(creds, storageAccountName, binding.queueName);
             }
             break;
             case 'table': {
+
+                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionStrings[0]);
+                if (!storageAccountName) {
+                    return;
+                }
 
                 await this.navigateToStorageTable(creds, storageAccountName, binding.tableName);
             }

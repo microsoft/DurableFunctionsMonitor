@@ -368,6 +368,59 @@ suite('MonitorView Test Suite', () => {
 
 	}).timeout(testTimeoutInMs);
 
+	test('Handles GotoBinding', async () => {
+
+		// Arrange
+
+		const context: any = {};
+		const webView: any = {};
+		const functionGraphList: any = {};
+
+		const backend: any = {
+
+			storageConnectionStrings: [
+				Settings().storageEmulatorConnectionString
+			],
+		};
+
+		const request: any = {
+
+			method: 'GotoBinding',
+			url: 'my-func-2',
+			data: 0
+		};
+
+		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backendFolder });
+
+		const errorMessageToThrow = 'TestErrorMessageToCheckGotoBinding';
+		let errorMessageThrown: string = '';
+
+		const getTokenCredentialsForGivenConnectionString = (connString: string) => {
+			
+			assert.strictEqual(connString, backend.storageConnectionStrings[0]);
+
+			throw new Error(errorMessageToThrow);
+		}
+		const log = (s: string) => { errorMessageThrown = s; }
+
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, getTokenCredentialsForGivenConnectionString, () => { }, log);
+
+		(monitorView as any)._functionsAndProxies[request.url] = {
+			bindings: [ {} ]
+		};
+
+		// Act
+
+		(monitorView as any).handleMessageFromWebView(webView, request);
+
+		await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+
+		// Assert
+		assert.strictEqual(errorMessageThrown, `Failed to navigate to binding. ${errorMessageToThrow}`);
+
+	}).timeout(testTimeoutInMs);
+
 	test('Handles GET /function-map', async () => {
 
 		// Arrange
