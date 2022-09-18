@@ -29,7 +29,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         this._monitorViews = new MonitorViewList(this._context,
             functionGraphList,
             (connString) => this.getTokenCredentialsForGivenConnectionString(azureAccount, connString),
-            () => this._onDidChangeTreeData.fire(),
+            () => this._onDidChangeTreeData.fire(undefined),
             !logChannel ? () => { } : (l) => logChannel.append(l));
 
         const resourcesFolderPath = this._context.asAbsolutePath('resources');
@@ -45,7 +45,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             this._context,
             azureAccount,
             this._storageAccounts,
-            () => this._onDidChangeTreeData.fire(),
+            () => this._onDidChangeTreeData.fire(undefined),
             resourcesFolderPath,
             !logChannel ? () => { } : (l) => logChannel.appendLine(l)
         );
@@ -110,7 +110,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
         monitorView.show(messageToWebView).then(() => {
 
-            this._onDidChangeTreeData.fire();
+            this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;
 
         }, (err: any) => {
@@ -186,7 +186,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
         this._monitorViews.detachBackend(storageAccountItem.storageConnStrings).then(() => {
 
-            this._onDidChangeTreeData.fire();
+            this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;
 
         }, err => {
@@ -224,7 +224,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                     taskHubItem.removeFromTree();
 
-                    this._onDidChangeTreeData.fire();
+                    this._onDidChangeTreeData.fire(undefined);
                     this._inProgress = false;
 
                 }, (err) => { 
@@ -281,7 +281,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     // Handles 'Refresh' button
     refresh() {
         this._subscriptions.cleanup();
-        this._onDidChangeTreeData.fire();
+        this._onDidChangeTreeData.fire(undefined);
     }
 
     // Handles 'Detach from all Task Hubs' button
@@ -296,7 +296,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         this.cleanup().catch(err => {
             vscode.window.showErrorMessage(`Failed to detach from Task Hub. ${err}`);
         }).finally(() => {
-            this._onDidChangeTreeData.fire();
+            this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;
         });
     }
@@ -364,7 +364,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
             this._inProgress = false;
             this._storageAccounts.addNodeForMonitorView(monitorView);
-            this._onDidChangeTreeData.fire();
+            this._onDidChangeTreeData.fire(undefined);
 
             return monitorView;
 
@@ -400,7 +400,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             await monitorView.show();
 
             this._storageAccounts.addNodeForMonitorView(monitorView);
-            this._onDidChangeTreeData.fire();
+            this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;
             
         } catch (err) {

@@ -24,9 +24,8 @@ suite('MonitorViewList Test Suite', () => {
 		};
 
 		const functionGraphList: any = {};
-		const onViewStatusChanged = () => { };
 
-		const monitorViewList = new MonitorViewList(context, functionGraphList, onViewStatusChanged, () => { });
+		const monitorViewList = new MonitorViewList(context, functionGraphList, () => undefined, () => { }, () => { });
 
 		(vscode.window as any).showInputBox = () => Promise.resolve('UseDevelopmentStorage=true');
 

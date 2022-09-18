@@ -19,7 +19,7 @@ suite('StorageAccountTreeItems Test Suite', () => {
 		const context: any = {};
 
 		const functionGraphList = new FunctionGraphList(context, undefined);
-		const monitorViewList = new MonitorViewList(context, functionGraphList, () => { }, () => { });
+		const monitorViewList = new MonitorViewList(context, functionGraphList, () => undefined, () => { }, () => { });
 
 		const resourcesFolderPath = path.join(__dirname, '..', '..', '..', 'resources');
 
@@ -32,9 +32,9 @@ suite('StorageAccountTreeItems Test Suite', () => {
 		const hubName2 = 'my-hub-2';
 		const hubName3 = 'my-hub-3';
 
-		const monitorView1 = new MonitorView(context, backend1, hubName1, functionGraphList, () => { });
-		const monitorView2 = new MonitorView(context, backend1, hubName2, functionGraphList, () => { });
-		const monitorView3 = new MonitorView(context, backend2, hubName3, functionGraphList, () => { });
+		const monitorView1 = new MonitorView(context, backend1, hubName1, functionGraphList, () => undefined, () => { }, () => { });
+		const monitorView2 = new MonitorView(context, backend1, hubName2, functionGraphList, () => undefined, () => { }, () => { });
+		const monitorView3 = new MonitorView(context, backend2, hubName3, functionGraphList, () => undefined, () => { }, () => { });
 
 		// Act
 
@@ -74,7 +74,7 @@ suite('StorageAccountTreeItems Test Suite', () => {
 		const context: any = {};
 
 		const functionGraphList = new FunctionGraphList(context, undefined);
-		const monitorViewList = new MonitorViewList(context, functionGraphList, () => { }, () => { });
+		const monitorViewList = new MonitorViewList(context, functionGraphList, () => undefined, () => { }, () => { });
 
 		const resourcesFolderPath = path.join(__dirname, '..', '..', '..', 'resources');
 
