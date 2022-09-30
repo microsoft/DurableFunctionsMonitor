@@ -367,6 +367,60 @@ suite('BackendProcess Test Suite', () => {
 		assert.strictEqual(!env.DFM_SQL_CONNECTION_STRING, true);
 		assert.strictEqual(!env.DFM_HUB_NAME, true);
 	});		
+
+	test('Uses correct custom backend binaries', async () => {
+
+		// Arrange
+
+		const extensionPath = path.join(__dirname, '..', '..', '..');
+
+		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub', false, true);
+
+		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => { });
+
+		await UpdateSetting('backendVersionToUse', '.Net Core 3.1');
+
+		// Act
+
+		try {
+
+			const binariesFolder = await (backendProcess as any).getAndCheckBinariesFolder();
+
+			// Assert
+
+			assert.strictEqual(binariesFolder, path.join(extensionPath, 'custom-backends', 'netcore31'));
+
+		} finally {
+
+			await UpdateSetting('backendVersionToUse', undefined);
+		}
+	});
+
+	test('Throws on older Functions version', async () => {
+
+		// Arrange
+
+		const extensionPath = path.join(__dirname, '..', '..', '..');
+
+		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub', false, true);
+
+		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => { });
+
+		(BackendProcess as any)._funcVersion = '3.4.5';
+
+		// Act
+
+		try {
+
+			await (backendProcess as any).getAndCheckBinariesFolder();
+
+		} catch(err: any) {
+
+			// Assert
+
+			assert.strictEqual(err.message, `Default backend now requires at least Azure Functions 4.x. Install Azure Functions Core Tools v4 or, alternatively, select a custom backend in extension's settings.`);
+		}
+	});
 });
 
 async function copyBackendProjectToTempFolder(customBackendName: string): Promise<string>{

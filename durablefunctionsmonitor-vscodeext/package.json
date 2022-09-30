@@ -249,7 +249,7 @@
                         ".Net Core 2.1"
                     ],
                     "default": "Default",
-                    "description": "Choose which backend binaries to use when starting a backend. Currently 'Default' backend targets .Net Core 2.1, but you can try other ones, if 'Default' doesn't work for you."
+                    "description": "Choose which backend binaries to use when starting a backend. Currently 'Default' backend targets .NET 6, but you can try other ones, if 'Default' doesn't work for you."
                 },
                 "durableFunctionsMonitor.customPathToBackendBinaries": {
                     "type": "string",
