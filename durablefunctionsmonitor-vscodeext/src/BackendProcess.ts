@@ -316,6 +316,9 @@ export class BackendProcess {
         const versionParts = BackendProcess._funcVersion.split('.');
         if (!!versionParts.length && (parseInt(versionParts[0]) < minimumVersion)) {
             
+            // Making sure the version is re-validated next time
+            BackendProcess._funcVersion = '';
+
             throw new Error(`Default backend now requires at least Azure Functions ${minimumVersion}.x. Install Azure Functions Core Tools v${minimumVersion} or, alternatively, select a custom backend in extension's settings.`);
         }
 
