@@ -50,11 +50,13 @@ suite('BackendProcess Test Suite', () => {
 			}
 		};
 
+		await UpdateSetting('customPathToBackendBinaries', tempBackendFolder);
+
 		// Act
 
 		try {
 
-			const backendProcess = new BackendProcess(tempBackendFolder, connSettings, callbackFunc, logFunc);
+			const backendProcess = new BackendProcess('', connSettings, callbackFunc, logFunc);
 
 			// Calling getBackend() twice. It should return the same promise.
 			try {
@@ -66,11 +68,11 @@ suite('BackendProcess Test Suite', () => {
 				await backendProcess.getBackend();
 			}
 
-		} catch (err) {
+		} catch (err: any) {
 
 			// Assert
 
-			assert.strictEqual((err as string).startsWith(`Func: Value cannot be null. (Parameter 'provider')`), true);
+			assert.strictEqual(err.message?.startsWith(`Func: Value cannot be null. (Parameter 'provider')`), true);
 
 			assert.strictEqual(backendWasPublished, true);
 			assert.strictEqual(callbackWasCalled, true);
@@ -80,6 +82,8 @@ suite('BackendProcess Test Suite', () => {
 			return;
 
 		} finally {
+
+			await UpdateSetting('customPathToBackendBinaries', undefined);
 
 			// Wait a bit, before removing backend binaries
 			await new Promise<void>((resolve) => setTimeout(resolve, 800));
@@ -126,9 +130,11 @@ suite('BackendProcess Test Suite', () => {
 			}
 		};
 
+		await UpdateSetting('customPathToBackendBinaries', tempBackendFolder);
+
 		// Act
 
-		const backendProcess = new BackendProcess(tempBackendFolder, connSettings, callbackFunc, logFunc);
+		const backendProcess = new BackendProcess('', connSettings, callbackFunc, logFunc);
 
 		try {
 
@@ -142,12 +148,12 @@ suite('BackendProcess Test Suite', () => {
 				await backendProcess.getBackend();
 			}
 
-		} catch (err) {
+		} catch (err: any) {
 
 			// Assert
 
 			// Backend should return 401 from its ping endpoint, due to invalid Task Hub name
-			assert.strictEqual(err, `Request failed with status code 401`);
+			assert.strictEqual(err.message, `Request failed with status code 401`);
 
 			assert.strictEqual(backendWasPublished, true);
 			assert.strictEqual(callbackWasCalled, true);
@@ -157,6 +163,8 @@ suite('BackendProcess Test Suite', () => {
 			return;
 
 		} finally {
+
+			await UpdateSetting('customPathToBackendBinaries', undefined);
 
 			await backendProcess.cleanup();
 
@@ -214,20 +222,22 @@ suite('BackendProcess Test Suite', () => {
 		const backendTimeoutInSeconds = 8;
 		const previousBackendTimeoutInSeconds = Settings().backendTimeoutInSeconds;
 		await UpdateSetting('backendTimeoutInSeconds', backendTimeoutInSeconds);
+
+		await UpdateSetting('customPathToBackendBinaries', tempBackendFolder);
 		
 		// Act
 
-		const backendProcess = new BackendProcess(tempBackendFolder, connSettings, callbackFunc, logFunc);
+		const backendProcess = new BackendProcess('', connSettings, callbackFunc, logFunc);
 
 		try {
 
 			await backendProcess.getBackend();
 				
-		} catch (err) {
+		} catch (err: any) {
 
 			// Assert
 
-			assert.strictEqual(err, `No response within ${backendTimeoutInSeconds} seconds. Ensure you have the latest Azure Functions Core Tools installed globally.`);
+			assert.strictEqual(err.message, `No response within ${backendTimeoutInSeconds} seconds. Ensure you have the latest Azure Functions Core Tools installed globally.`);
 
 			assert.strictEqual(backendWasPublished, true);
 			assert.strictEqual(callbackWasCalled, true);
@@ -237,6 +247,8 @@ suite('BackendProcess Test Suite', () => {
 			return;
 
 		} finally {
+
+			await UpdateSetting('customPathToBackendBinaries', undefined);
 
 			(axios as any).get = oldAxiosGet;
 			await UpdateSetting('backendTimeoutInSeconds', previousBackendTimeoutInSeconds);
@@ -268,11 +280,11 @@ suite('BackendProcess Test Suite', () => {
 
 			await backendProcess.getBackend();
 
-		} catch (err) {
+		} catch (err: any) {
 
 			// Assert
 
-			assert.strictEqual(err, `Couldn't find backend binaries in ${nonExistingFolder}`);
+			assert.strictEqual(err.message, `Couldn't find backend binaries in ${path.join(nonExistingFolder, 'backend')}`);
 
 			return;
 		}

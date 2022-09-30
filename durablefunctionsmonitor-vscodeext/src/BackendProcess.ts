@@ -12,7 +12,6 @@ import * as cp from 'child_process';
 import * as util from 'util';
 
 const execAsync = util.promisify(cp.exec);
-const { execSync } = require("child_process");
 
 import * as SharedConstants from './SharedConstants';
 import { Settings } from './Settings';
@@ -22,12 +21,12 @@ import { ConnStringUtils } from './ConnStringUtils';
 // Responsible for running the backend process
 export class BackendProcess {
 
-    constructor(private _binariesFolder: string,
+    constructor(private _extensionRootFolder: string,
         private _storageConnectionSettings: StorageConnectionSettings,
         private _removeMyselfFromList: () => void,
         private _log: (l: string) => void)
     { }
-    
+
     // Underlying Storage Connection Strings
     get storageConnectionStrings(): string[] {
         return this._storageConnectionSettings.storageConnStrings;
@@ -81,7 +80,7 @@ export class BackendProcess {
     private _backendUrl: string = '';
 
     // Folder where backend is run from (might be different, if the backend needs to be published first)
-    private _eventualBinariesFolder: string = this._binariesFolder;
+    private _eventualBinariesFolder: string = '';
 
     // A nonce for communicating with the backend
     private _backendCommunicationNonce = crypto.randomBytes(64).toString('base64');
@@ -89,8 +88,8 @@ export class BackendProcess {
     // Path to Functions host
     private static _funcExePath: string = '';
 
-    // True if Azure Functions Core Tools is installed
-    private static _coreToolsInstalled: boolean = false;
+    // Version of Azure Functions Core Tools currently installed
+    private static _funcVersion: string = '';
 
     // Prepares a set of environment variables for the backend process
     private getEnvVariables(): {} {
@@ -138,55 +137,6 @@ export class BackendProcess {
 
         return new Promise<void>((resolve, reject) => {
 
-            this._log(`Using Functions host: ${funcExePath}\n`);
-            this._log(`Attempting to start the backend from ${this._binariesFolder} on ${backendUrl}...`);
-
-            if (!fs.existsSync(this._binariesFolder)) {
-                reject(`Couldn't find backend binaries in ${this._binariesFolder}`);
-                return;
-            }
-    
-            // If this is a source code project
-            if (fs.readdirSync(this._binariesFolder).some(fn => fn.toLowerCase().endsWith('.csproj'))) {
-    
-                const publishFolder = path.join(this._binariesFolder, 'publish');
-                
-                // if it wasn't published yet
-                if (!fs.existsSync(publishFolder)) {
-    
-                    // publishing it
-                    const publishProcess = cp.spawnSync('dotnet', ['publish', '-o', publishFolder],
-                        { cwd: this._binariesFolder, encoding: 'utf8' }
-                    );
-    
-                    if (!!publishProcess.stdout) {
-                        this._log(publishProcess.stdout.toString());
-                    }
-    
-                    if (publishProcess.status !== 0) {
-    
-                        const err = 'dotnet publish failed. ' +
-                            (!!publishProcess.stderr ? publishProcess.stderr.toString() : `status: ${publishProcess.status}`);
-    
-                        this._log(`ERROR: ${err}`);
-                        reject(err);
-                        return;
-                    }
-                }
-    
-                this._eventualBinariesFolder = publishFolder;
-            }
-
-            try {
-                if (!BackendProcess._coreToolsInstalled){
-                    const cmd = `"${funcExePath}" --version`;
-                    execSync(cmd);
-                    BackendProcess._coreToolsInstalled = true;
-                }
-            } catch (error) {
-                reject(`Azure Functions Core Tools not found. Ensure that you have the latest Azure Functions Core Tools installed globally.`);
-            }
-
             this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString(), '--csharp'], {
                 cwd: this._eventualBinariesFolder,
                 env: this.getEnvVariables()
@@ -197,14 +147,14 @@ export class BackendProcess {
                 this._log(msg);
     
                 if (msg.toLowerCase().includes('no valid combination of account information found')) {
-                    reject('The provided Storage Connection String and/or Hub Name seem to be invalid.');
+                    reject(new Error('The provided Storage Connection String and/or Hub Name seem to be invalid.'));
                 }
             });
 
             this._funcProcess!.stderr?.on('data', (data) => {
                 const msg = data.toString();
                 this._log(`ERROR: ${msg}`);
-                reject(`Func: ${msg}`);
+                reject(new Error(`Func: ${msg}`));
             });
 
             console.log(`Waiting for ${backendUrl} to respond...`);
@@ -232,20 +182,20 @@ export class BackendProcess {
                         // This typically happens when mistyping Task Hub name
 
                         clearInterval(intervalToken);
-                        reject(err.message);
+                        reject(err);
                     }
                 });
 
                 if (cancelToken.isCancellationRequested) {
 
                     clearInterval(intervalToken);
-                    reject(`Cancelled by the user`);
+                    reject(new Error(`Cancelled by the user`));
 
                 } else if (--i <= 0) {
                     
                     console.log(`Timed out waiting for the backend!`);
                     clearInterval(intervalToken);
-                    reject(`No response within ${timeoutInSeconds} seconds. Ensure you have the latest Azure Functions Core Tools installed globally.`);
+                    reject(new Error(`No response within ${timeoutInSeconds} seconds. Ensure you have the latest Azure Functions Core Tools installed globally.`));
                 }
 
             }, intervalInMs);
@@ -265,12 +215,54 @@ export class BackendProcess {
             try {
 
                 const funcExePath = await this.getFuncExePath();
+                this._log(`Using Functions host: ${funcExePath}\n`);
 
                 // Starting the backend on a first available port
                 const portNr = await portscanner.findAPortNotInUse(37072, 38000);
 
                 const backendUrl = Settings().backendBaseUrl.replace('{portNr}', portNr.toString());
                 progress.report({ message: backendUrl });
+
+                const binariesFolder = await this.getAndCheckBinariesFolder(funcExePath);
+                this._log(`Attempting to start the backend from ${binariesFolder} on ${backendUrl}...`);
+    
+                if (!fs.existsSync(binariesFolder)) {
+                    throw new Error(`Couldn't find backend binaries in ${binariesFolder}`);
+                }
+        
+                // If this is a source code project
+                if (fs.readdirSync(binariesFolder).some(fn => fn.toLowerCase().endsWith('.csproj'))) {
+        
+                    const publishFolder = path.join(binariesFolder, 'publish');
+                    
+                    // if it wasn't published yet
+                    if (!fs.existsSync(publishFolder)) {
+        
+                        // publishing it
+                        const publishProcess = cp.spawnSync('dotnet', ['publish', '-o', publishFolder],
+                            { cwd: binariesFolder, encoding: 'utf8' }
+                        );
+        
+                        if (!!publishProcess.stdout) {
+                            this._log(publishProcess.stdout.toString());
+                        }
+        
+                        if (publishProcess.status !== 0) {
+        
+                            const err = 'dotnet publish failed. ' +
+                                (!!publishProcess.stderr ? publishProcess.stderr.toString() : `status: ${publishProcess.status}`);
+        
+                            this._log(`ERROR: ${err}`);
+                            throw new Error(err);
+                        }
+                    }
+        
+                    this._eventualBinariesFolder = publishFolder;
+    
+                } else {
+    
+                    this._eventualBinariesFolder = binariesFolder;
+                }
 
                 // Now running func.exe in backend folder
                 await this.startBackendOnPort(funcExePath, portNr, backendUrl, token)
@@ -283,6 +275,51 @@ export class BackendProcess {
                 throw err;
             }
         });
+    }
+
+    // Calculates the backend binaries folder to use, based on Settings
+    private async getAndCheckBinariesFolder(funcExePath: string): Promise<string> {
+
+        if (!BackendProcess._funcVersion) {
+
+            try {
+
+                BackendProcess._funcVersion = (await execAsync(`"${funcExePath}" --version`)).stdout;
+
+            } catch(err: any) {
+
+                throw new Error(`Azure Functions Core Tools not found. Ensure that you have the latest Azure Functions Core Tools installed globally.`);
+            }
+        }
+
+        var customBinariesFolder = Settings().customPathToBackendBinaries;
+        
+        if (!!customBinariesFolder) {
+
+            return customBinariesFolder;    
+
+        } else if (!!this._storageConnectionSettings.isMsSql) {
+            
+            return path.join(this._extensionRootFolder, 'custom-backends', 'mssql');
+
+        } else if (Settings().backendVersionToUse === '.Net Core 2.1') {
+
+            return path.join(this._extensionRootFolder, 'custom-backends', 'netcore21');
+
+        } else if (Settings().backendVersionToUse === '.Net Core 3.1') {
+
+            return path.join(this._extensionRootFolder, 'custom-backends', 'netcore31');
+        }
+
+        // Default backend now expects at least Functions V4. Checking that it is installed
+        const minimumVersion = 4;
+        const versionParts = BackendProcess._funcVersion.split('.');
+        if (!!versionParts.length && (parseInt(versionParts[0]) < minimumVersion)) {
+            
+            throw new Error(`Default backend now requires at least Azure Functions ${minimumVersion}.x. Install Azure Functions Core Tools v${minimumVersion} or, alternatively, select a custom backend in extension's settings.`);
+        }
+
+        return path.join(this._extensionRootFolder, 'backend');
     }
 
     private async getFuncExePath(): Promise<string> {

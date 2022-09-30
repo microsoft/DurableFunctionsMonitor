@@ -174,22 +174,8 @@ export class MonitorViewList {
 
         if (!backendProcess) {
 
-            var binariesFolder = Settings().customPathToBackendBinaries;
-            if (!binariesFolder) {
-                
-                if (connSettings.isMsSql) {
-                    binariesFolder = path.join(this._context.extensionPath, 'custom-backends', 'mssql');
-                } else if (Settings().backendVersionToUse === '.Net Core 2.1') {
-                    binariesFolder = path.join(this._context.extensionPath, 'custom-backends', 'netcore21');
-                } else if (Settings().backendVersionToUse === '.Net Core 3.1') {
-                    binariesFolder = path.join(this._context.extensionPath, 'custom-backends', 'netcore31');
-                } else {
-                    binariesFolder = path.join(this._context.extensionPath, 'backend');
-                }
-            }
-
             backendProcess = new BackendProcess(
-                binariesFolder,
+                this._context.extensionPath,
                 connSettings,
                 () => this.detachBackend(connSettings.storageConnStrings),
                 this._log
