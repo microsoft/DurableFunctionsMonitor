@@ -87,11 +87,11 @@ steps:
     verbose: false
 
 - task: Npm@1
-  displayName: 'npm install -g azure-functions-core-tools@3'
+  displayName: 'npm install -g azure-functions-core-tools@4'
   inputs:
     command: custom
     workingDir: 'durablefunctionsmonitor-vscodeext'
-    customCommand: 'install -g azure-functions-core-tools@3'
+    customCommand: 'install -g azure-functions-core-tools@4'
     verbose: false
 
 - task: Npm@1
