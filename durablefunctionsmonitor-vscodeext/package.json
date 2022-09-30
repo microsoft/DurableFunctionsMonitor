@@ -261,7 +261,7 @@
                 },
                 "durableFunctionsMonitor.backendTimeoutInSeconds": {
                     "type": "number",
-                    "default": "60",
+                    "default": 60,
                     "description": "Number of seconds to wait for the backend to start."
                 },
                 "durableFunctionsMonitor.storageEmulatorConnectionString": {
