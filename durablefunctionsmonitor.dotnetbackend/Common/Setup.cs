@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 
 namespace DurableFunctionsMonitor.DotNetBackend
@@ -85,7 +86,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         /// Provide your own implementation for a custom storage provider.
         /// Default implementation fetches history directly from XXXHistory table.
         /// </summary>
-        public Func<IDurableClient, string, string, string, IEnumerable<HistoryEvent>> GetInstanceHistoryRoutine { get; set; }
+        public Func<IDurableClient, string, string, string, Task<IEnumerable<HistoryEvent>>> GetInstanceHistoryRoutine { get; set; }
 
         public DfmExtensionPoints()
         {

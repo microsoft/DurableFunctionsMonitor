@@ -67,7 +67,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 {
                     var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
 
-                    history = DfmEndpoint.ExtensionPoints.GetInstanceHistoryRoutine(durableClient, connEnvVariableName, hubName, instanceId)
+                    history = (await DfmEndpoint.ExtensionPoints.GetInstanceHistoryRoutine(durableClient, connEnvVariableName, hubName, instanceId))
 
                         // This code duplication is intentional. We need to keep the whole iteration process inside try-block, because of potential exceptions during it.
 

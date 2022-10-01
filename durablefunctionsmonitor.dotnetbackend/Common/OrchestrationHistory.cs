@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json.Linq;
@@ -17,14 +18,14 @@ namespace DurableFunctionsMonitor.DotNetBackend
         /// Tries to mimic the history aggregation algorithm in https://github.com/Azure/azure-functions-durable-extension/blob/main/src/WebJobs.Extensions.DurableTask/ContextImplementations/DurableClient.cs
         /// Intentionally returns IEnumerable<>, because the consuming code not always iterates through all of it.
         /// </summary>
-        public static IEnumerable<HistoryEvent> GetHistoryDirectlyFromTable(IDurableClient durableClient, string connName, string hubName, string instanceId)
+        public static async Task<IEnumerable<HistoryEvent>> GetHistoryDirectlyFromTable(IDurableClient durableClient, string connName, string hubName, string instanceId)
         {
-            var tableClient = TableClient.GetTableClient(connName).Result;
+            var tableClient = await TableClient.GetTableClient(connName);
 
             // Need to fetch executionId first
 
-            var instanceEntity = tableClient.ExecuteAsync($"{hubName}Instances", TableOperation.Retrieve(instanceId, string.Empty))
-                .Result.Result as DynamicTableEntity;
+            var instanceEntity = (await tableClient.ExecuteAsync($"{hubName}Instances", TableOperation.Retrieve(instanceId, string.Empty)))
+                .Result as DynamicTableEntity;
 
             string executionId = instanceEntity.Properties.ContainsKey("ExecutionId") ? 
                 instanceEntity.Properties["ExecutionId"].StringValue : 
@@ -64,13 +65,21 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     return correlatedEventsMap;
                 });
 
-            // Memorizing 'ExecutionStarted' event, to further correlate with 'ExecutionCompleted'
-            HistoryEntity executionStartedEvent = null;
-
             // Fetching the history
             var query = new TableQuery<HistoryEntity>().Where(instanceIdFilter);
 
-            foreach (var evt in tableClient.GetAll($"{hubName}History", query))
+            // Intentionally using synchronous method, since not all results might be iterated
+            var queryResults = tableClient.GetAll($"{hubName}History", query);
+
+            return EnumerateEvents(queryResults, correlatedEventsTask);
+        }
+
+        private static IEnumerable<HistoryEvent> EnumerateEvents(IEnumerable<HistoryEntity> events, Task<Dictionary<int, HistoryEntity>> correlatedEventsTask)
+        {
+            // Memorizing 'ExecutionStarted' event, to further correlate with 'ExecutionCompleted'
+            HistoryEntity executionStartedEvent = null;
+
+            foreach (var evt in events)
             {
                 switch (evt.EventType)
                 {
@@ -146,12 +155,20 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             dynamic dynamicToken = token;
 
+            // Turned out that string.IsNullOrEmpty() can throw, if the passed dynamic value is not of a string type.
+            // So need to explicitly convert to string first
+            string name = dynamicToken.Name;
+            if (string.IsNullOrEmpty(name))
+            {
+                name = dynamicToken.FunctionName;
+            }
+
             return new HistoryEvent
             {
                 Timestamp = dynamicToken.Timestamp,
                 EventType = dynamicToken.EventType,
                 EventId = dynamicToken.EventId,
-                Name = string.IsNullOrEmpty(dynamicToken.Name) ? dynamicToken.FunctionName : dynamicToken.Name,
+                Name = name,
                 ScheduledTime = dynamicToken.ScheduledTime,
                 Result = dynamicToken.Result?.ToString(),
                 Details = dynamicToken.Details?.ToString(),
