@@ -47,7 +47,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
                 var orchestrations = durableClient
                     .ListAllInstances(filterClause.TimeFrom, filterClause.TimeTill, !hiddenColumns.Contains("input"), filterClause.RuntimeStatuses)
-                    .ExpandStatusIfNeeded(durableClient, connName, filterClause, hiddenColumns)
+                    .ExpandStatus(durableClient, connName, filterClause, hiddenColumns)
                     .ApplyRuntimeStatusesFilter(filterClause.RuntimeStatuses)
                     .ApplyFilter(filterClause)
                     .ApplyOrderBy(req.Query)
@@ -61,38 +61,45 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
     internal static class ExtensionMethodsForOrchestrations
     {
-        // Adds 'lastEvent' field to each entity, but only if being filtered by that field
-        internal static IEnumerable<ExpandedOrchestrationStatus> ExpandStatusIfNeeded(this IEnumerable<DurableOrchestrationStatus> orchestrations,
-            IDurableClient client, string connName, FilterClause filterClause, HashSet<string> hiddenColumns)
-        {
-            // Only expanding if being filtered by lastEvent or parentInstanceId
-            if (new [] { "lastEvent", "parentInstanceId" }.Contains(filterClause.FieldName)) 
-            {
-                return orchestrations.ExpandStatus(client, connName, filterClause, hiddenColumns);
-            } 
-            else
-            {
-                return orchestrations.Select(o => new ExpandedOrchestrationStatus(o, null, null, hiddenColumns));
-            }
-        }
-
-        // Adds 'lastEvent' field to each entity
+        // Adds artificial fields ('lastEvent' and 'parentInstanceId') fields to each entity, when needed
         internal static IEnumerable<ExpandedOrchestrationStatus> ExpandStatus(this IEnumerable<DurableOrchestrationStatus> orchestrations,
             IDurableClient client, string connName, FilterClause filterClause, HashSet<string> hiddenColumns)
         {
             var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
 
-            // Deliberately explicitly enumerating orchestrations here, to trigger all GetStatusAsync tasks in parallel.
-            // If just using yield return, they would be started and finished sequentially, one by one.
-            var list = new List<ExpandedOrchestrationStatus>();
+            // Iterating through the stream in batches of this size
+            var parallelizationLevel = 256;
+            var buf = new List<ExpandedOrchestrationStatus>();
+
             foreach (var orchestration in orchestrations)
             {
-                list.Add(new ExpandedOrchestrationStatus(orchestration,
-                    client.GetStatusAsync(orchestration.InstanceId, true, false, false),
-                    DfmEndpoint.ExtensionPoints.GetParentInstanceIdRoutine(client, connEnvVariableName, client.TaskHubName, orchestration.InstanceId),
-                    hiddenColumns));
+                var expandedStatus = new ExpandedOrchestrationStatus
+                (
+                    orchestration,
+                    // Only loading history when being filtered by lastEvent
+                    filterClause.FieldName == "lastEvent" ? client.GetStatusAsync(orchestration.InstanceId, true, false, false) : null,
+                    // Only loading parentInstanceId when being filtered by it
+                    filterClause.FieldName == "parentInstanceId" ? DfmEndpoint.ExtensionPoints.GetParentInstanceIdRoutine(client, connEnvVariableName, client.TaskHubName, orchestration.InstanceId) : null,
+                    hiddenColumns
+                );
+
+                buf.Add(expandedStatus);
+
+                if (buf.Count >= parallelizationLevel)
+                {
+                    foreach(var item in buf)
+                    {
+                        yield return item;
+                    }
+
+                    buf.Clear();
+                }
             }
-            return list;
+
+            foreach(var item in buf)
+            {
+                yield return item;
+            }
         }
 
         internal static IEnumerable<ExpandedOrchestrationStatus> ApplyOrderBy(this IEnumerable<ExpandedOrchestrationStatus> orchestrations,
