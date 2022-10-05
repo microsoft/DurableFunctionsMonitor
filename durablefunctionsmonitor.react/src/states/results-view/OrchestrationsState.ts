@@ -163,9 +163,21 @@ export class OrchestrationsState extends ErrorMessageState {
     }
 
     @computed
-    get showLastEventColumn(): boolean {
-        // Only showing lastEvent field when being filtered by it (because otherwise it is not populated on the server)
-        return this._filteredColumn === 'lastEvent' && (!!this._oldFilterValue);
+    get filteredOutColumns(): string[] {
+
+        // Only showing those fields when being filtered by them (because otherwise it is not populated on the server)
+        const result = ['lastEvent', 'parentInstanceId'];
+
+        if (!!this._oldFilterValue) {
+
+            const i = result.indexOf(this._filteredColumn);
+            if (i >= 0) {
+                
+                result.splice(i, 1)
+            }
+        }
+        
+        return result;
     }
 
     get backendClient(): IBackendClient { return this._backendClient; }
@@ -384,6 +396,8 @@ export class OrchestrationsState extends ErrorMessageState {
     @observable
     private _filterValue: string = '';
     @observable
+    private _oldFilterValue: string = '';
+    @observable
     private _filterOperator: FilterOperatorEnum = FilterOperatorEnum.Equals;
     @observable
     private _filteredColumn: string = '0';
@@ -397,8 +411,6 @@ export class OrchestrationsState extends ErrorMessageState {
     private readonly _tabStates: IResultsTabState[];
 
     private _refreshToken: NodeJS.Timeout;
-
-    private _oldFilterValue: string = '';
 
     private _oldTimeFrom: moment.Moment;
     private _oldTimeTill: moment.Moment;

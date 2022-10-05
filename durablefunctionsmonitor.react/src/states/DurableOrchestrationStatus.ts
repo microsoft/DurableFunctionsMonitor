@@ -43,6 +43,7 @@ export class EntityId {
 // A DTO returned by DurableOrchestrationClient.getStatusAll()
 export class DurableOrchestrationStatus {
     instanceId: string;
+    parentInstanceId: string;
     name: string;
     entityId: EntityId;
     runtimeStatus: RuntimeStatus;
@@ -64,6 +65,7 @@ export class DurableOrchestrationStatus {
 // Could instead just iterate through field names of DurableOrchestrationStatus, but reflection in TypeScript still looks tricky
 export const DurableOrchestrationStatusFields = [
     'instanceId',
+    'parentInstanceId',
     'name',
     'createdTime',
     'lastUpdatedTime',

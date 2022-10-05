@@ -45,7 +45,7 @@ export class OrchestrationLink extends React.Component<{ orchestrationId: string
     }
 
     // Just to be extra sure
-    private extraSanitizeHrefComponent(s: string): string{
-        return s.replace(/javascript:/gi, '');
+    private extraSanitizeHrefComponent(s: string): string {
+        return s?.replace(/javascript:/gi, '');
     }
 }

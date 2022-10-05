@@ -42,7 +42,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     return new NotFoundObjectResult($"Instance {instanceId} doesn't exist");
                 }
 
-                return new DetailedOrchestrationStatus(status, connName).ToJsonContentResult(Globals.FixUndefinedsInJson);
+                var detailedStatus = await DetailedOrchestrationStatus.CreateFrom(status, durableClient, connName, hubName, log);
+
+                return detailedStatus.ToJsonContentResult(Globals.FixUndefinedsInJson);
             });
         }
 
@@ -82,7 +84,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     log.LogWarning(ex, "Failed to get execution history from storage, falling back to DurableClient");
 
                     // Falling back to DurableClient
-                    var status = await GetInstanceStatusWithHistory(connName, instanceId, durableClient, log);
+                    var status = await GetInstanceStatusWithHistory(connName, hubName, instanceId, durableClient, log);
                     if (status == null)
                     {
                         return new NotFoundObjectResult($"Instance {instanceId} doesn't exist");
@@ -250,7 +252,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
-                var status = await GetInstanceStatusWithHistory(connName, instanceId, durableClient, log);
+                var status = await GetInstanceStatusWithHistory(connName, hubName, instanceId, durableClient, log);
                 if (status == null)
                 {
                     return new NotFoundObjectResult($"Instance {instanceId} doesn't exist");
@@ -303,7 +305,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             DateFormatString = "yyyy-MM-ddTHH:mm:ss.FFFFFFFZ"
         };
 
-        private static async Task<DetailedOrchestrationStatus> GetInstanceStatusWithHistory(string connName, string instanceId, IDurableClient durableClient, ILogger log)
+        private static async Task<DetailedOrchestrationStatus> GetInstanceStatusWithHistory(string connName, string hubName, string instanceId, IDurableClient durableClient, ILogger log)
         {
             var status = await durableClient.GetStatusAsync(instanceId, true, true, true);
             if (status == null)
@@ -313,7 +315,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
             ConvertScheduledTime(status.History);
 
-            return new DetailedOrchestrationStatus(status, connName);
+            var detailedStatus = await DetailedOrchestrationStatus.CreateFrom(status, durableClient, connName, hubName, log);
+
+            return detailedStatus;
         }
 
         private static void ConvertScheduledTime(JArray history)

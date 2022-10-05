@@ -81,3 +81,20 @@
     min-width: 160px;
     max-width: 200px;
 }
+
+.parent-instance-id-input {
+    padding-top: 20px;
+    padding-bottom: 17px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.parent-instance-id-input > a {
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.parent-instance-id-label {
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+}

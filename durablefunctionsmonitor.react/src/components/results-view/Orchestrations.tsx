@@ -387,7 +387,7 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
 
             {state.tabIndex === ResultsTabEnum.List && (<>
 
-                <OrchestrationsList state={listState} showLastEventColumn={state.showLastEventColumn} backendClient={state.backendClient} />
+                <OrchestrationsList state={listState} filteredOutColumns={state.filteredOutColumns} backendClient={state.backendClient} />
 
                 {state.inProgress && !!listState.orchestrations.length ? (<LinearProgress />) : (<Box height={4} />)}
                 

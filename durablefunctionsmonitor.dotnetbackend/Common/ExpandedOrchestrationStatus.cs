@@ -69,8 +69,37 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
         }
 
+        public string ParentInstanceId
+        {
+            get
+            {
+                if (this._parentInstanceIdTask == null)
+                {
+                    return string.Empty;
+                }
+
+                if (this._parentInstanceId != null)
+                {
+                    return this._parentInstanceId;
+                }
+
+                this._parentInstanceId = string.Empty;
+                try
+                {
+                    this._parentInstanceId = this._parentInstanceIdTask.Result;
+                }
+                catch(Exception)
+                {
+                    // Intentionally doing nothing. Also it's not possible to log anything here at this stage.
+                }
+
+                return this._parentInstanceId;
+            }
+        }
+
         public ExpandedOrchestrationStatus(DurableOrchestrationStatus that,
             Task<DurableOrchestrationStatus> detailsTask,
+            Task<string> parentInstanceIdTask,
             HashSet<string> hiddenColumns)
         {
             this.Name = that.Name;
@@ -86,13 +115,14 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
             // Detecting whether it is an Orchestration or a Durable Entity
             var match = EntityIdRegex.Match(this.InstanceId);
-            if(match.Success)
+            if (match.Success)
             {
                 this.EntityType = EntityTypeEnum.DurableEntity;
                 this.EntityId = new EntityId(match.Groups[1].Value, match.Groups[2].Value);
             }
 
             this._detailsTask = detailsTask;
+            this._parentInstanceIdTask = parentInstanceIdTask;
         }
 
         internal string GetEntityTypeName()
@@ -102,5 +132,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
         private Task<DurableOrchestrationStatus> _detailsTask;
         private string _lastEvent;
+        private Task<string> _parentInstanceIdTask;
+        private string _parentInstanceId;
     }
 }

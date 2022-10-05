@@ -5,10 +5,15 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using Microsoft.WindowsAzure.Storage;
 using System.IO;
 using Newtonsoft.Json;
 using System.IO.Compression;
+using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
@@ -17,6 +22,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
     {
         public EntityTypeEnum EntityType { get; private set; }
         public EntityId? EntityId { get; private set; }
+        public string ParentInstanceId { get; private set; }
 
         public List<string> TabTemplateNames
         {
@@ -28,34 +34,87 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
         }
 
-        public DetailedOrchestrationStatus(DurableOrchestrationStatus that, string connName)
+        internal static async Task<DetailedOrchestrationStatus> CreateFrom(DurableOrchestrationStatus that, IDurableClient durableClient, string connName, string hubName, ILogger log)
         {
-            this.Name = that.Name;
-            this.InstanceId = that.InstanceId;
-            this.CreatedTime = that.CreatedTime;
-            this.LastUpdatedTime = that.LastUpdatedTime;
-            this.RuntimeStatus = that.RuntimeStatus;
-            this.Output = that.Output;
-            this.CustomStatus = that.CustomStatus;
-            this.History = that.History;
+            var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
+
+            var result = new DetailedOrchestrationStatus();
+
+            result.Name = that.Name;
+            result.InstanceId = that.InstanceId;
+            result.CreatedTime = that.CreatedTime;
+            result.LastUpdatedTime = that.LastUpdatedTime;
+            result.RuntimeStatus = that.RuntimeStatus;
+            result.Output = that.Output;
+            result.CustomStatus = that.CustomStatus;
+            result.History = that.History;
 
             // Detecting whether it is an Orchestration or a Durable Entity
-            var match = ExpandedOrchestrationStatus.EntityIdRegex.Match(this.InstanceId);
+            var match = ExpandedOrchestrationStatus.EntityIdRegex.Match(result.InstanceId);
             if (match.Success)
             {
-                this.EntityType = EntityTypeEnum.DurableEntity;
-                this.EntityId = new EntityId(match.Groups[1].Value, match.Groups[2].Value);
+                result.EntityType = EntityTypeEnum.DurableEntity;
+                result.EntityId = new EntityId(match.Groups[1].Value, match.Groups[2].Value);
+            }
+            else
+            {
+                // Trying to get parent orchestrationId for this instance, if it is a subOrchestration
+                try
+                {
+                    result.ParentInstanceId = await DfmEndpoint.ExtensionPoints.GetParentInstanceIdRoutine(durableClient, connEnvVariableName, hubName, result.InstanceId);
+                }
+                catch(Exception ex)
+                {
+                    log.LogWarning(ex, "Failed to get parent instanceId");
+                }
             }
 
-            this.Input = this.ConvertInput(that.Input, connName);
+            result.Input = await result.ConvertInput(that.Input, connEnvVariableName);
+
+            return result;
         }
+
+        internal static async Task<string> GetParentInstanceIdDirectlyFromTable(IDurableClient durableClient, string connEnvVariableName, string hubName, string instanceId)
+        {
+            // Checking if instanceId looks like a suborchestration
+            var match = SubOrchestrationIdRegex.Match(instanceId);
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            string parentExecutionId = match.Groups[1].Value;
+
+            var tableClient = await TableClient.GetTableClient(connEnvVariableName);
+            string tableName = $"{durableClient.TaskHubName}Instances";
+
+            var executionIdQuery = new TableQuery<TableEntity>().Where
+            (
+                TableQuery.GenerateFilterCondition("ExecutionId", QueryComparisons.Equal, parentExecutionId)
+            );
+
+            var tableResult = await tableClient.GetAllAsync<TableEntity>(tableName, executionIdQuery);
+
+            var parentEntity = tableResult.SingleOrDefault();
+
+            if (parentEntity == null)
+            {
+                return null;
+            }
+
+            return parentEntity.PartitionKey;
+        }
+
+        private static readonly Regex SubOrchestrationIdRegex = new Regex(@"(.+):\d+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private DetailedOrchestrationStatus() {}
 
         internal string GetEntityTypeName()
         {
             return this.EntityType == EntityTypeEnum.DurableEntity ? this.EntityId.Value.EntityName : this.Name;
         }
 
-        private JToken ConvertInput(JToken input, string connName)
+        private async Task<JToken> ConvertInput(JToken input, string connEnvVariableName)
         {
             if (this.EntityType != EntityTypeEnum.DurableEntity)
             {
@@ -65,15 +124,15 @@ namespace DurableFunctionsMonitor.DotNetBackend
             // Temp fix for https://github.com/Azure/azure-functions-durable-extension/issues/1786
             if (input.Type == JTokenType.String && input.ToString().ToLowerInvariant().StartsWith("https://"))
             {
-                string connectionString = Environment.GetEnvironmentVariable(Globals.GetFullConnectionStringEnvVariableName(connName));
+                string connectionString = Environment.GetEnvironmentVariable(connEnvVariableName);
                 var blobClient = CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
-                var blob = blobClient.GetBlobReferenceFromServerAsync(new Uri(input.ToString())).Result;
+                var blob = await blobClient.GetBlobReferenceFromServerAsync(new Uri(input.ToString()));
 
-                using (var stream = new MemoryStream())
+                using (var memoryStream = new MemoryStream())
                 {
-                    blob.DownloadToStreamAsync(stream).Wait();
-                    stream.Position = 0;
-                    using (var gzipStream = new GZipStream(stream, CompressionMode.Decompress))
+                    await blob.DownloadToStreamAsync(memoryStream);
+                    memoryStream.Position = 0;
+                    using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
                     using (var streamReader = new StreamReader(gzipStream))
                     using (var jsonTextReader = new JsonTextReader(streamReader))
                     {

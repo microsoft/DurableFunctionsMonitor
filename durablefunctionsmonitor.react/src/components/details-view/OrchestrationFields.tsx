@@ -6,7 +6,7 @@ import { observer } from 'mobx-react';
 import moment from 'moment';
 
 import {
-    AppBar, Box, Checkbox, FormControl, Grid, InputLabel, Link, MenuItem, Select, Table, TableBody,
+    AppBar, Box, Checkbox, FormControl, Grid, InputLabel, Link, MenuItem, Select, OutlinedInput, Table, TableBody,
     TableCell, TableHead, TableRow, TextField, Toolbar, Typography
 } from '@material-ui/core';
 
@@ -58,9 +58,11 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
 
         const runtimeStatusStyle = RuntimeStatusToStyle(details.runtimeStatus);
 
+        const showParentInstanceId = !!details.parentInstanceId;
+
         return (<>
             <Grid container className="grid-container">
-                <Grid item xs={12} sm={12} md={3} zeroMinWidth className="grid-item">
+                <Grid item xs={12} sm={12} md={showParentInstanceId ? 2 : 3} zeroMinWidth className="grid-item">
                     <TextField
                         label="instanceId"
                         value={details.instanceId}
@@ -71,7 +73,35 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                         fullWidth
                     />
                 </Grid>
-                <Grid item xs={12} sm={12} md={3} zeroMinWidth className="grid-item">
+                {showParentInstanceId && (
+                    <Grid item xs={12} sm={12} md={2} zeroMinWidth className="grid-item">
+
+                         <FormControl variant="outlined" fullWidth margin="normal">
+                            <InputLabel
+                                shrink={true}
+                                className="parent-instance-id-label"
+                                variant="outlined"
+                                // workaround for label's 'strikethrough look' issue  
+                                style={{
+                                    backgroundColor: Theme.palette.background.paper
+                                }}
+                            >
+                                parentInstanceId
+                            </InputLabel>
+
+                            <OutlinedInput
+                                className="parent-instance-id-input"
+                                inputComponent={OrchestrationLink}
+                                inputProps={{
+                                    orchestrationId: details.parentInstanceId,
+                                    backendClient: state.backendClient
+                                }}                                
+                            />
+                        </FormControl>
+
+                    </Grid>
+                )}
+                <Grid item xs={12} sm={12} md={showParentInstanceId ? 2 : 3} zeroMinWidth className="grid-item">
                     <TextField
                         label="name"
                         value={details.name}

@@ -47,7 +47,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
                 var orchestrations = durableClient
                     .ListAllInstances(filterClause.TimeFrom, filterClause.TimeTill, !hiddenColumns.Contains("input"), filterClause.RuntimeStatuses)
-                    .ExpandStatusIfNeeded(durableClient, filterClause, hiddenColumns)
+                    .ExpandStatusIfNeeded(durableClient, connName, filterClause, hiddenColumns)
                     .ApplyRuntimeStatusesFilter(filterClause.RuntimeStatuses)
                     .ApplyFilter(filterClause)
                     .ApplyOrderBy(req.Query)
@@ -62,24 +62,26 @@ namespace DurableFunctionsMonitor.DotNetBackend
     internal static class ExtensionMethodsForOrchestrations
     {
         // Adds 'lastEvent' field to each entity, but only if being filtered by that field
-        internal static IEnumerable<ExpandedOrchestrationStatus> ExpandStatusIfNeeded(this IEnumerable<DurableOrchestrationStatus> orchestrations, 
-            IDurableClient client, FilterClause filterClause, HashSet<string> hiddenColumns)
+        internal static IEnumerable<ExpandedOrchestrationStatus> ExpandStatusIfNeeded(this IEnumerable<DurableOrchestrationStatus> orchestrations,
+            IDurableClient client, string connName, FilterClause filterClause, HashSet<string> hiddenColumns)
         {
-            // Only expanding if being filtered by lastEvent
-            if(filterClause.FieldName == "lastEvent") 
+            // Only expanding if being filtered by lastEvent or parentInstanceId
+            if (new [] { "lastEvent", "parentInstanceId" }.Contains(filterClause.FieldName)) 
             {
-                return orchestrations.ExpandStatus(client, filterClause, hiddenColumns);
+                return orchestrations.ExpandStatus(client, connName, filterClause, hiddenColumns);
             } 
             else
             {
-                return orchestrations.Select(o => new ExpandedOrchestrationStatus(o, null, hiddenColumns));
+                return orchestrations.Select(o => new ExpandedOrchestrationStatus(o, null, null, hiddenColumns));
             }
         }
 
         // Adds 'lastEvent' field to each entity
         internal static IEnumerable<ExpandedOrchestrationStatus> ExpandStatus(this IEnumerable<DurableOrchestrationStatus> orchestrations,
-            IDurableClient client, FilterClause filterClause, HashSet<string> hiddenColumns)
+            IDurableClient client, string connName, FilterClause filterClause, HashSet<string> hiddenColumns)
         {
+            var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
+
             // Deliberately explicitly enumerating orchestrations here, to trigger all GetStatusAsync tasks in parallel.
             // If just using yield return, they would be started and finished sequentially, one by one.
             var list = new List<ExpandedOrchestrationStatus>();
@@ -87,6 +89,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 list.Add(new ExpandedOrchestrationStatus(orchestration,
                     client.GetStatusAsync(orchestration.InstanceId, true, false, false),
+                    DfmEndpoint.ExtensionPoints.GetParentInstanceIdRoutine(client, connEnvVariableName, client.TaskHubName, orchestration.InstanceId),
                     hiddenColumns));
             }
             return list;
@@ -125,7 +128,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
             var genericParamType = fieldAccessExpression.Type;
 
-            if (!genericParamType.IsPrimitive && genericParamType != typeof(DateTime) && genericParamType != typeof(DateTimeOffset))
+            if (!genericParamType.IsPrimitive && genericParamType != typeof(string) && genericParamType != typeof(DateTime) && genericParamType != typeof(DateTimeOffset))
             {
                 // If this is a complex object field, then sorting by it's string representation
                 fieldAccessExpression = Expression.Call(fieldAccessExpression, ToStringMethodInfo);

@@ -25,7 +25,7 @@ import { renderFilteredField } from '../RenderHelpers';
 
 // Orchestrations list view
 @observer
-export class OrchestrationsList extends React.Component<{ state: ResultsListTabState, showLastEventColumn: boolean, backendClient: IBackendClient }> {
+export class OrchestrationsList extends React.Component<{ state: ResultsListTabState, filteredOutColumns: string[], backendClient: IBackendClient }> {
 
     static contextType = DfmContextType;
     context!: React.ContextType<typeof DfmContextType>;
@@ -144,62 +144,60 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
             );
         }
 
+        // Hidden columns is a combination of columns hidden by the user and columns being not shown due to the current filter (e.g. 'lastEvent' column is only shown when is being filtered on)
+        const hiddenColumns = this.props.filteredOutColumns.concat(state.hiddenColumns);
+
         const visibleColumns = DurableOrchestrationStatusFields
-            // hiding artificial 'lastEvent' column, when not used
-            .filter(f => this.props.showLastEventColumn ? true : f !== 'lastEvent');
+            .filter(col => !hiddenColumns.includes(col));
         
         return (
             <Table size="small">
                 <TableHead>
                     <TableRow>
-                        {visibleColumns.map(col => {
+                        {visibleColumns.map(col => (
 
-                            const onlyOneVisibleColumnLeft = visibleColumns.length <= state.hiddenColumns.length + 1;
-
-                            return !state.hiddenColumns.includes(col) && (
-                                <TableCell key={col}
-                                    onMouseEnter={() => state.columnUnderMouse = col}
-                                    onMouseLeave={() => state.columnUnderMouse = ''}
-                                    className="instances-list-header-cell"
+                            <TableCell key={col}
+                                onMouseEnter={() => state.columnUnderMouse = col}
+                                onMouseLeave={() => state.columnUnderMouse = ''}
+                                className="instances-list-header-cell"
+                            >
+                                <TableSortLabel
+                                    active={state.orderBy === col}
+                                    direction={state.orderByDirection}
+                                    onClick={() => state.orderBy = col}
                                 >
-                                    <TableSortLabel
-                                        active={state.orderBy === col}
-                                        direction={state.orderByDirection}
-                                        onClick={() => state.orderBy = col}
+                                    {col}
+
+                                    {['createdTime', 'lastUpdatedTime'].includes(col) && (<span className="time-zone-name-span">({this.context.timeZoneName})</span>)}
+
+                                </TableSortLabel>
+
+                                {state.columnUnderMouse === col && (<>
+                                    
+                                    <IconButton
+                                        color="inherit"
+                                        size="small"
+                                        className="column-filter-button"
+                                        onClick={() => state.setClientFilteredColumn(col)}
                                     >
-                                        {col}
+                                        <FunnelIcon/>
+                                    </IconButton>
 
-                                        {['createdTime', 'lastUpdatedTime'].includes(col) && (<span className="time-zone-name-span">({this.context.timeZoneName})</span>)}
-
-                                    </TableSortLabel>
-
-                                    {state.columnUnderMouse === col && (<>
-                                        
+                                    {(visibleColumns.length > 1) && (
                                         <IconButton
                                             color="inherit"
                                             size="small"
-                                            className="column-filter-button"
-                                            onClick={() => state.setClientFilteredColumn(col)}
+                                            className="column-hide-button"
+                                            onClick={() => state.hideColumn(col)}
                                         >
-                                            <FunnelIcon/>
+                                            <CloseIcon className="columnt-filter-button-img" />
                                         </IconButton>
+                                    )}
 
-                                        {!onlyOneVisibleColumnLeft && (
-                                            <IconButton
-                                                color="inherit"
-                                                size="small"
-                                                className="column-hide-button"
-                                                onClick={() => state.hideColumn(col)}
-                                            >
-                                                <CloseIcon className="columnt-filter-button-img" />
-                                            </IconButton>
-                                        )}
+                                </>)}
 
-                                    </>)}
-
-                                </TableCell>
-                            );
-                        })}
+                            </TableCell>
+                        ))}
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -212,7 +210,7 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
                                 key={orchestration.instanceId}
                                 style={rowStyle}
                             >
-                                {!state.hiddenColumns.includes('instanceId') && (
+                                {visibleColumns.includes('instanceId') && (
                                     <TableCell className="instance-id-cell" style={cellStyle}>
                                         <OrchestrationLink
                                             orchestrationId={orchestration.instanceId}
@@ -221,55 +219,64 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
                                         />
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('name') && (
+                                {visibleColumns.includes('parentInstanceId') && (
+                                    <TableCell className="instance-id-cell" style={cellStyle}>
+                                        <OrchestrationLink
+                                            orchestrationId={orchestration.parentInstanceId}
+                                            backendClient={this.props.backendClient}
+                                            filterValue={state.clientFilteredColumn === 'parentInstanceId' ? state.clientFilterValue : ''}
+                                        />
+                                    </TableCell>
+                                )}
+                                {visibleColumns.includes('name') && (
                                     <TableCell className="name-cell" style={cellStyle}>
                                         {renderFilteredField(orchestration.name,
                                             state.clientFilteredColumn === 'name' ? state.clientFilterValue : '')}
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('createdTime') && (
+                                {visibleColumns.includes('createdTime') && (
                                     <TableCell className="datetime-cell" style={cellStyle}>
                                         {renderFilteredField(this.context.formatDateTimeString(orchestration.createdTime),
                                             state.clientFilteredColumn === 'createdTime' ? state.clientFilterValue : '')}
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('lastUpdatedTime') && (
+                                {visibleColumns.includes('lastUpdatedTime') && (
                                     <TableCell className="datetime-cell" style={cellStyle}>
                                         {renderFilteredField(this.context.formatDateTimeString(orchestration.lastUpdatedTime),
                                             state.clientFilteredColumn === 'lastUpdatedTime' ? state.clientFilterValue : '')}
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('duration') && (
+                                {visibleColumns.includes('duration') && (
                                     <TableCell style={cellStyle}>
                                         {renderFilteredField(DateTimeHelpers.formatDuration(orchestration.duration),
                                             state.clientFilteredColumn === 'duration' ? state.clientFilterValue : '')}
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('runtimeStatus') && (
+                                {visibleColumns.includes('runtimeStatus') && (
                                     <TableCell style={cellStyle}>
                                         {renderFilteredField(orchestration.runtimeStatus,
                                             state.clientFilteredColumn === 'runtimeStatus' ? state.clientFilterValue : '')}
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('lastEvent') && this.props.showLastEventColumn && (
+                                {visibleColumns.includes('lastEvent') && (
                                     <TableCell style={cellStyle}>
                                         {renderFilteredField(orchestration.lastEvent,
                                             state.clientFilteredColumn === 'lastEvent' ? state.clientFilterValue : '')}
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('input') && (
+                                {visibleColumns.includes('input') && (
                                     <TableCell className="output-cell" style={cellStyle}>
                                         {LongJsonDialog.renderJson(orchestration.input, `${orchestration.instanceId} / input`,
                                             state.longJsonDialogState, state.clientFilteredColumn === 'input' ? state.clientFilterValue : '')}
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('output') && (
+                                {visibleColumns.includes('output') && (
                                     <TableCell className="output-cell" style={cellStyle}>
                                         {LongJsonDialog.renderJson(orchestration.output, `${orchestration.instanceId} / output`,
                                             state.longJsonDialogState, state.clientFilteredColumn === 'output' ? state.clientFilterValue : '')}
                                     </TableCell>
                                 )}
-                                {!state.hiddenColumns.includes('customStatus') && (
+                                {visibleColumns.includes('customStatus') && (
                                     <TableCell className="output-cell" style={cellStyle}>
                                         {LongJsonDialog.renderJson(orchestration.customStatus, `${orchestration.instanceId} / customStatus`,
                                             state.longJsonDialogState, state.clientFilteredColumn === 'customStatus' ? state.clientFilterValue : '')}

@@ -88,9 +88,19 @@ namespace DurableFunctionsMonitor.DotNetBackend
         /// </summary>
         public Func<IDurableClient, string, string, string, Task<IEnumerable<HistoryEvent>>> GetInstanceHistoryRoutine { get; set; }
 
+        /// <summary>
+        /// Routine for getting parent orchestration's Id.
+        /// Takes IDurableClient, connString env variable name, taskHubName and instanceId and returns
+        /// Id of parent orchestration, or null if the given instance is not a suborchestration.
+        /// Provide your own implementation for a custom storage provider.
+        /// Default implementation matches ExecutionId field in XXXInstances table.
+        /// </summary>
+        public Func<IDurableClient, string, string, string, Task<string>> GetParentInstanceIdRoutine { get; set; }
+
         public DfmExtensionPoints()
         {
             this.GetInstanceHistoryRoutine = OrchestrationHistory.GetHistoryDirectlyFromTable;
+            this.GetParentInstanceIdRoutine = DetailedOrchestrationStatus.GetParentInstanceIdDirectlyFromTable;
         }
     }
 
