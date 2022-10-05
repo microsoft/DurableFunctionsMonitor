@@ -43,10 +43,14 @@ export class ResultsListTabState implements IResultsTabState {
     }
 
     @computed
-    get orderByDirection(): ('asc' | 'desc') { return this._orderByDirection; }
+    get orderByDirection(): ('asc' | 'desc') {
+        return this._orderByDirection;
+    }
 
     @computed
-    get orderBy(): string { return this._orderBy; }
+    get orderBy(): string {
+        return this._orderBy;
+    }
     set orderBy(val: string) {
 
         if (this._orderBy !== val) {
@@ -74,7 +78,7 @@ export class ResultsListTabState implements IResultsTabState {
         
         this._orderBy = queryString.values['orderBy'] ?? '';
 
-        const orderByDirectionString = queryString.values['orderBy'];
+        const orderByDirectionString = queryString.values['orderByDirection'];
         if (!!orderByDirectionString) {
             this._orderByDirection = orderByDirectionString as 'asc' | 'desc';
         }
