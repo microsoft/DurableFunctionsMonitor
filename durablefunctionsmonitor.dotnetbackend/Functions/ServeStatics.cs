@@ -32,6 +32,11 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             return await req.HandleErrors(log, async () => {
 
+                foreach(var h in req.Headers)
+                {
+                    log.LogWarning($"{h.Key}:{h.Value.ToString()}");
+                }
+
                 // Checking nonce, if it was set as an env variable.
                 // Don't care about return value of this method here.
                 Auth.IsNonceSetAndValid(req.Headers);
