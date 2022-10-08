@@ -34,6 +34,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public const string DFM_USERNAME_CLAIM_NAME = "DFM_USERNAME_CLAIM_NAME";
         public const string DFM_ROLES_CLAIM_NAME = "DFM_ROLES_CLAIM_NAME";
         public const string DFM_ALTERNATIVE_CONNECTION_STRING_PREFIX = "DFM_ALTERNATIVE_CONNECTION_STRING_";
+        public const string DFM_INGRESS_ROUTE_PREFIX = "DFM_INGRESS_ROUTE_PREFIX";
     }
 
     static class Globals

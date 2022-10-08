@@ -32,11 +32,6 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             return await req.HandleErrors(log, async () => {
 
-                foreach(var h in req.Headers)
-                {
-                    log.LogWarning($"{h.Key}:{h.Value.ToString()}");
-                }
-
                 // Checking nonce, if it was set as an env variable.
                 // Don't care about return value of this method here.
                 Auth.IsNonceSetAndValid(req.Headers);
@@ -136,8 +131,32 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     html = html.Replace("<script>var IsFunctionGraphAvailable=0</script>", "<script>var IsFunctionGraphAvailable=1</script>");
                 }
 
-                // Using connAndHubName as an anchor, to locate the path prefix
-                int pos = requestPath.IndexOf("/" + connAndHubName);
+                /*  Using connAndHubName as an anchor, to locate the path prefix (path _without_ connAndHubName)
+                    Paths that need to be correctly handled here are:
+                        /my-hub-name
+                        /my-hub-name/orchestrations/my-instance-id
+                        /my/path/my-hub-name
+                        /my/path/my-hub-name/orchestrations/my-instance-id
+                */
+
+                // First trying with both slashes (to prevent collisions with instanceIds)
+                int pos = requestPath.IndexOf("/" + connAndHubName + "/");
+                if (pos >= 0)
+                {
+                    // Checking that TaskHub name does not collide with the prefix
+                    int nextPos = requestPath.IndexOf("/" + connAndHubName, pos + 1);
+                    if (nextPos >= 0)
+                    {
+                        // Preferring the last one
+                        pos = nextPos;
+                    }
+                }
+                else
+                {
+                    // Now just with the left slash
+                    pos = requestPath.IndexOf("/" + connAndHubName);
+                }
+
                 if (pos >= 0)
                 {
                     routePrefix = requestPath.Substring(0, pos);
@@ -145,6 +164,13 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
 
             routePrefix = routePrefix?.Trim('/');
+
+            // Prepending ingress route prefix, if configured
+            string ingressRoutePrefix = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_INGRESS_ROUTE_PREFIX);
+            if (!string.IsNullOrEmpty(ingressRoutePrefix))
+            {
+                routePrefix = (ingressRoutePrefix + "/" + routePrefix ?? string.Empty).Trim('/');
+            }
 
             log.LogInformation($"DFM endpoint: /{routePrefix}");
 

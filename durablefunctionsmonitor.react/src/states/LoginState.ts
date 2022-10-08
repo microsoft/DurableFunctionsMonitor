@@ -250,14 +250,19 @@ export class LoginState extends ErrorMessageState {
     // Extracts Task Hub name from window.location.href, still honoring client-side routing and subpaths
     private tryGetTaskHubName(): string {
 
-        const locationPathName = this.locationPathName;
+        const locationPathNameLowerCase = this.locationPathName.toLowerCase();
+        const routePrefixLowerCase = DfmRoutePrefix.toLowerCase();
 
         // If current path ends with DfmRoutePrefix, then it doesn't actually contain Task Hub name
-        if (locationPathName.toLowerCase().endsWith(`/${DfmRoutePrefix.toLowerCase()}/`)) {
+        if (
+            (locationPathNameLowerCase.endsWith(`/${routePrefixLowerCase}/`)) &&
+            // Just in case if DfmRoutePrefix appears to be equal to Task Hub name
+            !(locationPathNameLowerCase.endsWith(`/${routePrefixLowerCase}/${routePrefixLowerCase}/`))
+        ) {
             return null;
         }
 
-        const pathParts = locationPathName.split('/').filter(p => !!p);
+        const pathParts = this.locationPathName.split('/').filter(p => !!p);
         if (pathParts.length < 1) {
             return null;
         }
