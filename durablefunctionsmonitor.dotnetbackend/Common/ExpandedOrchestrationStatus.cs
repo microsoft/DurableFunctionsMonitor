@@ -19,7 +19,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
     // Adds extra fields to DurableOrchestrationStatus returned by IDurableClient.ListInstancesAsync()
     class ExpandedOrchestrationStatus : DurableOrchestrationStatus
     {
-        public static readonly Regex EntityIdRegex = new Regex(@"@(\w+)@(.+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public static readonly Regex EntityIdRegex = new Regex(@"@([\w-]+)@(.+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         public EntityTypeEnum EntityType { get; private set; }
         public EntityId? EntityId { get; private set; }
         public double Duration { get; private set; }
