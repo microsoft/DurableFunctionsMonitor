@@ -1,26 +1,27 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Extensions.Logging;
-using DurableFunctionsMonitor.DotNetBackend;
-using System.Threading.Tasks;
-using Moq;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using System;
-using System.Linq;
-using System.Reflection;
-using Microsoft.Azure.WebJobs;
 using System.Collections.Generic;
-using System.Security.Claims;
-using Microsoft.Azure.WebJobs.Extensions.DurableTask;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
-using System.Threading;
 using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.IO;
+using System.Linq;
 using System.Net.Http.Headers;
+using System.Reflection;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
+using DurableFunctionsMonitor.DotNetBackend;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 namespace durablefunctionsmonitor.dotnetbackend.tests
 {
@@ -69,10 +70,10 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                     Assert.AreEqual("No access token provided. Call is rejected.", ex.Message);
 
                     // Also extracting the function name, that was called, from current stack trace
-                    foreach(var stackFrame in new StackTrace().GetFrames())
+                    foreach (var stackFrame in new StackTrace().GetFrames())
                     {
                         var method = stackFrame.GetMethod();
-                        if (method.CustomAttributes.Any(a => a.AttributeType == typeof(FunctionNameAttribute)) )
+                        if (method.CustomAttributes.Any(a => a.AttributeType == typeof(FunctionNameAttribute)))
                         {
                             functionsThatWereCalled.Add(method.Name);
                         }
@@ -282,7 +283,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
 
         [TestMethod]
-        public async Task ReturnsUnauthorizedResultIfUserIsNotInRole()
+        public async Task ReturnsUnauthorizedResultIfUserIsNotInAppRole()
         {
             // Arrange
             var request = new DefaultHttpContext().Request;
@@ -359,6 +360,68 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
+        }
+
+        [TestMethod]
+        public async Task ReturnsAuthorizedIfUserIsInAppRole()
+        {
+            // Arrange
+            var request = new DefaultHttpContext().Request;
+
+            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
+            request.Headers.Add("Cookie", new CookieHeaderValue(Globals.XsrfTokenCookieAndHeaderName, xsrfToken).ToString());
+            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+
+            string userName = "tino@contoso.com";
+
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, "role1,role2");
+
+            // Need to reset DfmEndpoint.Settings
+            DfmEndpoint.Setup();
+
+            request.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity[] { new ClaimsIdentity( new Claim[] {
+                new Claim("preferred_username", userName),
+                new Claim("roles", "role1")})
+            });
+
+            // Act
+            var result = await About.DfmAboutFunction(request, "-", "TestHub", new NullLogger<AuthTests>());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ContentResult));
+        }
+
+        [TestMethod]
+        public async Task ReturnsAuthorizedIfUserIsInReadOnlyAppRole()
+        {
+            // Arrange
+            var request = new DefaultHttpContext().Request;
+
+            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
+            request.Headers.Add("Cookie", new CookieHeaderValue(Globals.XsrfTokenCookieAndHeaderName, xsrfToken).ToString());
+            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+
+            string userName = "tino@contoso.com";
+
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, "role1,role2");
+
+            // Need to reset DfmEndpoint.Settings
+            DfmEndpoint.Setup();
+
+            request.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity[] { new ClaimsIdentity( new Claim[] {
+                new Claim("preferred_username", userName),
+                new Claim("roles", "role1")})
+            });
+
+            // Act
+            var result = await About.DfmAboutFunction(request, "-", "TestHub", new NullLogger<AuthTests>());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ContentResult));
         }
 
         // The only way to define a callback for ValidateToken() method
@@ -453,9 +516,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                     // Next time, when MockedTableClient is set, we should get 'Task Hub is not allowed'.
                     // This also validates that queries against table storage are properly retried.
                     Assert.AreEqual(
-                        tableClientInitialized ? 
+                        tableClientInitialized ?
                         $"Task Hub '{hubName}' is not allowed." :
-                        "No access token provided. Call is rejected.", 
+                        "No access token provided. Call is rejected.",
                         ex.Message);
                 });
 
@@ -464,9 +527,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             var tableClientMoq = new Mock<ITableClient>();
 
             tableClientMoq.Setup(c => c.ListTableNamesAsync())
-                .Returns(Task.FromResult<IEnumerable<string>>(new string[] { 
+                .Returns(Task.FromResult<IEnumerable<string>>(new string[] {
                     "Hub1Instances","Hub1History",
-                    "Hub2Instances","Hub2History" 
+                    "Hub2Instances","Hub2History"
                 }));
 
             // Act
@@ -511,9 +574,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             var tableClientMoq = new Mock<ITableClient>();
 
             tableClientMoq.Setup(c => c.ListTableNamesAsync())
-                .Returns(Task.FromResult<IEnumerable<string>>(new string[] { 
+                .Returns(Task.FromResult<IEnumerable<string>>(new string[] {
                     "Hub1Instances","Hub1History",
-                    "Hub2Instances","Hub2History" 
+                    "Hub2Instances","Hub2History"
                 }));
 
             TableClient.MockedTableClient = tableClientMoq.Object;

@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,8 +13,6 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
-using System.Runtime.CompilerServices;
-using System.Linq;
 
 [assembly: InternalsVisibleToAttribute("durablefunctionsmonitor.dotnetbackend.tests")]
 
@@ -105,10 +105,11 @@ namespace DurableFunctionsMonitor.DotNetBackend
         // Applies authN/authZ rules and handles incoming HTTP request. Also does error handling.
         public static async Task<IActionResult> HandleAuthAndErrors(this HttpRequest req, string connName, string hubName, ILogger log, Func<Task<IActionResult>> todo)
         {
-            return await HandleErrors(req, log, async () => { 
+            return await HandleErrors(req, log, async () =>
+            {
 
                 await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, CombineConnNameAndHubName(connName, hubName));
-                
+
                 return await todo();
             });
         }
@@ -119,15 +120,15 @@ namespace DurableFunctionsMonitor.DotNetBackend
             try
             {
                 return await todo();
-            } 
+            }
             catch (UnauthorizedAccessException ex)
             {
                 log.LogError(ex, $"DFM failed to authenticate request");
                 return new UnauthorizedResult();
             }
-            catch (AccessViolationException)
+            catch (AccessViolationException ex)
             {
-                log.LogError("Endpoint is in ReadOnly mode");
+                log.LogError(ex, "Endpoint is in ReadOnly mode");
                 return new StatusCodeResult(403);
             }
             catch (Exception ex)
@@ -166,7 +167,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public static ContentResult ToJsonContentResult(this object result, Func<string, string> applyThisToJson = null)
         {
             string json = JsonConvert.SerializeObject(result, Globals.SerializerSettings);
-            if(applyThisToJson != null)
+            if (applyThisToJson != null)
             {
                 json = applyThisToJson(json);
             }
