@@ -29,7 +29,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string prefix,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
+            return this.HandleAuthAndErrors(OperationKind.Read, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
                 var response = await durableClient.ListInstancesAsync(new OrchestrationStatusQueryCondition()
                     {

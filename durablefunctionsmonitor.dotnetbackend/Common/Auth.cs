@@ -19,6 +19,16 @@ using Newtonsoft.Json.Linq;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
+    /// <summary>
+    /// Defines whether a Function only reads data or makes modifications.
+    /// Used for applying authorization rules.
+    /// </summary>
+    public enum OperationKind
+    {
+        Read,
+        Write
+    }
+
     internal static class Auth
     {
         // Magic constant for turning auth off
@@ -59,9 +69,15 @@ namespace DurableFunctionsMonitor.DotNetBackend
         }
 
         // Validates that the incoming request is properly authenticated
-        public static async Task ValidateIdentityAsync(ClaimsPrincipal principal, IHeaderDictionary headers, IRequestCookieCollection cookies, string taskHubName)
+        public static async Task ValidateIdentityAsync(ClaimsPrincipal principal, IHeaderDictionary headers, IRequestCookieCollection cookies, string taskHubName, OperationKind operationKind)
         {
-            // First validating Task Hub name, if it was specified
+            // Checking if the endpoint is in ReadOnly mode
+            if (operationKind != OperationKind.Read && DfmEndpoint.Settings.Mode == DfmMode.ReadOnly)
+            {
+                throw new AccessViolationException("Endpoint is in ReadOnly mode");
+            }
+
+            // Validating Task Hub name, if it was specified
             if (!string.IsNullOrEmpty(taskHubName))
             {
                 await ThrowIfTaskHubNameIsInvalid(taskHubName);
@@ -98,7 +114,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 }
             }
 
-            // Also validating App Roles, if set
+            // Also validating App Roles, but only if any of relevant setting is set
             var allowedAppRoles = DfmEndpoint.Settings.AllowedAppRoles;
             var allowedReadOnlyAppRoles = DfmEndpoint.Settings.AllowedReadOnlyAppRoles;
 
@@ -106,23 +122,21 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 var roleClaims = principal.FindAll(DfmEndpoint.Settings.RolesClaimName);
 
-                if (!(roleClaims.UserIsInAppRole() || roleClaims.UserIsReadOnly()))
+                bool userIsInAppRole = roleClaims.Any(claim => allowedAppRoles != null && allowedAppRoles.Contains(claim.Value));
+                bool userIsInReadonlyRole = roleClaims.Any(claim => allowedReadOnlyAppRoles != null && allowedReadOnlyAppRoles.Contains(claim.Value));
+
+                // If user belongs _neither_ to AllowedAppRoles _nor_ to AllowedReadOnlyAppRoles
+                if (!(userIsInAppRole || userIsInReadonlyRole))
                 {
                     throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected");
                 }
+
+                // If current operation modifies any data, then validating that user is _not_ in ReadOnly mode
+                if (operationKind != OperationKind.Read && userIsInReadonlyRole)
+                {
+                    throw new AccessViolationException($"User {userNameClaim.Value} is in read-only mode");
+                }
             }
-        }
-
-        private static bool UserIsInAppRole(this IEnumerable<Claim> roleClaims)
-        {
-            var allowedAppRoles = DfmEndpoint.Settings.AllowedAppRoles;
-            return roleClaims.Any(claim => allowedAppRoles != null && allowedAppRoles.Contains(claim.Value));
-        }
-
-        private static bool UserIsReadOnly(this IEnumerable<Claim> roleClaims)
-        {
-            var allowedReadOnlyAppRoles = DfmEndpoint.Settings.AllowedReadOnlyAppRoles;
-            return roleClaims.Any(claim => allowedReadOnlyAppRoles != null && allowedReadOnlyAppRoles.Contains(claim.Value));
         }
 
         private static async Task<HashSet<string>> GetTaskHubNamesFromStorage(string connStringName)
@@ -239,15 +253,6 @@ namespace DurableFunctionsMonitor.DotNetBackend
             if (tokenFromCookies != tokenFromHeaders)
             {
                 throw new UnauthorizedAccessException("XSRF tokens do not match.");
-            }
-        }
-
-        public static void ThrowIfInReadOnlyMode(ClaimsPrincipal principal)
-        {
-            var roleClaims = principal.FindAll(DfmEndpoint.Settings.RolesClaimName);
-            if (DfmEndpoint.Settings.Mode == DfmMode.ReadOnly || roleClaims.UserIsReadOnly())
-            {
-                throw new AccessViolationException();
             }
         }
 

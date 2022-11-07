@@ -39,9 +39,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string hubName,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
-
-                Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
+            return this.HandleAuthAndErrors(OperationKind.Write, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
                 // Important to deserialize time fields as strings, because otherwise time zone will appear to be local
                 var request = JsonConvert.DeserializeObject<PurgeHistoryRequest>(await req.ReadAsStringAsync());

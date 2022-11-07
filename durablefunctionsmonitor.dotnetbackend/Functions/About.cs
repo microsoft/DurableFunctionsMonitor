@@ -25,7 +25,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             ILogger log
         )
         {
-            return req.HandleAuthAndErrors(connName, hubName, log, async () => {
+            return req.HandleAuthAndErrors(OperationKind.Read, connName, hubName, log, async () => {
 
                 string accountName = string.Empty;
 

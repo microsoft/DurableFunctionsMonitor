@@ -29,9 +29,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             ILogger log
         )
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (_) => {
-
-                Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
+            return this.HandleAuthAndErrors(OperationKind.Write, defaultDurableClient, req, connName, hubName, log, async (_) => {
 
                 string connectionString = Environment.GetEnvironmentVariable(Globals.GetFullConnectionStringEnvVariableName(connName));
 

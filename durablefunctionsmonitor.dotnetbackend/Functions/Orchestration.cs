@@ -34,7 +34,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string instanceId,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
+            return this.HandleAuthAndErrors(OperationKind.Read, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
                 var status = await durableClient.GetStatusAsync(instanceId, false, false, true);
                 if (status == null)
@@ -59,7 +59,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string instanceId,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
+            return this.HandleAuthAndErrors(OperationKind.Read, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
                 var filterClause = new FilterClause(req.Query["$filter"]);
                 HistoryEvent[] history;
@@ -120,9 +120,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string hubName,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
-
-                Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
+            return this.HandleAuthAndErrors(OperationKind.Write, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
                 string bodyString = await req.ReadAsStringAsync();
                 dynamic body = JObject.Parse(bodyString);
@@ -153,9 +151,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string action,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
-
-                Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
+            return this.HandleAuthAndErrors(OperationKind.Write, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
                 string bodyString = await req.ReadAsStringAsync();
 
@@ -240,7 +236,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string templateName,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
+            return this.HandleAuthAndErrors(OperationKind.Read, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
                 var status = await GetInstanceStatusWithHistory(connName, hubName, instanceId, durableClient, log);
                 if (status == null)
