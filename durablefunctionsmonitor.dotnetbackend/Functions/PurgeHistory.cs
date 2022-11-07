@@ -41,12 +41,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
-                // Checking that we're not in ReadOnly mode
-                if (DfmEndpoint.Settings.Mode == DfmMode.ReadOnly)
-                {
-                    log.LogError("Endpoint is in ReadOnly mode");
-                    return new StatusCodeResult(403);
-                }
+                Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
 
                 // Important to deserialize time fields as strings, because otherwise time zone will appear to be local
                 var request = JsonConvert.DeserializeObject<PurgeHistoryRequest>(await req.ReadAsStringAsync());

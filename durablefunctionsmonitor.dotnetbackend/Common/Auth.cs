@@ -99,14 +99,30 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
 
             // Also validating App Roles, if set
-            if (DfmEndpoint.Settings.AllowedAppRoles != null)
+            var allowedAppRoles = DfmEndpoint.Settings.AllowedAppRoles;
+            var allowedReadOnlyAppRoles = DfmEndpoint.Settings.AllowedReadOnlyAppRoles;
+
+            if (allowedAppRoles != null || allowedReadOnlyAppRoles != null)
             {
                 var roleClaims = principal.FindAll(DfmEndpoint.Settings.RolesClaimName);
-                if (!roleClaims.Any(claim => DfmEndpoint.Settings.AllowedAppRoles.Contains(claim.Value)))
+
+                if (!(roleClaims.UserIsInAppRole() || roleClaims.UserIsReadOnly()))
                 {
-                    throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} config setting. Call is rejected");
+                    throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected");
                 }
             }
+        }
+
+        private static bool UserIsInAppRole(this IEnumerable<Claim> roleClaims)
+        {
+            var allowedAppRoles = DfmEndpoint.Settings.AllowedAppRoles;
+            return roleClaims.Any(claim => allowedAppRoles != null && allowedAppRoles.Contains(claim.Value));
+        }
+
+        private static bool UserIsReadOnly(this IEnumerable<Claim> roleClaims)
+        {
+            var allowedReadOnlyAppRoles = DfmEndpoint.Settings.AllowedReadOnlyAppRoles;
+            return roleClaims.Any(claim => allowedReadOnlyAppRoles != null && allowedReadOnlyAppRoles.Contains(claim.Value));
         }
 
         private static async Task<HashSet<string>> GetTaskHubNamesFromStorage(string connStringName)
@@ -149,7 +165,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 var hubNames = await GetTaskHubNamesFromStorage(EnvVariableNames.AzureWebJobsStorage);
 
                 // Also checking alternative connection strings
-                foreach(var connName in AlternativeConnectionStringNames)
+                foreach (var connName in AlternativeConnectionStringNames)
                 {
                     var connAndHubNames = (await GetTaskHubNamesFromStorage(Globals.GetFullConnectionStringEnvVariableName(connName)))
                         .Select(hubName => Globals.CombineConnNameAndHubName(connName, hubName));
@@ -226,20 +242,29 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
         }
 
+        public static void ThrowIfInReadOnlyMode(ClaimsPrincipal principal)
+        {
+            var roleClaims = principal.FindAll(DfmEndpoint.Settings.RolesClaimName);
+            if (DfmEndpoint.Settings.Mode == DfmMode.ReadOnly || roleClaims.UserIsReadOnly())
+            {
+                throw new AccessViolationException();
+            }
+        }
+
         internal static string[] AlternativeConnectionStringNames = GetAlternativeConnectionStringNames().ToArray();
 
         internal static IEnumerable<string> GetAlternativeConnectionStringNames()
         {
             var envVars = Environment.GetEnvironmentVariables();
-            foreach(DictionaryEntry kv in envVars)
+            foreach (DictionaryEntry kv in envVars)
             {
                 string variableName = kv.Key.ToString();
                 if (variableName.StartsWith(EnvVariableNames.DFM_ALTERNATIVE_CONNECTION_STRING_PREFIX))
                 {
-                    yield return variableName.Substring(EnvVariableNames.DFM_ALTERNATIVE_CONNECTION_STRING_PREFIX.Length);
+                    yield return variableName[EnvVariableNames.DFM_ALTERNATIVE_CONNECTION_STRING_PREFIX.Length..];
                 }
             }
-        } 
+        }
 
         private static string TryGetHubNameFromHostJson()
         {
@@ -286,7 +311,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 throw new UnauthorizedAccessException($"Specify the Valid Issuer value via '{EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER}' config setting. Typically it looks like 'https://login.microsoftonline.com/<your-aad-tenant-id>/v2.0'.");
             }
 
-            string token = authorizationHeader.Substring("Bearer ".Length);
+            string token = authorizationHeader["Bearer ".Length..];
 
             var validationParameters = new TokenValidationParameters
             {
@@ -300,8 +325,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             };
 
             var handler = MockedJwtSecurityTokenHandler ?? new JwtSecurityTokenHandler();
-
-            return handler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            return handler.ValidateToken(token, validationParameters, out _);
         }
 
         // Caching the keys for 24 hours
@@ -345,7 +369,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
             if (openIdIssuer.EndsWith("/v2.0"))
             {
-                openIdIssuer = openIdIssuer.Substring(0, openIdIssuer.Length - "/v2.0".Length);
+                openIdIssuer = openIdIssuer[..^"/v2.0".Length];
             }
 
             string stsDiscoveryEndpoint = $"{openIdIssuer}/.well-known/openid-configuration";
