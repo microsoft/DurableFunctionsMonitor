@@ -69,7 +69,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 }
 
                 // Returning index.html by default, to support client routing
-                return await ReturnIndexHtml(context, log, root, p1);
+                return await ReturnIndexHtml(context, log, root, p1, req.Path);
             });
         }
 
@@ -97,85 +97,15 @@ namespace DurableFunctionsMonitor.DotNetBackend
             new [] {"logo.svg", "image/svg+xml; charset=UTF-8"},
         };
 
-        private static string RoutePrefix = null;
-        // Gets routePrefix setting from host.json (since there seems to be no other place to take it from)
-        private static string GetRoutePrefixFromHostJson(ExecutionContext context, ILogger log)
-        {
-            if (RoutePrefix != null)
-            {
-                return RoutePrefix;
-            }
-
-            try
-            {
-                string hostJsonFileName = Path.Combine(context.FunctionAppDirectory, "host.json");
-                dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
-
-                RoutePrefix = hostJson.extensions.http.routePrefix;
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Failed to get RoutePrefix from host.json, using default value ('api')");
-                RoutePrefix = "api";
-            }
-            return RoutePrefix;
-        }
-
-        private static string DfmRoutePrefix = null;
-        // Gets DfmRoutePrefix from our function.json file, but only if that file wasn't modified by our build task.
-        private static string GetDfmRoutePrefixFromFunctionJson(ExecutionContext context, ILogger log)
-        {
-            if (DfmRoutePrefix != null)
-            {
-                return DfmRoutePrefix;
-            }
-
-            DfmRoutePrefix = string.Empty;
-            try
-            {
-                string functionJsonFileName = Path.Combine(context.FunctionAppDirectory, nameof(DfmServeStaticsFunction), "function.json");
-                dynamic functionJson = JObject.Parse(File.ReadAllText(functionJsonFileName));
-
-                string route = functionJson.bindings[0].route;
-
-                // if it wasn't modified by our build task, then doing nothing
-                if(route != StaticsRoute)
-                {
-                    DfmRoutePrefix = route.Substring(0, route.IndexOf("/" + StaticsRoute));
-                }
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Failed to get DfmRoutePrefix from function.json, using default value (empty string)");
-            }
-            return DfmRoutePrefix;
-        }
-
         // Populates index.html template and serves it
-        private static async Task<ContentResult> ReturnIndexHtml(ExecutionContext context, ILogger log, string root, string connAndHubName)
+        private static async Task<ContentResult> ReturnIndexHtml(ExecutionContext context, ILogger log, string rootFolderName, string connAndHubName, string requestPath)
         {
-            string indexHtmlPath = Path.Join(root, "index.html");
+            string indexHtmlPath = Path.Join(rootFolderName, "index.html");
             string html = await File.ReadAllTextAsync(indexHtmlPath);
 
             // Replacing our custom meta tag with customized code from Storage or with default Content Security Policy
             string customMetaTagCode = (await CustomTemplates.GetCustomMetaTagCodeAsync()) ?? DefaultContentSecurityPolicyMeta;
             html = html.Replace("<meta name=\"durable-functions-monitor-meta\">", customMetaTagCode);
-
-            // Calculating routePrefix
-            string routePrefix = GetRoutePrefixFromHostJson(context, log);
-            string dfmRoutePrefix = GetDfmRoutePrefixFromFunctionJson(context, log);
-            if (!string.IsNullOrEmpty(dfmRoutePrefix))
-            {
-                routePrefix = string.IsNullOrEmpty(routePrefix) ? dfmRoutePrefix : routePrefix + "/" + dfmRoutePrefix;
-            }
-
-            // Applying routePrefix, if it is set to something other than empty string
-            if (!string.IsNullOrEmpty(routePrefix))
-            {
-                html = html.Replace("<script>var DfmRoutePrefix=\"\"</script>", $"<script>var DfmRoutePrefix=\"{routePrefix}\"</script>");
-                html = html.Replace("href=\"/", $"href=\"/{routePrefix}/");
-                html = html.Replace("src=\"/", $"src=\"/{routePrefix}/");
-            }
 
             // Applying client config, if any
             string clientConfigString = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_CLIENT_CONFIG);
@@ -184,6 +114,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 dynamic clientConfig = JObject.Parse(clientConfigString);
                 html = html.Replace("<script>var DfmClientConfig={}</script>", "<script>var DfmClientConfig=" + clientConfig.ToString() + "</script>");
             }
+
+            string routePrefix = requestPath;
 
             // Mentioning whether Function Map is available for this Task Hub.
             if (!string.IsNullOrEmpty(connAndHubName))
@@ -198,6 +130,55 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 {
                     html = html.Replace("<script>var IsFunctionGraphAvailable=0</script>", "<script>var IsFunctionGraphAvailable=1</script>");
                 }
+
+                /*  Using connAndHubName as an anchor, to locate the path prefix (path _without_ connAndHubName)
+                    Paths that need to be correctly handled here are:
+                        /my-hub-name
+                        /my-hub-name/orchestrations/my-instance-id
+                        /my/path/my-hub-name
+                        /my/path/my-hub-name/orchestrations/my-instance-id
+                */
+
+                // First trying with both slashes (to prevent collisions with instanceIds)
+                int pos = requestPath.IndexOf("/" + connAndHubName + "/");
+                if (pos >= 0)
+                {
+                    // Checking that TaskHub name does not collide with the prefix
+                    int nextPos = requestPath.IndexOf("/" + connAndHubName, pos + 1);
+                    if (nextPos >= 0)
+                    {
+                        // Preferring the last one
+                        pos = nextPos;
+                    }
+                }
+                else
+                {
+                    // Now just with the left slash
+                    pos = requestPath.IndexOf("/" + connAndHubName);
+                }
+
+                if (pos >= 0)
+                {
+                    routePrefix = requestPath.Substring(0, pos);
+                }
+            }
+
+            routePrefix = routePrefix?.Trim('/');
+
+            // Prepending ingress route prefix, if configured
+            string ingressRoutePrefix = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_INGRESS_ROUTE_PREFIX);
+            if (!string.IsNullOrEmpty(ingressRoutePrefix))
+            {
+                routePrefix = (ingressRoutePrefix + "/" + routePrefix ?? string.Empty).Trim('/');
+            }
+
+            log.LogInformation($"DFM endpoint: /{routePrefix}");
+
+            if (!string.IsNullOrEmpty(routePrefix))
+            {
+                html = html.Replace("<script>var DfmRoutePrefix=\"\"</script>", $"<script>var DfmRoutePrefix=\"{routePrefix}\"</script>");
+                html = html.Replace("href=\"/", $"href=\"/{routePrefix}/");
+                html = html.Replace("src=\"/", $"src=\"/{routePrefix}/");
             }
 
             return new ContentResult()
