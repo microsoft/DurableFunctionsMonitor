@@ -347,7 +347,8 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                 });
 
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, string.Empty);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, "role1,role2");
 
             // Need to reset DfmEndpoint.Settings
@@ -377,8 +378,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             string userName = "tino@contoso.com";
 
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, "role1,role2");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, string.Empty);
 
             // Need to reset DfmEndpoint.Settings
             DfmEndpoint.Setup();
@@ -408,7 +410,8 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             string userName = "tino@contoso.com";
 
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, string.Empty);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, "role1,role2");
 
             // Need to reset DfmEndpoint.Settings
