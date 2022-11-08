@@ -157,6 +157,12 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
                 switch (action)
                 {
+                    case "suspend":
+                        await durableClient.SuspendAsync(instanceId, bodyString);
+                        break;
+                    case "resume":
+                        await durableClient.ResumeAsync(instanceId, bodyString);
+                        break;
                     case "purge":
                         await durableClient.PurgeInstanceHistoryAsync(instanceId);
                         break;

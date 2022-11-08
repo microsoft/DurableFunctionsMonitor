@@ -103,6 +103,24 @@ export class OrchestrationDetailsState extends ErrorMessageState {
     }
 
     @computed
+    get suspendDialogOpen(): boolean { return this._suspendDialogOpen; }
+    set suspendDialogOpen(val: boolean) {
+        this._suspendDialogOpen = val;
+        if (!!val) {
+            this.suspendResumeReason = '';
+        }
+    }
+
+    @computed
+    get resumeDialogOpen(): boolean { return this._resumeDialogOpen; }
+    set resumeDialogOpen(val: boolean) {
+        this._resumeDialogOpen = val;
+        if (!!val) {
+            this.suspendResumeReason = '';
+        }
+    }
+
+    @computed
     get isCustomStatusDirty(): boolean { 
 
         if (!this._details.customStatus) {
@@ -202,6 +220,8 @@ export class OrchestrationDetailsState extends ErrorMessageState {
     @observable
     purgeConfirmationOpen: boolean = false;
 
+    @observable
+    suspendResumeReason: string;
     @observable
     eventName: string;
     @observable
@@ -354,6 +374,23 @@ export class OrchestrationDetailsState extends ErrorMessageState {
         }, err => {
             this._inProgress = false;
             this.showError('Failed to set custom status', err);
+        });
+    }
+
+    suspendResume(resume: boolean) {
+
+        const uri = `/orchestrations('${this._orchestrationId}')/${!!resume ? 'resume' : 'suspend'}`;
+
+        this.suspendDialogOpen = false;
+        this.resumeDialogOpen = false;
+        this._inProgress = true;
+
+        this._backendClient.call('POST', uri, this.suspendResumeReason).then(() => {
+            this._inProgress = false;
+            this.loadDetails();
+        }, err => {
+            this._inProgress = false;
+            this.showError(`Failed to ${!!resume ? 'resume' : 'suspend'}`, err);
         });
     }
 
@@ -685,6 +722,10 @@ export class OrchestrationDetailsState extends ErrorMessageState {
     private _setCustomStatusDialogOpen: boolean = false;
     @observable
     private _restartDialogOpen: boolean = false;
+    @observable
+    private _suspendDialogOpen: boolean = false;
+    @observable
+    private _resumeDialogOpen: boolean = false;
     @observable
     private _autoRefresh: number = 0;
     @observable

@@ -26,27 +26,35 @@ export class OrchestrationButtons extends React.Component<{ state: Orchestration
 
             {this.renderDialogs(state)}
 
-            <Button variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.restartDialogOpen = true}>
+            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.suspendDialogOpen = true}>
+                Suspend
+            </Button>
+            <Box width={7} />
+            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.resumeDialogOpen = true}>
+                Resume
+            </Button>
+            <Box width={7} />
+            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.restartDialogOpen = true}>
                 Restart
             </Button>
-            <Box width={10} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.rewindConfirmationOpen = true}>
+            <Box width={7} />
+            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.rewindConfirmationOpen = true}>
                 Rewind
             </Button>
-            <Box width={10} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.terminateConfirmationOpen = true}>
+            <Box width={7} />
+            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.terminateConfirmationOpen = true}>
                 Terminate
             </Button>
-            <Box width={10} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.raiseEventDialogOpen = true}>
+            <Box width={7} />
+            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.raiseEventDialogOpen = true}>
                 Raise Event
             </Button>
-            <Box width={10} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.setCustomStatusDialogOpen = true}>
+            <Box width={7} />
+            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.setCustomStatusDialogOpen = true}>
                 Set Custom Status
             </Button>
-            <Box width={10} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.purgeConfirmationOpen = true}>
+            <Box width={7} />
+            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.purgeConfirmationOpen = true}>
                 Purge
             </Button>           
             
@@ -226,6 +234,60 @@ export class OrchestrationButtons extends React.Component<{ state: Orchestration
                     </Button>
                     <Button onClick={() => state.restart()} color="secondary">
                         Restart
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={state.suspendDialogOpen}
+                onClose={() => state.suspendDialogOpen = false}
+            >
+                <DialogTitle>Suspend Orchestration</DialogTitle>
+                <DialogContent>
+
+                    <TextField
+                        margin="dense"
+                        InputLabelProps={{ shrink: true }}
+                        label="Reason (optional)"
+                        fullWidth
+                        value={state.suspendResumeReason}
+                        onChange={(evt) => state.suspendResumeReason = evt.target.value as string}
+                    />
+
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => state.suspendDialogOpen = false} color={PrimaryButtonColor}>
+                        Cancel
+                    </Button>
+                    <Button onClick={() => state.suspendResume(false)} color="secondary">
+                        Suspend
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={state.resumeDialogOpen}
+                onClose={() => state.resumeDialogOpen = false}
+            >
+                <DialogTitle>Resume Orchestration</DialogTitle>
+                <DialogContent>
+
+                    <TextField
+                        margin="dense"
+                        InputLabelProps={{ shrink: true }}
+                        label="Reason (optional)"
+                        fullWidth
+                        value={state.suspendResumeReason}
+                        onChange={(evt) => state.suspendResumeReason = evt.target.value as string}
+                    />
+
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => state.resumeDialogOpen = false} color={PrimaryButtonColor}>
+                        Cancel
+                    </Button>
+                    <Button onClick={() => state.suspendResume(true)} color="secondary">
+                        Resume
                     </Button>
                 </DialogActions>
             </Dialog>
