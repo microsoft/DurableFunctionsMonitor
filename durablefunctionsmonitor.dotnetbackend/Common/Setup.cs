@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
@@ -136,6 +137,17 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 string dfmUserNameClaimName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_USERNAME_CLAIM_NAME);
                 string dfmRolesClaimName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ROLES_CLAIM_NAME);
 
+                var allowedAppRoles = dfmAllowedAppRoles == null ? null : dfmAllowedAppRoles.Split(',');
+                var allowedReadOnlyAppRoles = dfmAllowedreadOnlyAppRoles == null ? null : dfmAllowedreadOnlyAppRoles.Split(',');
+                if (allowedAppRoles != null && allowedReadOnlyAppRoles != null)
+                {
+                    // Validating that same app role does not appear in both settings
+                    if (allowedAppRoles.Intersect(allowedReadOnlyAppRoles).Any())
+                    {
+                        throw new NotSupportedException($"{EnvVariableNames.DFM_ALLOWED_APP_ROLES} and {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} should not intersect");
+                    }
+                }
+
                 _settings = new DfmSettings()
                 {
                     // Don't want to move the below initializatin to DfmSettings's ctor. The idea is: either _everything_ comes 
@@ -143,8 +155,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     DisableAuthentication = dfmNonce == Auth.ISureKnowWhatIAmDoingNonce,
                     Mode = dfmMode == DfmMode.ReadOnly.ToString() ? DfmMode.ReadOnly : DfmMode.Normal,
                     AllowedUserNames = dfmAllowedUserNames == null ? null : dfmAllowedUserNames.Split(','),
-                    AllowedAppRoles = dfmAllowedAppRoles == null ? null : dfmAllowedAppRoles.Split(','),
-                    AllowedReadOnlyAppRoles = dfmAllowedreadOnlyAppRoles == null ? null : dfmAllowedreadOnlyAppRoles.Split(','),
+                    AllowedAppRoles = allowedAppRoles,
+                    AllowedReadOnlyAppRoles = allowedReadOnlyAppRoles,
                     UserNameClaimName = string.IsNullOrEmpty(dfmUserNameClaimName) ? Auth.PreferredUserNameClaim : dfmUserNameClaimName,
                     RolesClaimName = string.IsNullOrEmpty(dfmRolesClaimName) ? Auth.RolesClaim : dfmRolesClaimName
                 };
