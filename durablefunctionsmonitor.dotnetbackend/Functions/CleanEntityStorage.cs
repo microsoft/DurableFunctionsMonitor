@@ -35,10 +35,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string hubName,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
+            return this.HandleAuthAndErrors(OperationKind.Write, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
              
-                Auth.ThrowIfInReadOnlyMode(req.HttpContext.User);
-
                 var request = JsonConvert.DeserializeObject<CleanEntityStorageRequest>(await req.ReadAsStringAsync());
 
                 var result = await durableClient.CleanEntityStorageAsync(request.removeEmptyEntities, request.releaseOrphanedLocks, CancellationToken.None);

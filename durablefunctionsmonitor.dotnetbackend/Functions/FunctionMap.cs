@@ -24,7 +24,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             ILogger log
         )
         {
-            return req.HandleAuthAndErrors(connName, hubName, log, async () => {
+            return req.HandleAuthAndErrors(OperationKind.Read, connName, hubName, log, async () => {
 
                 // The underlying Task never throws, so it's OK.
                 var functionMapsMap = await CustomTemplates.GetFunctionMapsAsync();

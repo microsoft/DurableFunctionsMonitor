@@ -32,7 +32,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             string hubName,
             ILogger log)
         {
-            return this.HandleAuthAndErrors(defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
+            return this.HandleAuthAndErrors(OperationKind.Read, defaultDurableClient, req, connName, hubName, log, async (durableClient) => {
 
                 var filterClause = new FilterClause(req.Query["$filter"]);
 

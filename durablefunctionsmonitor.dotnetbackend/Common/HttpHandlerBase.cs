@@ -25,11 +25,11 @@ namespace DurableFunctionsMonitor.DotNetBackend
         }
 
         // Applies authN/authZ rules and handles incoming HTTP request. Also creates IDurableClient (when needed) and does error handling.
-        protected async Task<IActionResult> HandleAuthAndErrors(IDurableClient defaultDurableClient, HttpRequest req, string connName, string hubName, ILogger log, Func<IDurableClient, Task<IActionResult>> todo)
+        protected async Task<IActionResult> HandleAuthAndErrors(OperationKind kind, IDurableClient defaultDurableClient, HttpRequest req, string connName, string hubName, ILogger log, Func<IDurableClient, Task<IActionResult>> todo)
         {
             return await Globals.HandleErrors(req, log, async () => { 
 
-                await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, Globals.CombineConnNameAndHubName(connName, hubName));
+                await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, Globals.CombineConnNameAndHubName(connName, hubName), kind);
 
                 // For default storage connections using default durableClient, injected normally, as a parameter.
                 // Only using IDurableClientFactory for custom connections, just in case.
