@@ -20,12 +20,19 @@ suite('MonitorViewList Test Suite', () => {
 		// Arrange
 
 		const context: any = {
-			extensionPath: path.join(__dirname, '..', '..', '..')
+			extensionPath: path.join(__dirname, '..', '..', '..'),
+			globalState: {
+				get: () => undefined,
+				update: () => undefined
+			},
+			secrets: {
+				store: () => undefined
+			}
 		};
 
 		const functionGraphList: any = {};
 
-		const monitorViewList = new MonitorViewList(context, functionGraphList, () => undefined, () => { }, () => { });
+		const monitorViewList = new MonitorViewList(context, functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		(vscode.window as any).showInputBox = () => Promise.resolve('UseDevelopmentStorage=true');
 

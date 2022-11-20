@@ -40,7 +40,7 @@ export class MonitorView
         private _backend: BackendProcess,
         private _hubName: string,
         private _functionGraphList: FunctionGraphList,
-        private _getTokenCredentialsForGivenConnectionString: (connString: string) => AzureConnectionInfo | undefined,
+        private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureConnectionInfo | undefined>,
         private _onViewStatusChanged: () => void,
         private _log: (line: string) => void) {
         
@@ -444,7 +444,7 @@ export class MonitorView
 
     private async navigateToBinding(binding: any): Promise<void> {
 
-        const creds = this._getTokenCredentialsForGivenConnectionString(this._backend.storageConnectionStrings[0]);
+        const creds = await this._getTokenCredentialsForGivenConnectionString(this._backend.storageConnectionStrings[0]);
         if (!creds) {
             return;
         }

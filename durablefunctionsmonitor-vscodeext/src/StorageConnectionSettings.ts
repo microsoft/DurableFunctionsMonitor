@@ -18,14 +18,11 @@ export class StorageConnectionSettings {
     get hubName(): string { return this._hubName; };
     get connStringHashKey(): string { return this._connStringHashKey; }
     get hashKey(): string { return this._hashKey; }
-    get isFromLocalSettingsJson(): boolean { return this._fromLocalSettingsJson; }
     get isMsSql(): boolean { return !!ConnStringUtils.GetSqlServerName(this._connStrings[0]); }
-    get isIdentityBasedConnection(): boolean { return this._isIdentityBasedConnection; }
+    get isIdentityBasedConnection(): boolean { return !this.isMsSql && !ConnStringUtils.GetAccountKey(this._connStrings[0]); }
 
     constructor(private _connStrings: string[],
-        private _hubName: string,
-        private _fromLocalSettingsJson: boolean = false,
-        private _isIdentityBasedConnection: boolean = false
+        private _hubName: string
     ) {
 
         this._connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(this._connStrings);
@@ -34,10 +31,10 @@ export class StorageConnectionSettings {
 
     static GetConnStringHashKey(connStrings: string[]): string {
 
-        const sqlServerName = ConnStringUtils.GetSqlServerName(connStrings[0]);
+        const sqlServerName = ConnStringUtils.GetSqlServerName(connStrings[0]).toLowerCase();
 
         if (!!sqlServerName) {
-            return sqlServerName + ConnStringUtils.GetSqlDatabaseName(connStrings[0]);
+            return `Server:${sqlServerName};Initial Catalog=${ConnStringUtils.GetSqlDatabaseName(connStrings[0]).toLowerCase()}`;
         }
 
         return ConnStringUtils.GetTableEndpoint(connStrings[0]).toLowerCase();
@@ -92,13 +89,12 @@ export class SequentialDeviceTokenCredentials extends DeviceTokenCredentials {
 }
 
 // Creates a user-specific access token for accessing Storage, also adds other needed headers
-export async function CreateIdentityBasedAuthHeadersForTableStorage(subscription: AzureSubscription): Promise<{}> {
+export async function CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential: DeviceTokenCredentials): Promise<{}> {
 
     // The default resourceId ('https://management.core.windows.net/') doesn't work for Storage.
     // So we need to replace it with the proper one.
     const storageResourceId = 'https://storage.azure.com';
 
-    const tokenCredential = subscription.session.credentials2 as DeviceTokenCredentials;
     const environment = tokenCredential.environment;
 
     const credentials = new SequentialDeviceTokenCredentials(

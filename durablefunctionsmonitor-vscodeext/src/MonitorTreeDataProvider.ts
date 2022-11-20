@@ -2,17 +2,15 @@
 // Licensed under the MIT license.
 
 import * as vscode from 'vscode';
+import * as path from 'path';
+import { StorageManagementClient } from "@azure/arm-storage";
+import { StorageAccount, StorageAccountKey } from "@azure/arm-storage/src/models";
 
 import { AzureConnectionInfo, MonitorView } from "./MonitorView";
-import { MonitorViewList } from "./MonitorViewList";
-import { StorageAccountTreeItem } from './StorageAccountTreeItem';
-import { StorageAccountTreeItems } from './StorageAccountTreeItems';
-import { TaskHubTreeItem } from './TaskHubTreeItem';
-import { SubscriptionTreeItems } from './SubscriptionTreeItems';
-import { SubscriptionTreeItem } from './SubscriptionTreeItem';
+import { MonitorViewList, getTaskHubNamesFromTableStorage, getTaskHubNamesFromTableStorageWithUserToken } from "./MonitorViewList";
 import { FunctionGraphList } from './FunctionGraphList';
 import { Settings, UpdateSetting } from './Settings';
-import { StorageConnectionSettings } from "./StorageConnectionSettings";
+import { StorageConnectionSettings, AzureSubscription } from "./StorageConnectionSettings";
 import { ConnStringUtils } from './ConnStringUtils';
 
 // Root object in the hierarchy. Also serves data for the TreeView.
@@ -24,36 +22,20 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         const azureAccountExtension = vscode.extensions.getExtension('ms-vscode.azure-account');
 
         // Typings for azureAccount are here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
-        const azureAccount = !!azureAccountExtension ? azureAccountExtension.exports : undefined;
+        this._azureAccount = !!azureAccountExtension ? azureAccountExtension.exports : undefined;
 
         this._monitorViews = new MonitorViewList(this._context,
             functionGraphList,
-            (connString) => this.getTokenCredentialsForGivenConnectionString(azureAccount, connString),
+            (connString) => this.getTokenCredentialsForGivenConnectionString(connString),
             () => this._onDidChangeTreeData.fire(undefined),
             !logChannel ? () => { } : (l) => logChannel.append(l));
 
-        const resourcesFolderPath = this._context.asAbsolutePath('resources');
-        this._storageAccounts = new StorageAccountTreeItems(resourcesFolderPath, this._monitorViews);
+        this._resourcesFolderPath = this._context.asAbsolutePath('resources');
         
-        if (!!azureAccount && !!azureAccount.onFiltersChanged) {
+        if (!!this._azureAccount && !!this._azureAccount.onFiltersChanged) {
 
             // When user changes their list of filtered subscriptions (or just relogins to Azure)...
-            this._context.subscriptions.push(azureAccount.onFiltersChanged(() => this.refresh()));
-        }
-
-        this._subscriptions = new SubscriptionTreeItems(
-            this._context,
-            azureAccount,
-            this._storageAccounts,
-            () => this._onDidChangeTreeData.fire(undefined),
-            resourcesFolderPath,
-            !logChannel ? () => { } : (l) => logChannel.appendLine(l)
-        );
-
-        // Also trying to parse current project's files and create a Task Hub node for them
-        const connSettingsFromCurrentProject = this._monitorViews.getStorageConnectionSettingsFromCurrentProject();
-        if (!!connSettingsFromCurrentProject) {
-            this._storageAccounts.addNodeForConnectionSettings(connSettingsFromCurrentProject);
+            this._context.subscriptions.push(this._azureAccount.onFiltersChanged(() => this.refresh()));
         }
     }
 
@@ -61,47 +43,335 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem { return element; }
 
     // Returns the children of `element` or root if no element is passed.
-    getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+    async getChildren(parent: vscode.TreeItem): Promise<vscode.TreeItem[]> {
 
-        if (!element) {
-            return this._subscriptions.getNonEmptyNodes();
-        }
+        const result: vscode.TreeItem[] = [];
 
-        const subscriptionNode = element as SubscriptionTreeItem;
-        if (subscriptionNode.isSubscriptionTreeItem) {
+        try {
 
-            const storageAccountNodes = subscriptionNode.storageAccountNodes;
+            switch (parent?.contextValue)
+            {
+                case undefined:
 
-            // Initially collapsing those storage nodes, that don't have attached TaskHubs at the moment
-            for (const n of storageAccountNodes) {
-                if (!n.isAttached) {
-                    n.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-                }
+                    result.push({
+                        contextValue: 'subscriptions',
+                        label: 'Azure Subscriptions',
+                        tooltip: 'Shows Task Hubs automatically discovered from all your Azure Storage accounts',
+                        iconPath: path.join(this._resourcesFolderPath, 'azureSubscriptions.svg'),
+                        collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
+                    });
+
+                    result.push({
+                        contextValue: 'connectionStrings',
+                        label: 'Stored Connection Strings',
+                        tooltip: `These Connection Strings are persisted in VsCode's SecretStorage`,
+                        iconPath: new vscode.ThemeIcon('plug'),
+                        collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
+                    });
+
+                    const curConnSettings = this._monitorViews.getStorageConnectionSettingsFromCurrentProject('TestHubName');
+                    if (!!curConnSettings) {
+
+                        result.push({
+                            contextValue: 'localProject',
+                            label: 'Local Project',
+                            tooltip: 'Task Hub used by your currently opened project',
+                            iconPath: {
+                                light: path.join(this._resourcesFolderPath, 'light', 'localProject.svg'),
+                                dark: path.join(this._resourcesFolderPath, 'dark', 'localProject.svg')
+                            },
+                            collapsibleState: vscode.TreeItemCollapsibleState.Expanded
+                        });
+                    }
+
+                    result.push({
+                        contextValue: 'storageEmulator',
+                        label: 'Local Storage Emulator',
+                        tooltip: 'Shows Task Hubs automatically discovered in your local Azure Storage Emulator',
+                        iconPath: path.join(this._resourcesFolderPath, 'storageEmulator.svg'),
+                        collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
+                    });
+                    
+                    break;
+                
+                case 'subscriptions':
+
+                    if (!this._azureAccount  || (!await this._azureAccount.waitForFilters())) {
+
+                        result.push({
+                            label: 'Install Azure Account extension and sign in to Azure to see anything here'
+                        });
+
+                    } else {
+
+                        for (const sub of this._azureAccount.filters) {
+
+                            const node: SubscriptionTreeItem = {
+                                contextValue: 'subscription',
+                                label: sub.subscription.displayName,
+                                iconPath: path.join(this._resourcesFolderPath, 'azureSubscription.svg'),
+                                collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
+                                azureSubscription: sub,
+                            };
+
+                            result.push(node);
+                        }
+                    }
+                    
+                    break;
+                
+                case 'subscription':
+
+                    const subscriptionsNode = parent as SubscriptionTreeItem;
+
+                    const storageAccountsAndTaskHubs = await this.getStorageAccountsAndTaskHubs(subscriptionsNode.azureSubscription!);
+
+                    for (const acc of storageAccountsAndTaskHubs) {
+
+                        const storageConnStrings = [this.getConnectionStringForStorageAccount(acc.account, acc.storageKey)];
+
+                        const isAttached = !!this._monitorViews.getBackendUrl(storageConnStrings)
+
+                        let iconPath = '';
+                        if (acc.account.kind == 'StorageV2') {
+                            iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountV2Attached.svg' : 'storageAccountV2.svg');
+                        } else {
+                            iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountAttached.svg' : 'storageAccount.svg');
+                        }
+
+                        const node: StorageAccountTreeItem = {
+                            label: acc.account.name,
+                            contextValue: isAttached ? 'storageAccount-attached' : 'storageAccount-detached',
+                            iconPath,
+                            collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
+                            storageAccountId: acc.account.id,
+                            storageConnStrings,
+                            hubNames: acc.hubNames,
+                            description: `${acc.hubNames.length} Task Hub${acc.hubNames.length === 1 ? '' : 's'}`,
+                            tooltip: !acc.storageKey ? 'identity-based' : ConnStringUtils.MaskStorageConnString(storageConnStrings[0])
+                        };
+                        
+                        // Sorting by name on the fly
+                        const index = result.findIndex(n => n.label! > node.label!);
+                        result.splice(index < 0 ? result.length : index, 0, node);
+                    }
+                    
+                    break;
+
+                case 'storageAccount-attached':
+                case 'storageAccount-detached':
+                case 'storedStorageAccount-attached':
+                case 'storedStorageAccount-detached':
+
+                    const accountNode = parent as StorageAccountTreeItem;
+
+                    if (!accountNode.hubNames || !accountNode.hubNames.length) {
+
+                        result.push({
+                            label: 'No Task Hubs found'
+                        });
+                        
+                    } else {
+
+                        for (const hub of accountNode.hubNames) {
+
+                            const storageConnectionSettings = new StorageConnectionSettings(accountNode.storageConnStrings, hub);
+                            const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
+    
+                            const node: TaskHubTreeItem = {
+                                label: hub,
+                                contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
+                                iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
+                                storageAccountId: accountNode.storageAccountId,
+                                storageConnectionSettings,
+                            };
+    
+                            node.command = {
+                                title: 'Attach',
+                                command: 'durableFunctionsMonitorTreeView.attachToTaskHub',
+                                arguments: [node]
+                            };
+                            
+                            // Sorting by name on the fly
+                            const index = result.findIndex(n => n.label! > node.label!);
+                            result.splice(index < 0 ? result.length : index, 0, node);
+                        }    
+                    }
+
+                    break;
+                
+                case 'localProject':
+
+                    const storageConnectionSettings = this._monitorViews.getStorageConnectionSettingsFromCurrentProject('TestHubName');
+
+                    if (!!storageConnectionSettings) {
+                        
+                        const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
+
+                        const node: TaskHubTreeItem = {
+                            label: storageConnectionSettings.hubName,
+                            contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
+                            iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
+                            storageConnectionSettings: storageConnectionSettings
+                        };
+    
+                        node.command = {
+                            title: 'Attach',
+                            command: 'durableFunctionsMonitorTreeView.attachToTaskHub',
+                            arguments: [node]
+                        };
+    
+                        result.push(node);
+                    }
+                        
+                    break;
+                
+                case 'connectionStrings':
+
+                    const connStringHashes = this._context.globalState.get(MonitorViewList.ConnectionStringHashes) as string[];
+                    if (!!connStringHashes) {
+
+                        for (const connStringHash of connStringHashes) {
+
+                            const connString = await this._context.secrets.get(connStringHash);
+
+                            if (!connString) {
+                                continue;
+                            }
+
+                            const isAttached = !!this._monitorViews.getBackendUrl([connString])
+
+                            let hubNames: string[] | null = null;
+                            let iconPath: string = '';
+                            let tooltip: string = '';
+                            let description: string = '';
+
+                            if (ConnStringUtils.GetSqlServerName(connString)) {
+
+                                hubNames = ['DurableFunctionsHub'];
+
+                                iconPath = path.join(this._resourcesFolderPath, isAttached ? 'mssqlAttached.svg' : 'mssql.svg');
+                                tooltip = 'MSSQL Storage Provider';
+                                description = 'MSSQL Storage Provider';
+                                
+                            } else {
+
+                                const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
+                                const accountName = ConnStringUtils.GetAccountName(connString);
+                                const accountKey = ConnStringUtils.GetAccountKey(connString);
+    
+                                if (!tableEndpoint || !accountName || !accountKey) {
+                                    continue;
+                                }
+    
+                                try {
+
+                                    hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey, true);
+
+                                    if (!!hubNames) {
+                                        
+                                        description = `${hubNames.length} Task Hub${hubNames.length === 1 ? '' : 's'}`;
+                                    }
+
+                                } catch (err: any) {
+
+                                    description = `Failed to load Task Hubs. ${err.message ?? err}`
+                                }
+
+                                iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountAttached.svg' : 'storageAccount.svg');
+                                tooltip = ConnStringUtils.MaskStorageConnString(connString);
+                            }
+
+                            const node: StorageAccountTreeItem = {
+                                label: ConnStringUtils.GetStorageName([connString]),
+                                contextValue: isAttached ? 'storedStorageAccount-attached' : 'storedStorageAccount-detached',
+                                iconPath,
+                                collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
+                                storageConnStrings: [connString],
+                                hubNames: hubNames ?? [],
+                                description,
+                                tooltip
+                            };
+                            
+                            // Sorting by name on the fly
+                            const index = result.findIndex(n => n.label! > node.label!);
+                            result.splice(index < 0 ? result.length : index, 0, node);                                
+                        }
+                    }
+
+                    break;
+                
+                case 'storageEmulator':
+                    
+                    const emulatorConnString = Settings().storageEmulatorConnectionString;
+
+                    const accountName = ConnStringUtils.GetAccountName(emulatorConnString);
+                    const accountKey = ConnStringUtils.GetAccountKey(emulatorConnString);
+                    const tableEndpoint = ConnStringUtils.GetTableEndpoint(emulatorConnString);
+
+                    let hubNames: string[] | null = null;
+            
+                    try {
+
+                        hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey, true) ?? [];
+                        
+                    } catch (err: any) {
+                        
+                        result.push({
+                            label: `Failed to load Task Hubs. ${err.message ?? err}`
+                        });
+                    }
+
+                    if (!!hubNames) {
+
+                        if (!hubNames.length) {
+
+                            result.push({
+                                label: 'No Task Hubs found'
+                            });
+                                
+                        } else {
+
+                            for (const hub of hubNames) {
+
+                                const storageConnectionSettings = new StorageConnectionSettings([emulatorConnString], hub);
+                                const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
+        
+                                const node: TaskHubTreeItem = {
+                                    label: hub,
+                                    contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
+                                    iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
+                                    storageConnectionSettings,
+                                };
+        
+                                node.command = {
+                                    title: 'Attach',
+                                    command: 'durableFunctionsMonitorTreeView.attachToTaskHub',
+                                    arguments: [node]
+                                };
+                                
+                                // Sorting by name on the fly
+                                const index = result.findIndex(n => n.label! > node.label!);
+                                result.splice(index < 0 ? result.length : index, 0, node);
+                            }
+                        }                    
+                    }
+
+                    break;
             }
 
-            return Promise.resolve(storageAccountNodes);
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Failed to load tree items. ${err.message ?? err}`);
         }
 
-        // If this is a storage account tree item
-        const item = element as StorageAccountTreeItem;
-        if (this._storageAccounts.nodes.includes(item)) {
-            return Promise.resolve(item.childItems);
-        }
-
-        return Promise.resolve([]);
+        return result;
     }
 
     // Handles 'Attach' context menu item or a click on a tree node
-    attachToTaskHub(taskHubItem: TaskHubTreeItem | null, messageToWebView: any = undefined): void {
+    attachToTaskHub(taskHubItem: TaskHubTreeItem, messageToWebView: any = undefined): void {
 
         if (!!this._inProgress) {
             console.log(`Another operation already in progress...`);
-            return;
-        }
-
-        // This could happen, if the command is executed via Command Palette (and not via menu)
-        if (!taskHubItem) {
-            this.createOrActivateMonitorView(false, messageToWebView);
             return;
         }
 
@@ -170,11 +440,36 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         }
     }
 
+    // Handles 'Forget this Connection String' context menu item
+    forgetConnectionString(storageAccountItem: StorageAccountTreeItem) {
+
+        if (!storageAccountItem) {
+            vscode.window.showWarningMessage('This command is only available via context menu');
+            return;
+        }
+
+        if (!!this._inProgress) {
+            console.log(`Another operation already in progress...`);
+            return;
+        }
+        this._inProgress = true;
+
+        this._monitorViews.forgetConnectionString(storageAccountItem.storageConnStrings).then(() => {
+
+            this._onDidChangeTreeData.fire(undefined);
+            this._inProgress = false;
+
+        }, err => {
+            this._inProgress = false;
+            vscode.window.showErrorMessage(`Failed to detach from Task Hub. ${err}`);
+        });
+    }
+
     // Handles 'Detach' context menu item
     detachFromTaskHub(storageAccountItem: StorageAccountTreeItem) {
 
         if (!storageAccountItem) {
-            vscode.window.showInformationMessage('This command is only available via context menu');
+            vscode.window.showWarningMessage('This command is only available via context menu');
             return;
         }
 
@@ -199,12 +494,17 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     deleteTaskHub(taskHubItem: TaskHubTreeItem) {
 
         if (!taskHubItem) {
-            vscode.window.showInformationMessage('This command is only available via context menu');
+            vscode.window.showWarningMessage('This command is only available via context menu');
             return;
         }
 
         if (!!this._inProgress) {
             console.log(`Another operation already in progress...`);
+            return;
+        }
+
+        if (!!taskHubItem.storageConnectionSettings.isMsSql) {
+            vscode.window.showErrorMessage('Deleting Task Hubs is not supported for MSSQL Durability Provider');
             return;
         }
 
@@ -222,7 +522,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 this._inProgress = true;
                 monitorView.deleteTaskHub().then(() => { 
 
-                    taskHubItem.removeFromTree();
+                    this._storageAccountMap = {};
 
                     this._onDidChangeTreeData.fire(undefined);
                     this._inProgress = false;
@@ -238,6 +538,17 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     // Handles 'Open in Storage Explorer' context menu item
     async openTableInStorageExplorer(taskHubItem: TaskHubTreeItem, table: 'Instances' | 'History') {
 
+        if (!taskHubItem.storageAccountId) {
+            return;
+        }
+
+        // Extracting subscriptionId
+        const match = /\/subscriptions\/([^\/]+)\/resourceGroups/gi.exec(taskHubItem.storageAccountId);
+        if (!match || match.length <= 0) {
+            return;
+        }
+        const subscriptionId = match[1];
+
         // Using Azure Storage extension for this
         var storageExt = vscode.extensions.getExtension('ms-azuretools.vscode-azurestorage');
         if (!storageExt) {
@@ -250,21 +561,21 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             if (!storageExt.isActive) {
                 await storageExt.activate();
             }
-            
+
             await vscode.commands.executeCommand('azureStorage.openTable', {
 
                 root: {
                     storageAccountId: taskHubItem.storageAccountId,
                     // This works with older versions of Azure Storage ext
-                    subscriptionId: taskHubItem.subscriptionId
+                    subscriptionId: subscriptionId
                 },
 
                 subscription: {
                     // This works with newer versions of Azure Storage ext
-                    subscriptionId: taskHubItem.subscriptionId
+                    subscriptionId: subscriptionId
                 },
 
-                tableName: taskHubItem.hubName + table
+                tableName: taskHubItem.label + table
             });
 
         } catch (err) {
@@ -272,15 +583,9 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         }
     }
 
-    // Handles 'Attach' button
-    attachToAnotherTaskHub() {
-
-        this.createOrActivateMonitorView(true);
-    }
-
     // Handles 'Refresh' button
     refresh() {
-        this._subscriptions.cleanup();
+        this._storageAccountMap = {};
         this._onDidChangeTreeData.fire(undefined);
     }
 
@@ -333,17 +638,21 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         return this._monitorViews.cleanup();
     }
 
+    private readonly _azureAccount: any;
+    private readonly _resourcesFolderPath: string;
+
     private _inProgress: boolean = false;
 
     private _monitorViews: MonitorViewList;
-    private _storageAccounts: StorageAccountTreeItems;
-    private _subscriptions: SubscriptionTreeItems;
 
-    private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> = new vscode.EventEmitter<StorageAccountTreeItem | undefined>();
+    // Caching storage accounts per each subscription
+    private _storageAccountMap: { [subscriptionId: string]: StorageAccountAndTaskHubs[] } = {};
+
+    private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> = new vscode.EventEmitter<vscode.TreeItem | undefined>();
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> = this._onDidChangeTreeData.event;
 
     // Shows or makes active the main view
-    private async createOrActivateMonitorView(alwaysCreateNew: boolean, messageToWebView: any = undefined): Promise<MonitorView | null> {
+    async createOrActivateMonitorView(alwaysCreateNew: boolean, messageToWebView: any = undefined): Promise<MonitorView | null> {
 
         if (!!this._inProgress) {
             console.log(`Another operation already in progress...`);
@@ -363,7 +672,6 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             await monitorView.show(messageToWebView);
 
             this._inProgress = false;
-            this._storageAccounts.addNodeForMonitorView(monitorView);
             this._onDidChangeTreeData.fire(undefined);
 
             return monitorView;
@@ -374,9 +682,42 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             // closes the error message. As a result, _inProgress remains true until then, which blocks all commands
             this._inProgress = false;
             vscode.window.showErrorMessage(!(err as any).message ? err : (err as any).message);
+
+            this._onDidChangeTreeData.fire(undefined);
         }
 
         return null;
+    }
+
+    private async getStorageAccountsAndTaskHubs(subscription: AzureSubscription): Promise<StorageAccountAndTaskHubs[]> {
+
+        // Caching storage accounts, to speed up refresh
+        let result = this._storageAccountMap[subscription.subscription.subscriptionId];
+        if (!!result) {
+            return result;
+        }
+
+        result = [];
+
+        const storageManagementClient = new StorageManagementClient(subscription.session.credentials2, subscription!.subscription.subscriptionId);
+                    
+        const storageAccounts = await this.fetchAllStorageAccounts(storageManagementClient);
+          
+        await Promise.all(
+            storageAccounts.map(async acc => {
+
+                const taskHubsAndStorageKey = await this.getStorageKeyAndTaskHubs(storageManagementClient, acc, subscription);
+
+                if (!!taskHubsAndStorageKey && taskHubsAndStorageKey.hubNames.length > 0) {
+
+                    result.push({ account: acc, hubNames: taskHubsAndStorageKey.hubNames, storageKey: taskHubsAndStorageKey.storageKey });
+                }
+            })
+        );
+
+        this._storageAccountMap[subscription.subscription.subscriptionId] = result;
+
+        return result;
     }
 
     // Shows the main view upon a debug session
@@ -399,7 +740,6 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             
             await monitorView.show();
 
-            this._storageAccounts.addNodeForMonitorView(monitorView);
             this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;
             
@@ -413,36 +753,140 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     }
 
     // Tries to map a Storage connection string to some Azure credentials
-    private getTokenCredentialsForGivenConnectionString(azureAccount: any, connString: string): AzureConnectionInfo | undefined {
+    private async getTokenCredentialsForGivenConnectionString(connString: string): Promise<AzureConnectionInfo | undefined> {
 
         const storageAccountName = ConnStringUtils.GetAccountName(connString);
         if (!storageAccountName) {
             return;
         }
 
-        const subscription = azureAccount.filters.find((s: any) => { 
+        for (const subscription of this._azureAccount.filters) {
 
-            const subscriptionNode = this._subscriptions.nodes.find(n => n.subscriptionId === s.subscription.subscriptionId);
-            if (!subscriptionNode) {
-                return false;
-            }
+            const storageAccounts = await this.getStorageAccountsAndTaskHubs(subscription);
 
-            for (const accountName of subscriptionNode.storageAccountNames) {
-                if (accountName.toLowerCase() === storageAccountName.toLowerCase()) {
-                    return true;
+            for (const account of storageAccounts) {
+                
+                if (account.account.name?.toLowerCase() === storageAccountName.toLowerCase()) {
+                 
+                    return {
+                        credentials: subscription.session.credentials2,
+                        subscriptionId: subscription.subscription.subscriptionId,
+                        tenantId: subscription.session.tenantId
+                    };                                
                 }
             }
-            return false;
-        });
+        }
+    }
 
-        if (!subscription) {
-            return;
+    private async fetchAllStorageAccounts(storageManagementClient: StorageManagementClient): Promise<StorageAccount[]> {
+ 
+        const result: StorageAccount[] = [];
+
+        var storageAccountsPartialResponse = await storageManagementClient.storageAccounts.list();
+        result.push(...storageAccountsPartialResponse);
+
+        while (!!storageAccountsPartialResponse.nextLink) {
+
+            storageAccountsPartialResponse = await storageManagementClient.storageAccounts.listNext(storageAccountsPartialResponse.nextLink);
+            result.push(...storageAccountsPartialResponse);
         }
 
-        return {
-            credentials: subscription.session.credentials2,
-            subscriptionId: subscription.subscription.subscriptionId,
-            tenantId: subscription.session.tenantId
-        };
+        return result;
+    }
+
+    private async getStorageKeyAndTaskHubs(
+        storageManagementClient: StorageManagementClient, storageAccount: StorageAccount, subscription: AzureSubscription
+    ): Promise<{storageKey?: string, hubNames: string[]} | undefined> {
+
+        // Extracting resource group name
+        const match = /\/resourceGroups\/([^\/]+)\/providers/gi.exec(storageAccount.id!);
+        if (!match || match.length <= 0) {
+            return;
+        }
+        const resourceGroupName = match[1];
+
+        let tableEndpoint = '';
+        if (!!storageAccount.primaryEndpoints) {
+            tableEndpoint = storageAccount.primaryEndpoints.table!;
+        }
+        
+        let storageKey: StorageAccountKey | undefined = undefined;
+        const storageKeys = await storageManagementClient.storageAccounts.listKeys(resourceGroupName, storageAccount.name!);
+
+        if (!!storageKeys.keys?.length) {
+
+            // Choosing the key that looks best
+            storageKey = storageKeys.keys.find(k => !k.permissions || k.permissions.toLowerCase() === "full");
+            if (!storageKey) {
+                storageKey = storageKeys.keys.find(k => !k.permissions || k.permissions.toLowerCase() === "read");
+            }
+        }
+
+        let hubNames: string[] | null = null;
+
+        if (!storageKey?.value) {
+            
+            // If no keys found, just trying user's Azure login.
+            hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
+
+        } else {
+
+            try {
+
+                hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, storageAccount.name!, storageKey.value, true);
+
+            } catch (err) {
+
+                storageKey = undefined;
+
+                // This might indicate that storage keys are being disabled for this account. So trying user's Azure login.
+                if ((err as any).response?.status === 403) {
+        
+                    hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
+                }
+
+            }
+        }
+
+        if (!!hubNames) {
+
+            return { storageKey: storageKey?.value, hubNames };
+        }
+    }
+
+    private getConnectionStringForStorageAccount(account: StorageAccount, storageKey?: string): string {
+
+        var endpoints = ''; 
+        if (!!account.primaryEndpoints) {
+            endpoints = `BlobEndpoint=${account.primaryEndpoints!.blob};QueueEndpoint=${account.primaryEndpoints!.queue};TableEndpoint=${account.primaryEndpoints!.table};FileEndpoint=${account.primaryEndpoints!.file};`;
+        } else {
+            endpoints = `BlobEndpoint=https://${account.name}.blob.core.windows.net/;QueueEndpoint=https://${account.name}.queue.core.windows.net/;TableEndpoint=https://${account.name}.table.core.windows.net/;FileEndpoint=https://${account.name}.file.core.windows.net/;`;
+        }
+
+        if (!storageKey) {
+            return `DefaultEndpointsProtocol=https;AccountName=${account.name};${endpoints}`;
+        }
+
+        return `DefaultEndpointsProtocol=https;AccountName=${account.name};AccountKey=${storageKey};${endpoints}`;
     }
 }
+
+type SubscriptionTreeItem = vscode.TreeItem & {
+
+    azureSubscription?: AzureSubscription,
+};
+
+type StorageAccountTreeItem = vscode.TreeItem & {
+
+    storageAccountId?: string,
+    storageConnStrings: string[],
+    hubNames: string[],
+};
+
+type TaskHubTreeItem = vscode.TreeItem & {
+
+    storageAccountId?: string,
+    storageConnectionSettings: StorageConnectionSettings,
+};
+
+type StorageAccountAndTaskHubs = { account: StorageAccount, storageKey?: string, hubNames: string[] };

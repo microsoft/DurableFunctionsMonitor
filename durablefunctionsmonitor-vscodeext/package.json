@@ -129,6 +129,10 @@
             {
                 "command": "durableFunctionsMonitorTreeView.startNewInstance",
                 "title": "Start New Orchestration Instance..."
+            },
+            {
+                "command": "durableFunctionsMonitorTreeView.forgetConnectionString",
+                "title": "Forget this Connection String"
             }
         ],
         "menus": {
@@ -209,7 +213,7 @@
                 },
                 {
                     "command": "durableFunctionsMonitorTreeView.detachFromTaskHub",
-                    "when": "view == durableFunctionsMonitorTreeView && viewItem == storageAccount-attached"
+                    "when": "view == durableFunctionsMonitorTreeView && viewItem == storageAccount-attached || viewItem == storedStorageAccount-attached"
                 },
                 {
                     "command": "durableFunctionsMonitorTreeView.openInstancesInStorageExplorer",
@@ -220,6 +224,14 @@
                     "command": "durableFunctionsMonitorTreeView.openHistoryInStorageExplorer",
                     "when": "view == durableFunctionsMonitorTreeView && viewItem == taskHub-attached || viewItem == taskHub-detached",
                     "group": "4_storage_explorer@2"
+                },
+                {
+                    "command": "durableFunctionsMonitorTreeView.forgetConnectionString",
+                    "when": "view == durableFunctionsMonitorTreeView && viewItem == storedStorageAccount-attached || viewItem == storedStorageAccount-detached"
+                },
+                {
+                    "command": "durableFunctionsMonitorTreeView.attachToAnotherTaskHub",
+                    "when": "view == durableFunctionsMonitorTreeView && viewItem == connectionStrings"
                 }
             ],
             "commandPalette": [

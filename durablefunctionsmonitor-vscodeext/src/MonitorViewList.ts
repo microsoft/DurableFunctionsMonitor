@@ -11,15 +11,17 @@ import { ConnStringUtils } from "./ConnStringUtils";
 import { AzureConnectionInfo, MonitorView } from "./MonitorView";
 import { BackendProcess } from './BackendProcess';
 import { StorageConnectionSettings, CreateAuthHeadersForTableStorage, CreateIdentityBasedAuthHeadersForTableStorage, AzureSubscription } from "./StorageConnectionSettings";
-import { Settings } from './Settings';
 import { FunctionGraphList } from './FunctionGraphList';
+import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
 // Represents all MonitorViews created so far
 export class MonitorViewList {
 
+    public static readonly ConnectionStringHashes = 'ConnectionStringHashes';
+
     constructor(private _context: vscode.ExtensionContext,
         private _functionGraphList: FunctionGraphList,
-        private _getTokenCredentialsForGivenConnectionString: (connString: string) => AzureConnectionInfo | undefined,
+        private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureConnectionInfo | undefined>,
         private _onViewStatusChanged: () => void,
         private _log: (line: string) => void) {
     }
@@ -64,7 +66,14 @@ export class MonitorViewList {
 
         const connSettings = await this.askForStorageConnectionSettings();
 
-        return !connSettings ? null : this.getOrCreateFromStorageConnectionSettings(connSettings);
+        if (!connSettings || !connSettings.connStringHashKey) {
+            return null;
+        }
+
+        // Persisting the provided connection string in ExtensionContext.secrets
+        await this.saveConnectionString(connSettings);
+
+        return await this.getOrCreateFromStorageConnectionSettings(connSettings);
     }
 
     firstOrDefault(): MonitorView | null {
@@ -89,10 +98,7 @@ export class MonitorViewList {
                 return null;
             }
 
-            return new StorageConnectionSettings(
-                [sqlConnectionString],
-                'DurableFunctionsHub',
-                true);
+            return new StorageConnectionSettings([sqlConnectionString], 'DurableFunctionsHub');
         }
 
         var hubName: string | undefined = hostJson.hubName;
@@ -109,7 +115,7 @@ export class MonitorViewList {
             return null;
         }
 
-        return new StorageConnectionSettings([ConnStringUtils.ExpandEmulatorShortcutIfNeeded(storageConnString)], hubName, true);
+        return new StorageConnectionSettings([ConnStringUtils.ExpandEmulatorShortcutIfNeeded(storageConnString)], hubName);
     }
 
     // Stops all backend processes and closes all views
@@ -123,7 +129,7 @@ export class MonitorViewList {
         return Promise.all(Object.keys(backends).map(k => backends[k].cleanup()));
     }
 
-    detachBackend(storageConnStrings: string[]): Promise<any> {
+    async detachBackend(storageConnStrings: string[]): Promise<any> {
 
         const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnStrings);
 
@@ -141,12 +147,33 @@ export class MonitorViewList {
         // Stopping background process
         const backendProcess = this._backends[connStringHashKey];
         if (!backendProcess) {
-            return Promise.resolve();
+            return;
         }
 
-        return backendProcess.cleanup().then(() => {
-            delete this._backends[connStringHashKey];
-        });
+        await backendProcess.cleanup();
+
+        delete this._backends[connStringHashKey];
+    }
+
+    async forgetConnectionString(storageConnStrings: string[]): Promise<any> {
+
+        await this.detachBackend(storageConnStrings);
+
+        const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnStrings);
+
+        let connStringHashes = this._context.globalState.get(MonitorViewList.ConnectionStringHashes) as string[];
+        if (!!connStringHashes) {
+
+            let i;
+            while ((i = connStringHashes.indexOf(connStringHashKey)) >= 0)
+            {
+                connStringHashes.splice(i, 1);
+            }
+
+            this._context.globalState.update(MonitorViewList.ConnectionStringHashes, connStringHashes);
+        }
+
+        this._context.secrets.delete(connStringHashKey);
     }
 
     getBackendUrl(storageConnStrings: string[]): string {
@@ -255,16 +282,14 @@ export class MonitorViewList {
                 if (!!hubNameFromHostJson) {
 
                     hubPick.items = [{
-                        label: hubNameFromHostJson,
-                        description: '(from host.json)'
+                        label: hubNameFromHostJson
                     }];
                     hubPick.placeholder = hubNameFromHostJson;
 
                 } else {
 
                     hubPick.items = [{
-                        label: 'DurableFunctionsHub',
-                        description: '(default hub name)'
+                        label: 'DurableFunctionsHub'
                     }];
 
                     hubPick.placeholder = 'DurableFunctionsHub';
@@ -277,7 +302,7 @@ export class MonitorViewList {
 
                         // Adding loaded names to the list
                         hubPick.items = hubNames.map(label => {
-                            return { label: label, description: '(from Table Storage)' };
+                            return { label: label };
                         });
 
                         hubPick.placeholder = hubNames[0];
@@ -296,12 +321,26 @@ export class MonitorViewList {
         const accountKey = ConnStringUtils.GetAccountKey(storageConnString);
         const tableEndpoint = ConnStringUtils.GetTableEndpoint(storageConnString);
 
-        if (!accountName || !accountKey) {
+        if (!accountName) {
             return [];
         }
 
-        const hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey);
-        return hubNames ?? [];
+        if (!accountKey) {
+
+            const credentials = await this._getTokenCredentialsForGivenConnectionString(storageConnString);
+            if (!credentials) {
+                
+                return [];
+            }
+
+            const hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, accountName, credentials.credentials);
+            return hubNames ?? [];
+
+        } else {
+
+            const hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey);
+            return hubNames ?? [];
+        }
     }
 
     private getValueFromLocalSettings(valueName: string): string {
@@ -359,6 +398,23 @@ export class MonitorViewList {
         }
         return result;
     }
+
+    private async saveConnectionString(connSettings: StorageConnectionSettings): Promise<void> {
+
+        let connStringHashes = this._context.globalState.get(MonitorViewList.ConnectionStringHashes) as string[];
+        if (!connStringHashes) {
+            connStringHashes = [];
+        }
+
+        if (!connStringHashes.includes(connSettings.connStringHashKey)) {
+
+            connStringHashes.push(connSettings.connStringHashKey);
+        }
+
+        this._context.secrets.store(connSettings.connStringHashKey, connSettings.storageConnStrings[0]);
+
+        await this._context.globalState.update(MonitorViewList.ConnectionStringHashes, connStringHashes)
+    }
 }
 
 function getTaskHubNamesFromTableNames(tableNames: string[]): string[] {
@@ -388,7 +444,7 @@ function fixTableEndpointUrl(tableEndpointUrl: string, accountName: string): str
 
 // Tries to load the list of TaskHub names from a storage account.
 // Had to handcraft this code, since @azure/data-tables package is still in beta :(
-export async function getTaskHubNamesFromTableStorage(tableEndpointUrl: string, accountName: string, accountKey: string, throwUpon403?: boolean): Promise<string[] | null> {
+export async function getTaskHubNamesFromTableStorage(tableEndpointUrl: string, accountName: string, accountKey: string, throwUponError?: boolean): Promise<string[] | null> {
 
     tableEndpointUrl = fixTableEndpointUrl(tableEndpointUrl, accountName);
 
@@ -402,7 +458,7 @@ export async function getTaskHubNamesFromTableStorage(tableEndpointUrl: string, 
 
     } catch (err) {
 
-        if (((err as any).response?.status === 403) && !!throwUpon403) {
+        if (!!throwUponError) {
             
             throw err;
         }
@@ -419,7 +475,7 @@ export async function getTaskHubNamesFromTableStorage(tableEndpointUrl: string, 
 
 // Tries to load the list of TaskHub names from a storage account.
 // Had to handcraft this code, since @azure/data-tables package is still in beta :(
-export async function getTaskHubNamesFromTableStorageWithUserToken(tableEndpointUrl: string, accountName: string, subscription?: AzureSubscription): Promise<string[] | null> {
+export async function getTaskHubNamesFromTableStorageWithUserToken(tableEndpointUrl: string, accountName: string, tokenCredential: DeviceTokenCredentials): Promise<string[] | null> {
 
     tableEndpointUrl = fixTableEndpointUrl(tableEndpointUrl, accountName);
 
@@ -427,7 +483,7 @@ export async function getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint
 
     try {
 
-        const authHeaders = await CreateIdentityBasedAuthHeadersForTableStorage(subscription!);
+        const authHeaders = await CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential);
         response = await axios.get(`${tableEndpointUrl}Tables`, { headers: authHeaders });
         
     } catch (err) {

@@ -297,7 +297,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const connSettings = new StorageConnectionSettings(['my-conn-string'], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings(['AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http'], 'my-task-hub');
 
 		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
 
@@ -347,7 +347,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub', false, true);
+		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;DefaultEndpointsProtocol=http;`], 'my-task-hub');
 
 		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
 
@@ -374,7 +374,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const extensionPath = path.join(__dirname, '..', '..', '..');
 
-		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub', false, true);
+		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub');
 
 		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => { });
 
@@ -402,7 +402,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const extensionPath = path.join(__dirname, '..', '..', '..');
 
-		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub', false, true);
+		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub');
 
 		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => { });
 

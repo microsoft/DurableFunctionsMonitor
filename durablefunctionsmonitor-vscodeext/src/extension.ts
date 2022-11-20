@@ -28,14 +28,16 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.debug.onDidStartDebugSession(() => monitorTreeDataProvider.handleOnDebugSessionStarted()),
 
+        vscode.window.registerTreeDataProvider('durableFunctionsMonitorTreeView', monitorTreeDataProvider),
+
         vscode.commands.registerCommand('extension.durableFunctionsMonitor',
-            () => monitorTreeDataProvider.attachToTaskHub(null)),
+            () => monitorTreeDataProvider.createOrActivateMonitorView(false)),
         
         vscode.commands.registerCommand('extension.durableFunctionsMonitorPurgeHistory',
-            () => monitorTreeDataProvider.attachToTaskHub(null, { id: 'purgeHistory' })),
+            () => monitorTreeDataProvider.createOrActivateMonitorView(false, { id: 'purgeHistory' })),
 
         vscode.commands.registerCommand('extension.durableFunctionsMonitorCleanEntityStorage',
-            () => monitorTreeDataProvider.attachToTaskHub(null, { id: 'cleanEntityStorage' })),
+            () => monitorTreeDataProvider.createOrActivateMonitorView(false, { id: 'cleanEntityStorage' })),
 
         vscode.commands.registerCommand('extension.durableFunctionsMonitorGotoInstanceId',
             () => monitorTreeDataProvider.gotoInstanceId(null)),
@@ -65,13 +67,11 @@ export function activate(context: vscode.ExtensionContext) {
             () => monitorTreeDataProvider.refresh()),
         
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.attachToAnotherTaskHub',
-            () => monitorTreeDataProvider.attachToAnotherTaskHub()),
+            () => monitorTreeDataProvider.createOrActivateMonitorView(true)),
 
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.detachFromAllTaskHubs',
             () => monitorTreeDataProvider.detachFromAllTaskHubs()),
         
-        vscode.window.registerTreeDataProvider('durableFunctionsMonitorTreeView', monitorTreeDataProvider),
-
         vscode.commands.registerCommand('extension.durableFunctionsMonitorVisualizeAsGraph',
             (item) => functionGraphList.visualize(item)),
         
@@ -80,6 +80,9 @@ export function activate(context: vscode.ExtensionContext) {
         
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.openHistoryInStorageExplorer',
             (item) => monitorTreeDataProvider.openTableInStorageExplorer(item, 'History')),
+        
+        vscode.commands.registerCommand('durableFunctionsMonitorTreeView.forgetConnectionString',
+            (item) => monitorTreeDataProvider.forgetConnectionString(item)),
     );
 }
 

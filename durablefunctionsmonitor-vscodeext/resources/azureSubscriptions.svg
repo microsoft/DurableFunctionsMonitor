@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="bc18bade-5481-447e-a959-659d72346474"
+   width="18"
+   height="18"
+   viewBox="0 0 18 18"
+   version="1.1"
+   sodipodi:docname="azureSubscriptions.svg"
+   inkscape:version="1.2 (dc2aedaf03, 2022-05-15)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview20"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="13.111111"
+     inkscape:cx="9.0381356"
+     inkscape:cy="9.0381356"
+     inkscape:window-width="1500"
+     inkscape:window-height="930"
+     inkscape:window-x="-6"
+     inkscape:window-y="-6"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="bc18bade-5481-447e-a959-659d72346474" />
+  <defs
+     id="defs11">
+    <radialGradient
+       id="a445c717-9d75-44c7-ba6b-0d8f2383e560"
+       cx="-36.63"
+       cy="17.12"
+       r="11.18"
+       gradientTransform="matrix(0.94,0,0,0.94,39.88,-7.4)"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0.27"
+         stop-color="#ffd70f"
+         id="stop2" />
+      <stop
+         offset="0.49"
+         stop-color="#ffcb12"
+         id="stop4" />
+      <stop
+         offset="0.88"
+         stop-color="#feac19"
+         id="stop6" />
+      <stop
+         offset="1"
+         stop-color="#fea11b"
+         id="stop8" />
+    </radialGradient>
+    <radialGradient
+       id="a445c717-9d75-44c7-ba6b-0d8f2383e560-7"
+       cx="-36.630001"
+       cy="17.120001"
+       r="11.18"
+       gradientTransform="matrix(0.94,0,0,0.94,45.225743,-7.4562926)"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0.27"
+         stop-color="#ffd70f"
+         id="stop2-3" />
+      <stop
+         offset="0.49"
+         stop-color="#ffcb12"
+         id="stop4-6" />
+      <stop
+         offset="0.88"
+         stop-color="#feac19"
+         id="stop6-5" />
+      <stop
+         offset="1"
+         stop-color="#fea11b"
+         id="stop8-1" />
+    </radialGradient>
+  </defs>
+  <title
+     id="title13">Icon-general-2</title>
+  <path
+     id="e3d1e58c-f78e-4fb5-9857-0c9331da9979"
+     d="m 11.56,7.19 a 2.07,2.07 0 0 0 0,-2.93 v 0 L 8,0.69 a 2.06,2.06 0 0 0 -2.92,0 v 0 L 1.52,4.26 a 2.09,2.09 0 0 0 0,2.93 l 3,3 a 0.61,0.61 0 0 1 0.17,0.41 v 5.52 a 0.7,0.7 0 0 0 0.2,0.5 l 1.35,1.35 a 0.45,0.45 0 0 0 0.66,0 l 1.31,-1.31 v 0 l 0.77,-0.77 a 0.26,0.26 0 0 0 0,-0.38 L 8.43,14.95 a 0.29,0.29 0 0 1 0,-0.42 l 0.55,-0.56 a 0.26,0.26 0 0 0 0,-0.38 L 8.4,13 a 0.28,0.28 0 0 1 0,-0.41 L 9,12 A 0.26,0.26 0 0 0 9,11.62 L 8.23,10.84 v -0.28 z m -5,-5.64 A 1.18,1.18 0 1 1 5.37,2.73 1.17,1.17 0 0 1 6.54,1.55 Z"
+     fill="url(#a445c717-9d75-44c7-ba6b-0d8f2383e560)"
+     style="fill:url(#a445c717-9d75-44c7-ba6b-0d8f2383e560)" />
+  <path
+     id="a21a8f7a-61cc-4035-8449-e5c8fe4d4d5e"
+     d="m 5.62,16.21 v 0 A 0.25,0.25 0 0 0 6,16 V 11.55 A 0.27,0.27 0 0 0 5.89,11.33 v 0 A 0.25,0.25 0 0 0 5.5,11.55 V 16 a 0.27,0.27 0 0 0 0.12,0.21 z"
+     fill="#ff9300"
+     opacity="0.75" />
+  <rect
+     id="ecd3189c-fb1e-4a0e-a2b6-ba2f11dda484"
+     x="3.6900001"
+     y="5.4499998"
+     width="5.8600001"
+     height="0.69"
+     rx="0.31999999"
+     fill="#ff9300"
+     opacity="0.75" />
+  <rect
+     id="a1949a3c-4818-4bd1-b236-0d970b92fc62"
+     x="3.6900001"
+     y="6.5700002"
+     width="5.8600001"
+     height="0.69"
+     rx="0.31999999"
+     fill="#ff9300"
+     opacity="0.75" />
+  <path
+     id="e3d1e58c-f78e-4fb5-9857-0c9331da9979-5"
+     d="m 16.905743,7.1337077 a 2.07,2.07 0 0 0 0,-2.9300003 v 0 l -3.56,-3.57000001 a 2.06,2.06 0 0 0 -2.92,0 v 0 l -3.56,3.57000001 a 2.09,2.09 0 0 0 0,2.9300003 l 3,3.0000003 a 0.61,0.61 0 0 1 0.17,0.41 v 5.52 a 0.7,0.7 0 0 0 0.2,0.5 l 1.35,1.35 a 0.45,0.45 0 0 0 0.66,0 l 1.31,-1.31 v 0 l 0.77,-0.77 a 0.26,0.26 0 0 0 0,-0.38 l -0.55,-0.56 a 0.29,0.29 0 0 1 0,-0.42 l 0.55,-0.56 a 0.26,0.26 0 0 0 0,-0.38 l -0.58,-0.59 a 0.28,0.28 0 0 1 0,-0.41 l 0.6,-0.59 a 0.26,0.26 0 0 0 0,-0.38 l -0.77,-0.78 v -0.28 z m -5,-5.6400003 a 1.18,1.18 0 1 1 -1.19,1.18 1.17,1.17 0 0 1 1.17,-1.18 z"
+     fill="url(#a445c717-9d75-44c7-ba6b-0d8f2383e560)"
+     style="fill:url(#a445c717-9d75-44c7-ba6b-0d8f2383e560-7)" />
+  <path
+     id="a21a8f7a-61cc-4035-8449-e5c8fe4d4d5e-1"
+     d="m 10.965743,16.153708 v 0 a 0.25,0.25 0 0 0 0.38,-0.21 v -4.45 a 0.27,0.27 0 0 0 -0.11,-0.22 v 0 a 0.25,0.25 0 0 0 -0.39,0.22 v 4.45 a 0.27,0.27 0 0 0 0.12,0.21 z"
+     fill="#ff9300"
+     opacity="0.75" />
+  <rect
+     id="ecd3189c-fb1e-4a0e-a2b6-ba2f11dda484-2"
+     x="9.0357437"
+     y="5.3937073"
+     width="5.8600001"
+     height="0.69"
+     rx="0.31999999"
+     fill="#ff9300"
+     opacity="0.75" />
+  <rect
+     id="a1949a3c-4818-4bd1-b236-0d970b92fc62-1"
+     x="9.0357437"
+     y="6.5137081"
+     width="5.8600001"
+     height="0.69"
+     rx="0.31999999"
+     fill="#ff9300"
+     opacity="0.75" />
+</svg>
