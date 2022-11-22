@@ -117,7 +117,7 @@ namespace Dfm.MsSql
 							(chh.InstanceID = cii.InstanceID AND chh.EventType = 'ExecutionStarted')
 					) cih
 					ON
-					(cih.ParentInstanceID = h.InstanceID AND cih.TaskID = h.TaskID)
+					(cih.ParentInstanceID = h.InstanceID AND cih.TaskID = h.TaskID AND h.EventType = 'SubOrchestrationInstanceCreated')
 				WHERE
 					h.EventType IN 
 					(
