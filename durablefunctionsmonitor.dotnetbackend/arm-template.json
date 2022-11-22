@@ -98,7 +98,7 @@
             "properties": {
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('functionAppName'))]",
                 "siteConfig": {
-					"netFrameworkVersion": "v6.0",
+		    "netFrameworkVersion": "v6.0",
                     "appSettings": [
                         {
                             "name": "DFM_HUB_NAME",
