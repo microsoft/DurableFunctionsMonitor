@@ -1,5 +1,79 @@
 # Change Log
 
+## Version 6.0
+
+- Default backend migrated to .NET 6 and Azure Functions 4.x. 
+
+    NOTE: you can still manually switch to an older backend version with `Backend Version to Use` setting:
+    <img width="500px" src="https://user-images.githubusercontent.com/5447190/203386985-80e3acfd-20bd-49d9-8c1e-99f791e4c9e0.png"/>
+
+
+
+- Tree View entirely reimplemented. Now it separately shows Task Hubs from: 
+    * Your Azure Subscriptions (when signed in to Azure)
+    * Your currently opened local project (if it is a Functions project) 
+    * Your local Azure Storage emulator (if running)
+    * And from the list of custom persisted Connection Strings
+
+
+        <img width="500px" src="https://user-images.githubusercontent.com/5447190/203390205-27598a8d-e338-45a3-a9ab-7b0abfb36e4b.png"/>
+
+    To connect to an arbitrary Task Hub via a Connection String:
+        
+    * Use the same `Attach to Task Hub...` button:
+
+        <img width="200px" src="https://user-images.githubusercontent.com/5447190/203391928-750cb48a-2412-406a-a520-4d61ed40c2fd.png"/>
+        
+    * Or use context menu on `Stored Connection Strings` tree node:
+
+        <img width="200px" src="https://user-images.githubusercontent.com/5447190/203392219-d173fd7a-0375-47af-8413-39f5f8533c47.png"/>
+        
+    * Or use `Durable Functions Monitor` command.
+
+
+
+    Entered Connection Strings are persisted using [VsCode SecretStorage API](https://code.visualstudio.com/api/references/vscode-api#SecretStorage). On Windows you should be able to see them in Windows Credential Manager:
+
+    <img width="500px" src="https://user-images.githubusercontent.com/5447190/203393181-4c9ed3bc-bf64-4518-9d15-c7d581eb2431.png"/>
+
+
+    To remove a persisted Connection String, use the `Forget this Connection String` context menu:
+
+    <img width="300px" src="https://user-images.githubusercontent.com/5447190/203393587-25ec8933-b9c0-4888-92c1-5eb91c1fac7b.png"/>
+
+
+    This also means that you can now connect to multiple SQL databases (if your Functions use [SQL Storage Provider](https://learn.microsoft.com/en-gb/azure/azure-functions/durable/durable-functions-storage-providers#mssql)).
+
+
+
+ 
+- New `parentInstanceId` field for SubOrchestrations. The field is filterable and sortable:
+
+    <img width="600px" src="https://user-images.githubusercontent.com/5447190/203397645-5a478ceb-3ef1-432a-8be1-f367d42b097d.png"/>
+
+    And allows to quickly navigate from a SubOrchestration to its parent:
+
+    <img width="600px" src="https://user-images.githubusercontent.com/5447190/203398113-c483d480-4586-429f-89e8-b4f532e494b0.png"/>
+
+
+
+
+
+- `Suspend` and `Resume` buttons for orchestrations:
+
+    <img width="600px" src="https://user-images.githubusercontent.com/5447190/203396413-e6bff09f-6e73-46ef-9f69-b3360cc41b3a.png"/>
+
+
+
+
+- Function Graph improvements. *Binding* nodes: 
+
+    <img width="400px" src="https://user-images.githubusercontent.com/5447190/203395847-b3e3d755-a70d-4932-8900-773e53e3069c.png"/>
+
+    are now also clickable (not all of them) and try its best to open the relevant resource in Azure Portal or Storage Explorer.
+
+
+
 ## Version 5.5
 
 - Support for identity-based connections (#40). When [storage keys are disabled](https://docs.microsoft.com/en-us/azure/storage/common/shared-key-authorization-prevent?tabs=portal#remediate-authorization-via-shared-key) for some Storage account, DfMon will try to connect to it on *your* behalf (using your VsCode Azure login). Accounts like that will be marked as `identity-based` in the tree:
