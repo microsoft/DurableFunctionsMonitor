@@ -153,7 +153,7 @@ suite('BackendProcess Test Suite', () => {
 			// Assert
 
 			// Backend should return 401 from its ping endpoint, due to invalid Task Hub name
-			assert.strictEqual(err.message, `Request failed with status code 401`);
+			assert.strictEqual(err.message, `Backend responded with 401 Unauthorized. This might happen when specifying a non-existent Task Hub name.`);
 
 			assert.strictEqual(backendWasPublished, true);
 			assert.strictEqual(callbackWasCalled, true);

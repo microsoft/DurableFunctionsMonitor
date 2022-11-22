@@ -182,7 +182,7 @@ export class BackendProcess {
                         // This typically happens when mistyping Task Hub name
 
                         clearInterval(intervalToken);
-                        reject(err);
+                        reject(new Error(`Backend responded with 401 Unauthorized. This might happen when specifying a non-existent Task Hub name.`));
                     }
                 });
 
