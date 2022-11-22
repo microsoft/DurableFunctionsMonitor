@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DurableFunctionsMonitor.DotNetBackend;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
@@ -16,7 +17,55 @@ namespace Dfm.MsSql
     {
         public void Configure(IWebJobsBuilder builder)
         {
-            DfmEndpoint.Setup(null, new DfmExtensionPoints { GetInstanceHistoryRoutine = GetInstanceHistory });
+            DfmEndpoint.Setup(null, new DfmExtensionPoints 
+			{ 
+				GetInstanceHistoryRoutine = (client, connName, hubName, instanceId) => Task.FromResult(GetInstanceHistory(client, connName, hubName, instanceId)),
+				GetParentInstanceIdRoutine = GetParentInstanceId 
+			});
+        }
+
+        /// <summary>
+        /// Custom routine for fetching parent orchestration id
+        /// </summary>
+        public static async Task<string> GetParentInstanceId(IDurableClient durableClient, string connName, string hubName, string instanceId)
+        {
+            string sql =
+                @"SELECT 
+					i.ParentInstanceID as ParentInstanceID
+				FROM
+					dt.Instances i
+				WHERE
+					i.InstanceID = @OrchestrationInstanceId";
+
+            string sqlConnectionString = Environment.GetEnvironmentVariable("DFM_SQL_CONNECTION_STRING");
+
+            using (var conn = new SqlConnection(sqlConnectionString))
+            {
+                conn.Open();
+
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@OrchestrationInstanceId", instanceId);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (await reader.ReadAsync())
+						{
+                            var parentInstanceId = reader["ParentInstanceID"];
+							if (parentInstanceId != null)
+							{
+                                string parentInstanceIdString = parentInstanceId.ToString();
+								if (!string.IsNullOrWhiteSpace(parentInstanceIdString))
+								{
+                                    return parentInstanceIdString;
+                                }
+                            }
+						}
+                    }
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
