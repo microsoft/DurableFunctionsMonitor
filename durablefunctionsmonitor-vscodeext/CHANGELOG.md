@@ -42,8 +42,10 @@
     <img width="300px" src="https://user-images.githubusercontent.com/5447190/203393587-25ec8933-b9c0-4888-92c1-5eb91c1fac7b.png"/>
 
 
-    This also means that you can now connect to multiple SQL databases (if your Functions use [SQL Storage Provider](https://learn.microsoft.com/en-gb/azure/azure-functions/durable/durable-functions-storage-providers#mssql)).
 
+- Now it is the [release version](https://www.nuget.org/packages/Microsoft.DurableTask.SqlServer.AzureFunctions/1.0.1) of [SQL Storage Provider](https://learn.microsoft.com/en-gb/azure/azure-functions/durable/durable-functions-storage-providers#mssql) that is supported. And it is now fully supported.
+    
+    You can now connect to multiple SQL databases by providing Connection Strings to them. Those connections will be persisted as described above.
 
 
  
