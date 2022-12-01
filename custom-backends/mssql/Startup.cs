@@ -35,7 +35,7 @@ namespace Dfm.MsSql
 				FROM
 					dt.Instances i
 				WHERE
-					i.InstanceID = @OrchestrationInstanceId";
+					i.InstanceID = @OrchestrationInstanceId and i.TaskHub = @TaskHub";
 
             string sqlConnectionString = Environment.GetEnvironmentVariable("DFM_SQL_CONNECTION_STRING");
 
@@ -46,7 +46,7 @@ namespace Dfm.MsSql
                 using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@OrchestrationInstanceId", instanceId);
-
+                    cmd.Parameters.AddWithValue("@TaskHub", hubName);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         if (await reader.ReadAsync())
@@ -88,7 +88,7 @@ namespace Dfm.MsSql
 					INNER JOIN
 					dt.History h
 					ON
-					(i.InstanceID = h.InstanceID AND i.ExecutionID = h.ExecutionID)
+					(i.InstanceID = h.InstanceID AND i.ExecutionID = h.ExecutionID AND i.TaskHub = h.TaskHub)
 					LEFT JOIN
 					dt.History h2
 					ON
@@ -97,12 +97,14 @@ namespace Dfm.MsSql
 						AND
 						h2.EventType IN ('SubOrchestrationInstanceCompleted', 'SubOrchestrationInstanceFailed', 'TaskCompleted', 'TaskFailed')
 						AND
-						h.InstanceID = h2.InstanceID AND h.ExecutionID = h2.ExecutionID AND h.TaskID = h2.TaskID AND h.SequenceNumber != h2.SequenceNumber
+						h.InstanceID = h2.InstanceID AND h.ExecutionID = h2.ExecutionID AND h.TaskHub = h2.TaskHub AND h.TaskID = h2.TaskID AND h.SequenceNumber != h2.SequenceNumber
 					)
 					LEFT JOIN
 					dt.Payloads p
 					ON
 					p.PayloadID = h2.DataPayloadID
+					AND p.TaskHub = h2.TaskHub
+					AND p.InstanceID = h2.InstanceID
 					LEFT JOIN
 					(
 						select 
@@ -114,10 +116,10 @@ namespace Dfm.MsSql
 							INNER JOIN
 							dt.History chh
 							ON
-							(chh.InstanceID = cii.InstanceID AND chh.EventType = 'ExecutionStarted')
+							(chh.InstanceID = cii.InstanceID AND chh.TaskHub = cii.TaskHub AND chh.EventType = 'ExecutionStarted')
 					) cih
 					ON
-					(cih.ParentInstanceID = h.InstanceID AND cih.TaskID = h.TaskID AND h.EventType = 'SubOrchestrationInstanceCreated')
+					(cih.ParentInstanceID = h.InstanceID AND cih.TaskID = h.TaskID)
 				WHERE
 					h.EventType IN 
 					(
@@ -125,8 +127,7 @@ namespace Dfm.MsSql
 						'ContinueAsNew', 'TimerCreated', 'TimerFired', 'EventRaised', 'EventSent'
 					)
 					AND
-					i.InstanceID = @OrchestrationInstanceId
-
+					i.InstanceID = @OrchestrationInstanceId and i.TaskHub = @TaskHub
 				ORDER BY
 					h.SequenceNumber";
 
@@ -140,7 +141,7 @@ namespace Dfm.MsSql
                 using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@OrchestrationInstanceId", instanceId);
-
+                    cmd.Parameters.AddWithValue("@TaskHub", hubName);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         // Memorizing 'ExecutionStarted' event, to further correlate with 'ExecutionCompleted'
