@@ -16,7 +16,11 @@ import { ConnStringUtils } from './ConnStringUtils';
 // Root object in the hierarchy. Also serves data for the TreeView.
 export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> { 
 
+    private readonly _log: (line: string) => void;
+
     constructor(private _context: vscode.ExtensionContext, functionGraphList: FunctionGraphList, logChannel?: vscode.OutputChannel) {
+
+        this._log = !logChannel ? () => { } : (l) => logChannel.append(l);
 
         // Using Azure Account extension to connect to Azure, get subscriptions etc.
         const azureAccountExtension = vscode.extensions.getExtension('ms-vscode.azure-account');
@@ -28,7 +32,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             functionGraphList,
             (connString) => this.getTokenCredentialsForGivenConnectionString(connString),
             () => this._onDidChangeTreeData.fire(undefined),
-            !logChannel ? () => { } : (l) => logChannel.append(l));
+            this._log);
 
         this._resourcesFolderPath = this._context.asAbsolutePath('resources');
         
@@ -795,7 +799,9 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     }
 
     private async getStorageKeyAndTaskHubs(
-        storageManagementClient: StorageManagementClient, storageAccount: StorageAccount, subscription: AzureSubscription
+        storageManagementClient: StorageManagementClient,
+        storageAccount: StorageAccount,
+        subscription: AzureSubscription
     ): Promise<{storageKey?: string, hubNames: string[]} | undefined> {
 
         // Extracting resource group name
@@ -809,9 +815,19 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         if (!!storageAccount.primaryEndpoints) {
             tableEndpoint = storageAccount.primaryEndpoints.table!;
         }
-        
+
+        let storageKeys;
         let storageKey: StorageAccountKey | undefined = undefined;
-        const storageKeys = await storageManagementClient.storageAccounts.listKeys(resourceGroupName, storageAccount.name!);
+
+        try {
+
+            storageKeys = await storageManagementClient.storageAccounts.listKeys(resourceGroupName, storageAccount.name!);
+            
+        } catch (err: any) {
+
+            this._log(`Failed to list keys for Storage account ${storageAccount.name!}. ${err.message ?? err}`);
+            return;
+        }
 
         if (!!storageKeys.keys?.length) {
 
@@ -825,7 +841,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         let hubNames: string[] | null = null;
 
         if (!storageKey?.value) {
-            
+        
             // If no keys found, just trying user's Azure login.
             hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
 
