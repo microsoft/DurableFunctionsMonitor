@@ -110,6 +110,7 @@
             "properties": {
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('functionAppName'))]",
                 "siteConfig": {
+                    "netFrameworkVersion": "v6.0",
                     "appSettings": [
                         {
                             "name": "DFM_SQL_CONNECTION_STRING",
@@ -137,7 +138,7 @@
                         },
                         {
                             "name": "FUNCTIONS_EXTENSION_VERSION",
-                            "value": "~3"
+                            "value": "~4"
                         },
                         {
                             "name": "FUNCTIONS_WORKER_RUNTIME",
