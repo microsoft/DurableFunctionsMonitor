@@ -232,75 +232,76 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 
                 case 'connectionStrings':
 
-                    const connStringHashes = this._context.globalState.get(MonitorViewList.ConnectionStringHashes) as string[];
-                    if (!!connStringHashes) {
+                    const connStrings = await this._monitorViews.getPersistedConnStrings();
+                    
+                    for (const connString of connStrings) {
+                        
+                        const isAttached = !!this._monitorViews.getBackendUrl(connString)
 
-                        for (const connStringHash of connStringHashes) {
+                        let hubNames: string[] | null = null;
+                        let iconPath: string = '';
+                        let tooltip: string = '';
+                        let description: string = '';
 
-                            const connString = await this._context.secrets.get(connStringHash);
+                        if (ConnStringUtils.GetSqlServerName(connString)) {
 
-                            if (!connString) {
-                                continue;
-                            }
+                            hubNames = ['DurableFunctionsHub'];
 
-                            const isAttached = !!this._monitorViews.getBackendUrl(connString)
-
-                            let hubNames: string[] | null = null;
-                            let iconPath: string = '';
-                            let tooltip: string = '';
-                            let description: string = '';
-
-                            if (ConnStringUtils.GetSqlServerName(connString)) {
-
-                                hubNames = ['DurableFunctionsHub'];
-
-                                iconPath = path.join(this._resourcesFolderPath, isAttached ? 'mssqlAttached.svg' : 'mssql.svg');
-                                tooltip = 'MSSQL Storage Provider';
-                                description = 'MSSQL Storage Provider';
-                                
-                            } else {
-
-                                const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
-                                const accountName = ConnStringUtils.GetAccountName(connString);
-                                const accountKey = ConnStringUtils.GetAccountKey(connString);
-    
-                                if (!tableEndpoint || !accountName || !accountKey) {
-                                    continue;
-                                }
-    
-                                try {
-
-                                    hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey, true);
-
-                                    if (!!hubNames) {
-                                        
-                                        description = `${hubNames.length} Task Hub${hubNames.length === 1 ? '' : 's'}`;
-                                    }
-
-                                } catch (err: any) {
-
-                                    description = `Failed to load Task Hubs. ${err.message ?? err}`
-                                }
-
-                                iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountAttached.svg' : 'storageAccount.svg');
-                                tooltip = ConnStringUtils.MaskStorageConnString(connString);
-                            }
-
-                            const node: StorageAccountTreeItem = {
-                                label: ConnStringUtils.GetStorageName(connString),
-                                contextValue: isAttached ? 'storedStorageAccount-attached' : 'storedStorageAccount-detached',
-                                iconPath,
-                                collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
-                                storageConnString: connString,
-                                hubNames: hubNames ?? [],
-                                description,
-                                tooltip
-                            };
+                            iconPath = path.join(this._resourcesFolderPath, isAttached ? 'mssqlAttached.svg' : 'mssql.svg');
+                            tooltip = 'MSSQL Storage Provider';
+                            description = 'MSSQL Storage Provider';
                             
-                            // Sorting by name on the fly
-                            const index = result.findIndex(n => n.label! > node.label!);
-                            result.splice(index < 0 ? result.length : index, 0, node);                                
+                        } else {
+
+                            const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
+                            const accountName = ConnStringUtils.GetAccountName(connString);
+                            const accountKey = ConnStringUtils.GetAccountKey(connString);
+
+                            try {
+
+                                hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey, true);
+
+                                if (!!hubNames) {
+                                    
+                                    description = `${hubNames.length} Task Hub${hubNames.length === 1 ? '' : 's'}`;
+                                }
+
+                            } catch (err: any) {
+
+                                description = `Failed to load Task Hubs. ${err.message ?? err}`
+                            }
+
+                            iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountAttached.svg' : 'storageAccount.svg');
+                            tooltip = ConnStringUtils.MaskStorageConnString(connString);
                         }
+
+                        const node: StorageAccountTreeItem = {
+                            label: ConnStringUtils.GetStorageName(connString),
+                            contextValue: isAttached ? 'storedStorageAccount-attached' : 'storedStorageAccount-detached',
+                            iconPath,
+                            collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
+                            storageConnString: connString,
+                            hubNames: hubNames ?? [],
+                            description,
+                            tooltip
+                        };
+                        
+                        // Sorting by name on the fly
+                        const index = result.findIndex(n => n.label! > node.label!);
+                        result.splice(index < 0 ? result.length : index, 0, node);                                
+                    }
+
+                    if (!connStrings.length) {
+                        
+                        result.push({
+                            label: 'Attach to Task Hub...',
+
+                            command: {
+                                title: 'Attach to Task Hub...',
+                                command: 'durableFunctionsMonitorTreeView.attachToAnotherTaskHub'
+                            }
+                        });
+
                     }
 
                     break;

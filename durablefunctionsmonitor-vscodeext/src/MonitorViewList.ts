@@ -10,7 +10,7 @@ import { ConnStringUtils } from "./ConnStringUtils";
 
 import { AzureConnectionInfo, MonitorView } from "./MonitorView";
 import { BackendProcess } from './BackendProcess';
-import { StorageConnectionSettings, CreateAuthHeadersForTableStorage, CreateIdentityBasedAuthHeadersForTableStorage, AzureSubscription } from "./StorageConnectionSettings";
+import { StorageConnectionSettings, CreateAuthHeadersForTableStorage, CreateIdentityBasedAuthHeadersForTableStorage } from "./StorageConnectionSettings";
 import { FunctionGraphList } from './FunctionGraphList';
 import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
@@ -66,8 +66,12 @@ export class MonitorViewList {
 
         const connSettings = await this.askForStorageConnectionSettings();
 
-        if (!connSettings || !connSettings.connStringHashKey) {
+        if (!connSettings) {
             return null;
+        }
+
+        if (!connSettings.connStringHashKey) {
+            throw new Error(`The provided Connection String seem to be invalid`);
         }
 
         // Persisting the provided connection string in ExtensionContext.secrets
@@ -161,19 +165,20 @@ export class MonitorViewList {
 
         const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnString);
 
+        this._context.secrets.delete(connStringHashKey);
+
         let connStringHashes = this._context.globalState.get(MonitorViewList.ConnectionStringHashes) as string[];
-        if (!!connStringHashes) {
-
-            let i;
-            while ((i = connStringHashes.indexOf(connStringHashKey)) >= 0)
-            {
-                connStringHashes.splice(i, 1);
-            }
-
-            this._context.globalState.update(MonitorViewList.ConnectionStringHashes, connStringHashes);
+        if (!connStringHashes) {
+            return;
         }
 
-        this._context.secrets.delete(connStringHashKey);
+        let i;
+        while ((i = connStringHashes.indexOf(connStringHashKey)) >= 0)
+        {
+            connStringHashes.splice(i, 1);
+        }
+
+        this._context.globalState.update(MonitorViewList.ConnectionStringHashes, connStringHashes);
     }
 
     getBackendUrl(storageConnString: string): string {
@@ -189,6 +194,28 @@ export class MonitorViewList {
         }
 
         return Promise.resolve(this.getOrCreateFromStorageConnectionSettings(connSettingsFromCurrentProject));
+    }
+
+    async getPersistedConnStrings(): Promise<string[]> {
+
+        const connStringHashes = this._context.globalState.get(MonitorViewList.ConnectionStringHashes) as string[];
+        if (!connStringHashes) {
+            return [];
+        }
+
+        const result: string[] = [];
+
+        for (const connStringHash of connStringHashes) {
+
+            const connString = await this._context.secrets.get(connStringHash);
+
+            if (!!connString) {
+                
+                result.push(connString);
+            }
+        }
+
+        return result;
     }
 
     private _monitorViews: { [key: string]: MonitorView } = {};
