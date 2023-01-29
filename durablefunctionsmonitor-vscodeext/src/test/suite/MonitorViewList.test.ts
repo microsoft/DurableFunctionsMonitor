@@ -120,8 +120,7 @@ suite('MonitorViewList Test Suite', () => {
 
 		assert.strictEqual((monitorView as any).taskHubFullTitle, `devstoreaccount1/${taskHubNames[1]}`);
 		assert.strictEqual(monitorView.storageConnectionSettings.hashKey, `http://127.0.0.1:10002/devstoreaccount1${taskHubNames[1]}`);
-		assert.strictEqual(monitorView.storageConnectionSettings.storageConnStrings.length, 1);
-		assert.strictEqual(monitorView.storageConnectionSettings.storageConnStrings[0], Settings().storageEmulatorConnectionString);
+		assert.strictEqual(monitorView.storageConnectionSettings.storageConnString, Settings().storageEmulatorConnectionString);
 
 		const backend: BackendProcess = (monitorView as any)._backend;
 

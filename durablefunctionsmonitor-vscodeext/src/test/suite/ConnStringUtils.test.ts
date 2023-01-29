@@ -123,8 +123,8 @@ suite('ConnStringUtils Test Suite', () => {
 		const connString2 = `AccountKey=12345;accounTName=mystorageaccount3;defaulTendpointsProtocol=https;`;
 
 		// Act
-		const res1 = ConnStringUtils.GetStorageName([connString1]);
-		const res2 = ConnStringUtils.GetStorageName([connString2]);
+		const res1 = ConnStringUtils.GetStorageName(connString1);
+		const res2 = ConnStringUtils.GetStorageName(connString2);
 
 		// Assert
 

@@ -28,8 +28,8 @@ export class BackendProcess {
     { }
 
     // Underlying Storage Connection Strings
-    get storageConnectionStrings(): string[] {
-        return this._storageConnectionSettings.storageConnStrings;
+    get storageConnectionString(): string {
+        return this._storageConnectionSettings.storageConnString;
     }
 
     // Information about the started backend (if it was successfully started)
@@ -108,7 +108,7 @@ export class BackendProcess {
 
         if (this._storageConnectionSettings.isMsSql) {
 
-            env[SharedConstants.MsSqlConnStringEnvironmentVariableName] = this._storageConnectionSettings.storageConnStrings[0];
+            env[SharedConstants.MsSqlConnStringEnvironmentVariableName] = this._storageConnectionSettings.storageConnString;
 
             // For MSSQL just need to set DFM_HUB_NAME to something, doesn't matter what it is so far
             env[SharedConstants.HubNameEnvironmentVariableName] = this._storageConnectionSettings.hubName;
@@ -120,12 +120,12 @@ export class BackendProcess {
             
             if (!!this._storageConnectionSettings.isIdentityBasedConnection) {
 
-                const storageAccountName = ConnStringUtils.GetAccountName(this._storageConnectionSettings.storageConnStrings[0]);
+                const storageAccountName = ConnStringUtils.GetAccountName(this._storageConnectionSettings.storageConnString);
                 env['AzureWebJobsStorage__accountName'] = storageAccountName;
 
             } else {
 
-                env['AzureWebJobsStorage'] = this._storageConnectionSettings.storageConnStrings[0];
+                env['AzureWebJobsStorage'] = this._storageConnectionSettings.storageConnString;
             }
         }
 

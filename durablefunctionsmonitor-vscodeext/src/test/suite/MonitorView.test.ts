@@ -35,9 +35,7 @@ suite('MonitorView Test Suite', () => {
 
 			getBackend: () => Promise.resolve(),
 
-			storageConnectionStrings: [
-				Settings().storageEmulatorConnectionString
-			],
+			storageConnectionStrings: Settings().storageEmulatorConnectionString,
 
 			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend')
 		};
@@ -233,9 +231,7 @@ suite('MonitorView Test Suite', () => {
 
 			getBackend: () => Promise.resolve(),
 
-			storageConnectionStrings: [
-				Settings().storageEmulatorConnectionString
-			],
+			storageConnectionStrings: Settings().storageEmulatorConnectionString,
 
 			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend')
 		};
@@ -378,9 +374,7 @@ suite('MonitorView Test Suite', () => {
 
 		const backend: any = {
 
-			storageConnectionStrings: [
-				Settings().storageEmulatorConnectionString
-			],
+			storageConnectionString: Settings().storageEmulatorConnectionString
 		};
 
 		const request: any = {
@@ -398,7 +392,7 @@ suite('MonitorView Test Suite', () => {
 
 		const getTokenCredentialsForGivenConnectionString = (connString: string) => {
 			
-			assert.strictEqual(connString, backend.storageConnectionStrings[0]);
+			assert.strictEqual(connString, backend.storageConnectionString);
 
 			throw new Error(errorMessageToThrow);
 		}

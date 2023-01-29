@@ -21,7 +21,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const tempBackendFolder = await copyBackendProjectToTempFolder('netcore31');
 
-		const connSettings = new StorageConnectionSettings(['my-invalid-conn-string'], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings('my-invalid-conn-string', 'my-task-hub');
 
 		var callbackWasCalled = false;
 		var callbackWasCalledTwice = false;
@@ -101,7 +101,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const tempBackendFolder = await copyBackendProjectToTempFolder('mssql');
 
-		const connSettings = new StorageConnectionSettings(['Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;'], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings('Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;', 'my-task-hub');
 
 		var callbackWasCalled = false;
 		var callbackWasCalledTwice = false;
@@ -184,7 +184,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const tempBackendFolder = await copyBackendProjectToTempFolder('mssql');
 
-		const connSettings = new StorageConnectionSettings(['Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;'], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings('Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;', 'my-task-hub');
 
 		var callbackWasCalled = false;
 		var callbackWasCalledTwice = false;
@@ -270,7 +270,7 @@ suite('BackendProcess Test Suite', () => {
 		// Arrange
 
 		const nonExistingFolder = path.join(__dirname, 'non-existing-folder');
-		const connSettings = new StorageConnectionSettings(['my-invalid-conn-string'], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings('my-invalid-conn-string', 'my-task-hub');
 
 		// Act
 
@@ -297,7 +297,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const connSettings = new StorageConnectionSettings(['AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http'], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings('AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http', 'my-task-hub');
 
 		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
 
@@ -312,7 +312,7 @@ suite('BackendProcess Test Suite', () => {
 		assert.strictEqual(env.DFM_NONCE, (backendProcess as any)._backendCommunicationNonce);
 		assert.strictEqual(env.AzureWebJobsSecretStorageType, 'files');
 
-		assert.strictEqual(env.AzureWebJobsStorage, connSettings.storageConnStrings[0]);
+		assert.strictEqual(env.AzureWebJobsStorage, connSettings.storageConnString);
 		assert.strictEqual(!env.DFM_HUB_NAME, true);
 		assert.strictEqual(!env.AzureWebJobsStorage__accountName, true);
 		assert.strictEqual(!env.DFM_SQL_CONNECTION_STRING, true);
@@ -322,7 +322,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const connSettings = new StorageConnectionSettings(['Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;'], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings('Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;', 'my-task-hub');
 
 		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
 
@@ -337,7 +337,7 @@ suite('BackendProcess Test Suite', () => {
 		assert.strictEqual(env.DFM_NONCE, (backendProcess as any)._backendCommunicationNonce);
 		assert.strictEqual(env.AzureWebJobsSecretStorageType, 'files');
 
-		assert.strictEqual(env.DFM_SQL_CONNECTION_STRING, connSettings.storageConnStrings[0]);
+		assert.strictEqual(env.DFM_SQL_CONNECTION_STRING, connSettings.storageConnString);
 		assert.strictEqual(env.DFM_HUB_NAME, connSettings.hubName);
 		assert.strictEqual(!env.AzureWebJobsStorage, true);
 		assert.strictEqual(!env.AzureWebJobsStorage__accountName, true);
@@ -347,7 +347,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;DefaultEndpointsProtocol=http;`], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings(`AccountName=mystorageaccount1;DefaultEndpointsProtocol=http;`, 'my-task-hub');
 
 		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
 
@@ -374,7 +374,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const extensionPath = path.join(__dirname, '..', '..', '..');
 
-		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings(`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`, 'my-task-hub');
 
 		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => { });
 
@@ -402,7 +402,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const extensionPath = path.join(__dirname, '..', '..', '..');
 
-		const connSettings = new StorageConnectionSettings([`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`], 'my-task-hub');
+		const connSettings = new StorageConnectionSettings(`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`, 'my-task-hub');
 
 		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => { });
 

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { StorageAccount } from '@azure/arm-storage/esm/models';
 import { Settings } from './Settings';
 
 export class ConnStringUtils {
@@ -66,15 +67,15 @@ export class ConnStringUtils {
     }
 
     // Extracts human-readable storage name from a bunch of connection strings
-    static GetStorageName(connStrings: string[]): string {
+    static GetStorageName(connString: string): string {
 
-        const serverName = this.GetSqlServerName(connStrings[0]);
+        const serverName = this.GetSqlServerName(connString);
 
         if (!serverName) {
-            return this.GetAccountName(connStrings[0]);
+            return this.GetAccountName(connString);
         }
 
-        const dbName = this.GetSqlDatabaseName(connStrings[0]);
+        const dbName = this.GetSqlDatabaseName(connString);
 
         return serverName + (!dbName ? '' : '/' + dbName);
     }
@@ -83,4 +84,22 @@ export class ConnStringUtils {
     static MaskStorageConnString(connString: string): string {
         return connString.replace(/AccountKey=[^;]+/gi, 'AccountKey=*****');
     }
+
+    // Formats Storage Connection String for a given StorageAccount
+    static getConnectionStringForStorageAccount(account: StorageAccount, storageKey?: string): string {
+
+        var endpoints = ''; 
+        if (!!account.primaryEndpoints) {
+            endpoints = `BlobEndpoint=${account.primaryEndpoints!.blob};QueueEndpoint=${account.primaryEndpoints!.queue};TableEndpoint=${account.primaryEndpoints!.table};FileEndpoint=${account.primaryEndpoints!.file};`;
+        } else {
+            endpoints = `BlobEndpoint=https://${account.name}.blob.core.windows.net/;QueueEndpoint=https://${account.name}.queue.core.windows.net/;TableEndpoint=https://${account.name}.table.core.windows.net/;FileEndpoint=https://${account.name}.file.core.windows.net/;`;
+        }
+    
+        if (!storageKey) {
+            return `DefaultEndpointsProtocol=https;AccountName=${account.name};${endpoints}`;
+        }
+    
+        return `DefaultEndpointsProtocol=https;AccountName=${account.name};AccountKey=${storageKey};${endpoints}`;
+    }
+    
 }

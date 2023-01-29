@@ -98,7 +98,7 @@ export class MonitorViewList {
                 return null;
             }
 
-            return new StorageConnectionSettings([sqlConnectionString], 'DurableFunctionsHub');
+            return new StorageConnectionSettings(sqlConnectionString, 'DurableFunctionsHub');
         }
 
         var hubName: string | undefined = hostJson.hubName;
@@ -115,7 +115,7 @@ export class MonitorViewList {
             return null;
         }
 
-        return new StorageConnectionSettings([ConnStringUtils.ExpandEmulatorShortcutIfNeeded(storageConnString)], hubName);
+        return new StorageConnectionSettings(ConnStringUtils.ExpandEmulatorShortcutIfNeeded(storageConnString), hubName);
     }
 
     // Stops all backend processes and closes all views
@@ -129,9 +129,9 @@ export class MonitorViewList {
         return Promise.all(Object.keys(backends).map(k => backends[k].cleanup()));
     }
 
-    async detachBackend(storageConnStrings: string[]): Promise<any> {
+    async detachBackend(storageConnString: string): Promise<any> {
 
-        const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnStrings);
+        const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnString);
 
         // Closing all views related to this connection
         for (const key of Object.keys(this._monitorViews)) {
@@ -155,11 +155,11 @@ export class MonitorViewList {
         delete this._backends[connStringHashKey];
     }
 
-    async forgetConnectionString(storageConnStrings: string[]): Promise<any> {
+    async forgetConnectionString(storageConnString: string): Promise<any> {
 
-        await this.detachBackend(storageConnStrings);
+        await this.detachBackend(storageConnString);
 
-        const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnStrings);
+        const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnString);
 
         let connStringHashes = this._context.globalState.get(MonitorViewList.ConnectionStringHashes) as string[];
         if (!!connStringHashes) {
@@ -176,9 +176,9 @@ export class MonitorViewList {
         this._context.secrets.delete(connStringHashKey);
     }
 
-    getBackendUrl(storageConnStrings: string[]): string {
+    getBackendUrl(storageConnString: string): string {
 
-        const backendProcess = this._backends[StorageConnectionSettings.GetConnStringHashKey(storageConnStrings)];
+        const backendProcess = this._backends[StorageConnectionSettings.GetConnStringHashKey(storageConnString)];
         return !backendProcess ? '' : backendProcess.backendUrl; 
     }
 
@@ -204,7 +204,7 @@ export class MonitorViewList {
             backendProcess = new BackendProcess(
                 this._context.extensionPath,
                 connSettings,
-                () => this.detachBackend(connSettings.storageConnStrings),
+                () => this.detachBackend(connSettings.storageConnString),
                 this._log
             );
 
@@ -243,7 +243,7 @@ export class MonitorViewList {
                 // If it is MSSQL storage provider
                 if (!!ConnStringUtils.GetSqlServerName(connString)) {
                     
-                    resolve(new StorageConnectionSettings([connString!], 'DurableFunctionsHub'));
+                    resolve(new StorageConnectionSettings(connString, 'DurableFunctionsHub'));
                     return;
                 }
 
@@ -273,7 +273,7 @@ export class MonitorViewList {
                 hubPick.onDidAccept(() => {
 
                     hubPick.hide();
-                    resolve(!hubName ? null : new StorageConnectionSettings([connString!], hubName));
+                    resolve(!hubName ? null : new StorageConnectionSettings(connString!, hubName));
                 });
                 
                 hubPick.title = 'Hub Name';
@@ -411,7 +411,7 @@ export class MonitorViewList {
             connStringHashes.push(connSettings.connStringHashKey);
         }
 
-        this._context.secrets.store(connSettings.connStringHashKey, connSettings.storageConnStrings[0]);
+        this._context.secrets.store(connSettings.connStringHashKey, connSettings.storageConnString);
 
         await this._context.globalState.update(MonitorViewList.ConnectionStringHashes, connStringHashes)
     }

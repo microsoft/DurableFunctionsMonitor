@@ -24,7 +24,7 @@ export class MonitorView
 {
     // Storage Connection settings (connString and hubName) of this Monitor View
     get storageConnectionSettings(): StorageConnectionSettings {
-        return new StorageConnectionSettings(this._backend.storageConnectionStrings, this._hubName);
+        return new StorageConnectionSettings(this._backend.storageConnectionString, this._hubName);
     }
 
     get isVisible(): boolean {
@@ -427,7 +427,7 @@ export class MonitorView
     // Human-readable TaskHub title in form '[storage-account]/[task-hub]'
     private get taskHubFullTitle(): string {
 
-        return `${ConnStringUtils.GetStorageName(this._backend.storageConnectionStrings)}/${this._hubName}`;
+        return `${ConnStringUtils.GetStorageName(this._backend.storageConnectionString)}/${this._hubName}`;
     }
 
     // Returns orchestration/entity instanceIds that start with prefix
@@ -444,7 +444,7 @@ export class MonitorView
 
     private async navigateToBinding(binding: any): Promise<void> {
 
-        const creds = await this._getTokenCredentialsForGivenConnectionString(this._backend.storageConnectionStrings[0]);
+        const creds = await this._getTokenCredentialsForGivenConnectionString(this._backend.storageConnectionString);
         if (!creds) {
             return;
         }
@@ -454,7 +454,7 @@ export class MonitorView
             case 'blob':
             case 'blobTrigger': {
 
-                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionStrings[0]);
+                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionString);
                 if (!storageAccountName) {
                     return;
                 }
@@ -467,7 +467,7 @@ export class MonitorView
             case 'queue':
             case 'queueTrigger': {
 
-                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionStrings[0]);
+                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionString);
                 if (!storageAccountName) {
                     return;
                 }
@@ -477,7 +477,7 @@ export class MonitorView
             break;
             case 'table': {
 
-                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionStrings[0]);
+                const storageAccountName = ConnStringUtils.GetAccountName(this._backend.storageConnectionString);
                 if (!storageAccountName) {
                     return;
                 }

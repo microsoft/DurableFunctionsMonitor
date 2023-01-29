@@ -14,30 +14,30 @@ export type AzureSubscription = { session: { credentials2: any }, subscription: 
 // Aggregates parameters for connecting to a particular Task Hub
 export class StorageConnectionSettings {
 
-    get storageConnStrings(): string[] { return this._connStrings; };
+    get storageConnString(): string { return this._connString; };
     get hubName(): string { return this._hubName; };
     get connStringHashKey(): string { return this._connStringHashKey; }
     get hashKey(): string { return this._hashKey; }
-    get isMsSql(): boolean { return !!ConnStringUtils.GetSqlServerName(this._connStrings[0]); }
-    get isIdentityBasedConnection(): boolean { return !this.isMsSql && !ConnStringUtils.GetAccountKey(this._connStrings[0]); }
+    get isMsSql(): boolean { return !!ConnStringUtils.GetSqlServerName(this._connString); }
+    get isIdentityBasedConnection(): boolean { return !this.isMsSql && !ConnStringUtils.GetAccountKey(this._connString); }
 
-    constructor(private _connStrings: string[],
+    constructor(private _connString: string,
         private _hubName: string
     ) {
 
-        this._connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(this._connStrings);
+        this._connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(this._connString);
         this._hashKey = this._connStringHashKey + this._hubName.toLowerCase();
     }
 
-    static GetConnStringHashKey(connStrings: string[]): string {
+    static GetConnStringHashKey(connString: string): string {
 
-        const sqlServerName = ConnStringUtils.GetSqlServerName(connStrings[0]).toLowerCase();
+        const sqlServerName = ConnStringUtils.GetSqlServerName(connString).toLowerCase();
 
         if (!!sqlServerName) {
-            return `Server:${sqlServerName};Initial Catalog=${ConnStringUtils.GetSqlDatabaseName(connStrings[0]).toLowerCase()}`;
+            return `Server:${sqlServerName};Initial Catalog=${ConnStringUtils.GetSqlDatabaseName(connString).toLowerCase()}`;
         }
 
-        return ConnStringUtils.GetTableEndpoint(connStrings[0]).toLowerCase();
+        return ConnStringUtils.GetTableEndpoint(connString).toLowerCase();
     }
 
     private readonly _connStringHashKey: string;

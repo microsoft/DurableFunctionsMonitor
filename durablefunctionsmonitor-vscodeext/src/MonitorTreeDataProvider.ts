@@ -132,9 +132,9 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                     for (const acc of storageAccountsAndTaskHubs) {
 
-                        const storageConnStrings = [this.getConnectionStringForStorageAccount(acc.account, acc.storageKey)];
+                        const storageConnString = ConnStringUtils.getConnectionStringForStorageAccount(acc.account, acc.storageKey);
 
-                        const isAttached = !!this._monitorViews.getBackendUrl(storageConnStrings)
+                        const isAttached = !!this._monitorViews.getBackendUrl(storageConnString)
 
                         let iconPath = '';
                         if (acc.account.kind == 'StorageV2') {
@@ -149,10 +149,10 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             iconPath,
                             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
                             storageAccountId: acc.account.id,
-                            storageConnStrings,
+                            storageConnString,
                             hubNames: acc.hubNames,
                             description: `${acc.hubNames.length} Task Hub${acc.hubNames.length === 1 ? '' : 's'}`,
-                            tooltip: !acc.storageKey ? 'identity-based' : ConnStringUtils.MaskStorageConnString(storageConnStrings[0])
+                            tooltip: !acc.storageKey ? 'identity-based' : ConnStringUtils.MaskStorageConnString(storageConnString)
                         };
                         
                         // Sorting by name on the fly
@@ -179,7 +179,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                         for (const hub of accountNode.hubNames) {
 
-                            const storageConnectionSettings = new StorageConnectionSettings(accountNode.storageConnStrings, hub);
+                            const storageConnectionSettings = new StorageConnectionSettings(accountNode.storageConnString, hub);
                             const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
     
                             const node: TaskHubTreeItem = {
@@ -243,7 +243,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                                 continue;
                             }
 
-                            const isAttached = !!this._monitorViews.getBackendUrl([connString])
+                            const isAttached = !!this._monitorViews.getBackendUrl(connString)
 
                             let hubNames: string[] | null = null;
                             let iconPath: string = '';
@@ -287,11 +287,11 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             }
 
                             const node: StorageAccountTreeItem = {
-                                label: ConnStringUtils.GetStorageName([connString]),
+                                label: ConnStringUtils.GetStorageName(connString),
                                 contextValue: isAttached ? 'storedStorageAccount-attached' : 'storedStorageAccount-detached',
                                 iconPath,
                                 collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
-                                storageConnStrings: [connString],
+                                storageConnString: connString,
                                 hubNames: hubNames ?? [],
                                 description,
                                 tooltip
@@ -338,7 +338,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                             for (const hub of hubNames) {
 
-                                const storageConnectionSettings = new StorageConnectionSettings([emulatorConnString], hub);
+                                const storageConnectionSettings = new StorageConnectionSettings(emulatorConnString, hub);
                                 const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
         
                                 const node: TaskHubTreeItem = {
@@ -458,7 +458,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         }
         this._inProgress = true;
 
-        this._monitorViews.forgetConnectionString(storageAccountItem.storageConnStrings).then(() => {
+        this._monitorViews.forgetConnectionString(storageAccountItem.storageConnString).then(() => {
 
             this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;
@@ -483,7 +483,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         }
         this._inProgress = true;
 
-        this._monitorViews.detachBackend(storageAccountItem.storageConnStrings).then(() => {
+        this._monitorViews.detachBackend(storageAccountItem.storageConnString).then(() => {
 
             this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;
@@ -869,22 +869,6 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             return { storageKey: storageKey?.value, hubNames };
         }
     }
-
-    private getConnectionStringForStorageAccount(account: StorageAccount, storageKey?: string): string {
-
-        var endpoints = ''; 
-        if (!!account.primaryEndpoints) {
-            endpoints = `BlobEndpoint=${account.primaryEndpoints!.blob};QueueEndpoint=${account.primaryEndpoints!.queue};TableEndpoint=${account.primaryEndpoints!.table};FileEndpoint=${account.primaryEndpoints!.file};`;
-        } else {
-            endpoints = `BlobEndpoint=https://${account.name}.blob.core.windows.net/;QueueEndpoint=https://${account.name}.queue.core.windows.net/;TableEndpoint=https://${account.name}.table.core.windows.net/;FileEndpoint=https://${account.name}.file.core.windows.net/;`;
-        }
-
-        if (!storageKey) {
-            return `DefaultEndpointsProtocol=https;AccountName=${account.name};${endpoints}`;
-        }
-
-        return `DefaultEndpointsProtocol=https;AccountName=${account.name};AccountKey=${storageKey};${endpoints}`;
-    }
 }
 
 type SubscriptionTreeItem = vscode.TreeItem & {
@@ -895,7 +879,7 @@ type SubscriptionTreeItem = vscode.TreeItem & {
 type StorageAccountTreeItem = vscode.TreeItem & {
 
     storageAccountId?: string,
-    storageConnStrings: string[],
+    storageConnString: string,
     hubNames: string[],
 };
 
