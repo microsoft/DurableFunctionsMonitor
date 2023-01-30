@@ -259,7 +259,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                             try {
 
-                                hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey, true);
+                                hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey);
 
                                 if (!!hubNames) {
                                     
@@ -318,7 +318,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             
                     try {
 
-                        hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey, true) ?? [];
+                        hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey) ?? [];
                         
                     } catch (err: any) {
                         
@@ -711,9 +711,9 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         await Promise.all(
             storageAccounts.map(async acc => {
 
-                const taskHubsAndStorageKey = await this.getStorageKeyAndTaskHubs(storageManagementClient, acc, subscription);
+                const taskHubsAndStorageKey = await this.getStorageAccountTaskHubsForSubscription(storageManagementClient, acc, subscription);
 
-                if (!!taskHubsAndStorageKey && taskHubsAndStorageKey.hubNames.length > 0) {
+                if (!!taskHubsAndStorageKey && taskHubsAndStorageKey.hubNames?.length > 0) {
 
                     result.push({ account: acc, hubNames: taskHubsAndStorageKey.hubNames, storageKey: taskHubsAndStorageKey.storageKey });
                 }
@@ -799,76 +799,84 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         return result;
     }
 
-    private async getStorageKeyAndTaskHubs(
+    private async getStorageAccountTaskHubsForSubscription(
         storageManagementClient: StorageManagementClient,
         storageAccount: StorageAccount,
         subscription: AzureSubscription
-    ): Promise<{storageKey?: string, hubNames: string[]} | undefined> {
+    ): Promise<{ storageKey?: string, hubNames: string[] } | undefined> {
+
+        try {
+
+            let tableEndpoint = '';
+            if (!!storageAccount.primaryEndpoints) {
+                tableEndpoint = storageAccount.primaryEndpoints.table!;
+            }
+
+            switch (Settings().taskHubsDiscoveryMode) {
+                case 'Do not use Storage keys':
+
+                    // Only using token
+                    const hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
+                    return { hubNames: hubNames ?? [] };
+                
+                case 'Do not use Azure account':
+
+                    // Only using keys
+                    return await this.getTaskHubsViaStorageKeys(storageManagementClient, storageAccount, tableEndpoint);
+            }
+
+            // Default mode
+            try {
+
+                // First trying with keys
+                return await this.getTaskHubsViaStorageKeys(storageManagementClient, storageAccount, tableEndpoint);
+                
+            } catch (err) {
+
+                // Falling back to token
+                const hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
+                return { hubNames: hubNames ?? [] };
+            }
+            
+        } catch (err: any) {
+
+            this._log(`Failed to list Task Hubs for Storage account ${storageAccount.name!}. ${err.message ?? err}\n`);
+        }
+    }
+
+    private async getTaskHubsViaStorageKeys(
+        storageManagementClient: StorageManagementClient,
+        storageAccount: StorageAccount,
+        tableEndpoint: string
+    ): Promise<{storageKey?: string, hubNames: string[]}> {
 
         // Extracting resource group name
         const match = /\/resourceGroups\/([^\/]+)\/providers/gi.exec(storageAccount.id!);
         if (!match || match.length <= 0) {
-            return;
+            
+            throw new Error(`Failed to extract Resource Group name`);
         }
         const resourceGroupName = match[1];
-
-        let tableEndpoint = '';
-        if (!!storageAccount.primaryEndpoints) {
-            tableEndpoint = storageAccount.primaryEndpoints.table!;
-        }
 
         let storageKeys;
         let storageKey: StorageAccountKey | undefined = undefined;
 
-        try {
-
-            storageKeys = await storageManagementClient.storageAccounts.listKeys(resourceGroupName, storageAccount.name!);
-            
-        } catch (err: any) {
-
-            this._log(`Failed to list keys for Storage account ${storageAccount.name!}. ${err.message ?? err}`);
-            return;
-        }
-
-        if (!!storageKeys.keys?.length) {
-
-            // Choosing the key that looks best
-            storageKey = storageKeys.keys.find(k => !k.permissions || k.permissions.toLowerCase() === "full");
-            if (!storageKey) {
-                storageKey = storageKeys.keys.find(k => !k.permissions || k.permissions.toLowerCase() === "read");
-            }
-        }
-
-        let hubNames: string[] | null = null;
-
-        if (!storageKey?.value) {
+        storageKeys = await storageManagementClient.storageAccounts.listKeys(resourceGroupName, storageAccount.name!);
         
-            // If no keys found, just trying user's Azure login.
-            hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
-
-        } else {
-
-            try {
-
-                hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, storageAccount.name!, storageKey.value, true);
-
-            } catch (err) {
-
-                storageKey = undefined;
-
-                // This might indicate that storage keys are being disabled for this account. So trying user's Azure login.
-                if ((err as any).response?.status === 403) {
-        
-                    hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
-                }
-
-            }
+        // Choosing the key that looks best
+        storageKey = storageKeys?.keys?.find(k => !k.permissions || k.permissions.toLowerCase() === "full");
+        if (!storageKey) {
+            storageKey = storageKeys?.keys?.find(k => !k.permissions || k.permissions.toLowerCase() === "read");
         }
 
-        if (!!hubNames) {
+        if (!storageKey || !storageKey.value) {
 
-            return { storageKey: storageKey?.value, hubNames };
+            throw new Error(`No Storage keys were returned.`);
         }
+
+        const hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, storageAccount.name!, storageKey.value);
+
+        return { storageKey: storageKey.value, hubNames: hubNames ?? [] };
     }
 }
 

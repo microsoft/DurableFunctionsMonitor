@@ -299,6 +299,16 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Show Durable Functions Monitor when you start debugging a Durable Functions project"
+                },
+                "durableFunctionsMonitor.taskHubsDiscoveryMode": {
+                    "type": "string",
+                    "enum": [
+                        "Default",
+                        "Do not use Storage keys",
+                        "Do not use Azure account"
+                    ],
+                    "default": "Default",
+                    "description": "Task Hubs discovery mode. 'Default' first tries to 'listKeys' on the Storage account and then falls back to User Identity. 'Do not use Storage keys' always uses User Identity. `Do not use Azure account` always uses Storage keys."
                 }
             }
         }

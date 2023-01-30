@@ -11,7 +11,7 @@ export function Settings(): ISettings {
     // Better to have default values hardcoded here (not only in package.json) as well
     return {
         backendBaseUrl: config.get<string>('backendBaseUrl', 'http://localhost:{portNr}/a/p/i'),
-        backendVersionToUse: config.get<'Default' | '.Net Core 3.1'>('backendVersionToUse', 'Default'),
+        backendVersionToUse: config.get<'Default' | '.Net Core 3.1' | '.Net Core 2.1'>('backendVersionToUse', 'Default'),
         customPathToBackendBinaries: config.get<string>('customPathToBackendBinaries', ''),
         customPathToAzureFunctionsHost: config.get<string>('customPathToAzureFunctionsHost', ''),
         backendTimeoutInSeconds: config.get<number>('backendTimeoutInSeconds', 60),
@@ -19,6 +19,7 @@ export function Settings(): ISettings {
         enableLogging: config.get<boolean>('enableLogging', false),
         showTimeAs: config.get<'UTC' | 'Local'>('showTimeAs', 'UTC'),
         showWhenDebugSessionStarts: config.get<boolean>('showWhenDebugSessionStarts', false),
+        taskHubsDiscoveryMode: config.get<'Default' | 'Do not use Storage keys' | 'Do not use Azure account'>('taskHubsDiscoveryMode', 'Default'),
     };
 }
 
@@ -40,4 +41,5 @@ interface ISettings
     enableLogging: boolean;
     showTimeAs: 'UTC' | 'Local';
     showWhenDebugSessionStarts: boolean;
+    taskHubsDiscoveryMode: 'Default' | 'Do not use Storage keys' | 'Do not use Azure account';
 }

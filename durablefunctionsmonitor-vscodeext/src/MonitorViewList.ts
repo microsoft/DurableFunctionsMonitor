@@ -348,26 +348,21 @@ export class MonitorViewList {
         const accountKey = ConnStringUtils.GetAccountKey(storageConnString);
         const tableEndpoint = ConnStringUtils.GetTableEndpoint(storageConnString);
 
-        if (!accountName) {
+        if (!accountName || !accountKey) {
             return [];
         }
 
-        if (!accountKey) {
-
-            const credentials = await this._getTokenCredentialsForGivenConnectionString(storageConnString);
-            if (!credentials) {
-                
-                return [];
-            }
-
-            const hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, accountName, credentials.credentials);
-            return hubNames ?? [];
-
-        } else {
+        try {
 
             const hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey);
             return hubNames ?? [];
+            
+        } catch (err: any) {
+            
+            this._log(`Failed to list Task Hubs for Storage account ${accountName}. ${err.message ?? err}\n`);
         }
+
+        return [];
     }
 
     private getValueFromLocalSettings(valueName: string): string {
@@ -470,28 +465,12 @@ function fixTableEndpointUrl(tableEndpointUrl: string, accountName: string): str
 }
 
 // Tries to load the list of TaskHub names from a storage account.
-// Had to handcraft this code, since @azure/data-tables package is still in beta :(
-export async function getTaskHubNamesFromTableStorage(tableEndpointUrl: string, accountName: string, accountKey: string, throwUponError?: boolean): Promise<string[] | null> {
+export async function getTaskHubNamesFromTableStorage(tableEndpointUrl: string, accountName: string, accountKey: string): Promise<string[] | null> {
 
     tableEndpointUrl = fixTableEndpointUrl(tableEndpointUrl, accountName);
 
-    let response: any;
-    try {
-
-        // Creating the SharedKeyLite signature to query Table Storage REST API for the list of tables
-        const authHeaders = CreateAuthHeadersForTableStorage(accountName, accountKey, tableEndpointUrl);
-
-        response = await axios.get(`${tableEndpointUrl}Tables`, { headers: authHeaders });
-
-    } catch (err) {
-
-        if (!!throwUponError) {
-            
-            throw err;
-        }
-
-        console.log(`Failed to load hub names from table storage. ${(err as any).message}`);
-    }    
+    const authHeaders = CreateAuthHeadersForTableStorage(accountName, accountKey, tableEndpointUrl);
+    const response = await axios.get(`${tableEndpointUrl}Tables`, { headers: authHeaders });
 
     if (!response || !response.data || !response.data.value || response.data.value.length <= 0) {
         return null;
@@ -501,23 +480,13 @@ export async function getTaskHubNamesFromTableStorage(tableEndpointUrl: string, 
 }
 
 // Tries to load the list of TaskHub names from a storage account.
-// Had to handcraft this code, since @azure/data-tables package is still in beta :(
 export async function getTaskHubNamesFromTableStorageWithUserToken(tableEndpointUrl: string, accountName: string, tokenCredential: DeviceTokenCredentials): Promise<string[] | null> {
 
     tableEndpointUrl = fixTableEndpointUrl(tableEndpointUrl, accountName);
 
-    let response: any;
-
-    try {
-
-        const authHeaders = await CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential);
-        response = await axios.get(`${tableEndpointUrl}Tables`, { headers: authHeaders });
-        
-    } catch (err) {
-
-        console.log(`Failed to load hub names from table storage with user account. ${(err as any).message}`);
-    }
-
+    const authHeaders = await CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential);
+    const response = await axios.get(`${tableEndpointUrl}Tables`, { headers: authHeaders });
+ 
     if (!response || !response.data || !response.data.value || response.data.value.length <= 0) {
         return null;
     }
