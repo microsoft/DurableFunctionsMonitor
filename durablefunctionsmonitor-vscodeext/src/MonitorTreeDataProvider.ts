@@ -134,7 +134,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                         const storageConnString = ConnStringUtils.getConnectionStringForStorageAccount(acc.account, acc.storageKey);
 
-                        const isAttached = !!this._monitorViews.getBackendUrl(storageConnString)
+                        const isAttached = this._monitorViews.isBackendAttached(storageConnString)
 
                         let iconPath = '';
                         if (acc.account.kind == 'StorageV2') {
@@ -236,43 +236,47 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                     
                     for (const connString of connStrings) {
                         
-                        const isAttached = !!this._monitorViews.getBackendUrl(connString)
+                        const isAttached = this._monitorViews.isBackendAttached(connString)
 
                         let hubNames: string[] | null = null;
                         let iconPath: string = '';
                         let tooltip: string = '';
                         let description: string = '';
 
-                        if (ConnStringUtils.GetSqlServerName(connString)) {
-
-                            hubNames = ['DurableFunctionsHub'];
-
-                            iconPath = path.join(this._resourcesFolderPath, isAttached ? 'mssqlAttached.svg' : 'mssql.svg');
-                            tooltip = 'MSSQL Storage Provider';
-                            description = 'MSSQL Storage Provider';
+                        try {
                             
-                        } else {
+                            if (ConnStringUtils.GetSqlServerName(connString)) {
 
-                            const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
-                            const accountName = ConnStringUtils.GetAccountName(connString);
-                            const accountKey = ConnStringUtils.GetAccountKey(connString);
+                                iconPath = path.join(this._resourcesFolderPath, isAttached ? 'mssqlAttached.svg' : 'mssql.svg');
+                                tooltip = 'MSSQL Storage Provider';
+                                description = 'MSSQL Storage Provider';
 
-                            try {
+                                hubNames = this._monitorViews.getPersistedTaskHubNames(connString);
+
+                                if (hubNames.length <= 0) {
+                                    hubNames = ['dbo'];
+                                }
+                                
+                            } else {
+
+                                iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountAttached.svg' : 'storageAccount.svg');
+                                tooltip = ConnStringUtils.MaskStorageConnString(connString);
+
+                                const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
+                                const accountName = ConnStringUtils.GetAccountName(connString);
+                                const accountKey = ConnStringUtils.GetAccountKey(connString);
 
                                 hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey);
-
-                                if (!!hubNames) {
-                                    
-                                    description = `${hubNames.length} Task Hub${hubNames.length === 1 ? '' : 's'}`;
-                                }
-
-                            } catch (err: any) {
-
-                                description = `Failed to load Task Hubs. ${err.message ?? err}`
                             }
 
-                            iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountAttached.svg' : 'storageAccount.svg');
-                            tooltip = ConnStringUtils.MaskStorageConnString(connString);
+                            if (!!hubNames) {
+                                    
+                                description = `${hubNames.length} Task Hub${hubNames.length === 1 ? '' : 's'}`;
+                            }
+
+                        } catch (err: any) {
+
+                            description = `Failed to load Task Hubs. ${err.message ?? err}`
                         }
 
                         const node: StorageAccountTreeItem = {
@@ -301,7 +305,6 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                                 command: 'durableFunctionsMonitorTreeView.attachToAnotherTaskHub'
                             }
                         });
-
                     }
 
                     break;
@@ -459,15 +462,17 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         }
         this._inProgress = true;
 
-        this._monitorViews.forgetConnectionString(storageAccountItem.storageConnString).then(() => {
+        this._monitorViews.detachBackends(storageAccountItem.storageConnString, storageAccountItem.hubNames)
+            .then(() => this._monitorViews.forgetConnectionString(storageAccountItem.storageConnString))
+            .then(() => {
 
-            this._onDidChangeTreeData.fire(undefined);
-            this._inProgress = false;
+                this._onDidChangeTreeData.fire(undefined);
+                this._inProgress = false;
 
-        }, err => {
-            this._inProgress = false;
-            vscode.window.showErrorMessage(`Failed to detach from Task Hub. ${err}`);
-        });
+            }, err => {
+                this._inProgress = false;
+                vscode.window.showErrorMessage(`Failed to detach from Task Hub. ${err}`);
+            });
     }
 
     // Handles 'Detach' context menu item
@@ -484,7 +489,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         }
         this._inProgress = true;
 
-        this._monitorViews.detachBackend(storageAccountItem.storageConnString).then(() => {
+        this._monitorViews.detachBackends(storageAccountItem.storageConnString, storageAccountItem.hubNames).then(() => {
 
             this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;

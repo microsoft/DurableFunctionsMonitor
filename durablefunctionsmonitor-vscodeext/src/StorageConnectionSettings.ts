@@ -21,6 +21,9 @@ export class StorageConnectionSettings {
     get isMsSql(): boolean { return !!ConnStringUtils.GetSqlServerName(this._connString); }
     get isIdentityBasedConnection(): boolean { return !this.isMsSql && !ConnStringUtils.GetAccountKey(this._connString); }
 
+    // For Storage we have one backed per account. For SQL - one backend per each Task Hub (because SQL Durability Provider does not support connections to multiple hubs)
+    get hashKeyForBackend(): string { return this.isMsSql ? this._hashKey : this._connStringHashKey; }
+
     constructor(private _connString: string,
         private _hubName: string
     ) {

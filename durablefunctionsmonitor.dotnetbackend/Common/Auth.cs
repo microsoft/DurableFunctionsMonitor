@@ -139,7 +139,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
         }
 
-        private static async Task<HashSet<string>> GetTaskHubNamesFromStorage(string connStringName)
+        public static async Task<IEnumerable<string>> GetTaskHubNamesFromStorage(string connStringName)
         {
             var tableClient = await TableClient.GetTableClient(connStringName);
             var tableNames = await tableClient.ListTableNamesAsync();
@@ -176,12 +176,12 @@ namespace DurableFunctionsMonitor.DotNetBackend
             // Otherwise trying to load table names from the Storage
             try
             {
-                var hubNames = await GetTaskHubNamesFromStorage(EnvVariableNames.AzureWebJobsStorage);
+                var hubNames = new HashSet<string>(await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage));
 
                 // Also checking alternative connection strings
                 foreach (var connName in AlternativeConnectionStringNames)
                 {
-                    var connAndHubNames = (await GetTaskHubNamesFromStorage(Globals.GetFullConnectionStringEnvVariableName(connName)))
+                    var connAndHubNames = (await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(Globals.GetFullConnectionStringEnvVariableName(connName)))
                         .Select(hubName => Globals.CombineConnNameAndHubName(connName, hubName));
 
                     hubNames.UnionWith(connAndHubNames);

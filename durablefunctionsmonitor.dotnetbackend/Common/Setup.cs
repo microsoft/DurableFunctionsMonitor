@@ -105,10 +105,19 @@ namespace DurableFunctionsMonitor.DotNetBackend
         /// </summary>
         public Func<IDurableClient, string, string, string, Task<string>> GetParentInstanceIdRoutine { get; set; }
 
+        /// <summary>
+        /// Routine for getting Task Hub names
+        /// Takes connString env variable name and returns names of Task Hubs discovered there.
+        /// Provide your own implementation for a custom storage provider.
+        /// Default implementation traverses XXXInstances tables.
+        /// </summary>
+        public Func<string, Task<IEnumerable<string>>> GetTaskHubNamesRoutine { get; set; }
+
         public DfmExtensionPoints()
         {
             this.GetInstanceHistoryRoutine = OrchestrationHistory.GetHistoryDirectlyFromTable;
             this.GetParentInstanceIdRoutine = DetailedOrchestrationStatus.GetParentInstanceIdDirectlyFromTable;
+            this.GetTaskHubNamesRoutine = Auth.GetTaskHubNamesFromStorage;
         }
     }
 
