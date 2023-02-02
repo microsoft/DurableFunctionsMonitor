@@ -20,8 +20,7 @@ namespace Dfm.MsSql
             DfmEndpoint.Setup(null, new DfmExtensionPoints 
             { 
                 GetInstanceHistoryRoutine = (client, connName, hubName, instanceId) => Task.FromResult(GetInstanceHistory(client, connName, hubName, instanceId)),
-                GetParentInstanceIdRoutine = GetParentInstanceId,
-                GetTaskHubNamesRoutine = GetTaskHubNames
+                GetParentInstanceIdRoutine = GetParentInstanceId
             });
         }
 
