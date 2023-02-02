@@ -462,7 +462,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         }
         this._inProgress = true;
 
-        this._monitorViews.detachBackends(storageAccountItem.storageConnString, storageAccountItem.hubNames)
+        this._monitorViews.detachBackends(storageAccountItem.storageConnString)
             .then(() => this._monitorViews.forgetConnectionString(storageAccountItem.storageConnString))
             .then(() => {
 
@@ -489,7 +489,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         }
         this._inProgress = true;
 
-        this._monitorViews.detachBackends(storageAccountItem.storageConnString, storageAccountItem.hubNames).then(() => {
+        this._monitorViews.detachBackends(storageAccountItem.storageConnString).then(() => {
 
             this._onDidChangeTreeData.fire(undefined);
             this._inProgress = false;

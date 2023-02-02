@@ -142,7 +142,7 @@ export class MonitorViewList {
         return Promise.all(Object.keys(backends).map(k => backends[k].cleanup()));
     }
 
-    async detachBackends(storageConnString: string, hubNames: string[]): Promise<any> {
+    async detachBackends(storageConnString: string): Promise<any> {
 
         const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnString);
 
@@ -157,20 +157,19 @@ export class MonitorViewList {
             }
         }
 
-        // Stopping background process(es)
+        // Stopping background process(es) with this conn string
 
-        for (const hubName of hubNames) {
+        const backendHashKeys = Object.keys(this._backends);
+        for (const backendHashKey of backendHashKeys) {
             
-            const connSettings = new StorageConnectionSettings(storageConnString, hubName);
+            const backendProcess = this._backends[backendHashKey];
 
-            const backendProcess = this._backends[connSettings.hashKeyForBackend];
-            if (!backendProcess) {
-                continue;
+            if (StorageConnectionSettings.GetConnStringHashKey(backendProcess.storageConnectionString) === connStringHashKey) {
+                
+                await backendProcess.cleanup();
+
+                delete this._backends[backendHashKey];
             }
-    
-            await backendProcess.cleanup();
-    
-            delete this._backends[connSettings.hashKeyForBackend];
         }
     }
 
