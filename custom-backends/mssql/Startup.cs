@@ -21,7 +21,7 @@ namespace Dfm.MsSql
             { 
                 GetInstanceHistoryRoutine = (client, connName, hubName, instanceId) => Task.FromResult(GetInstanceHistory(client, connName, hubName, instanceId)),
                 GetParentInstanceIdRoutine = GetParentInstanceId,
-				GetTaskHubNamesRoutine = GetTaskHubNames
+                GetTaskHubNamesRoutine = GetTaskHubNames
             });
         }
 
@@ -69,7 +69,7 @@ namespace Dfm.MsSql
                     i.ParentInstanceID as ParentInstanceID
                 FROM
                     dt.Instances i
-					LEFT JOIN
+                    LEFT JOIN
                     dt.Instances i2
                     ON
                     (i2.InstanceID = i.InstanceID AND i2.TaskHub = @TaskHub)
@@ -158,7 +158,7 @@ namespace Dfm.MsSql
                     ) cih
                     ON
                     (cih.ParentInstanceID = h.InstanceID AND cih.TaskHub = h.TaskHub AND cih.TaskID = h.TaskID AND h.EventType = 'SubOrchestrationInstanceCreated')
-					LEFT JOIN
+                    LEFT JOIN
                     dt.Instances i2
                     ON
                     (i2.InstanceID = i.InstanceID AND i2.TaskHub = @TaskHub)
