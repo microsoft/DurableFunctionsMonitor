@@ -16,7 +16,8 @@ import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
 type PersistedConnStringHashes = {
     [hash: string]: {
-        taskHubNames?: string[]
+        taskHubNames?: string[],
+        schemaName?: string
     }
 };
 
@@ -111,7 +112,7 @@ export class MonitorViewList {
                 return null;
             }
 
-            return new StorageConnectionSettings(sqlConnectionString, hubName || 'TestHubName');
+            return new StorageConnectionSettings(sqlConnectionString, hubName || 'TestHubName', hostJson.schemaName);
         }
 
         if (!hubName) {
@@ -257,19 +258,14 @@ export class MonitorViewList {
         return result;
     }
 
-    getPersistedTaskHubNames(connString: string): string[] {
+    getPersistedConnStringData(connString: string): { taskHubNames?: string[], schemaName?: string } | undefined {
 
         const connStringMap = this.getConnStringHashes();
         if (!connStringMap) {
-            return [];
+            return undefined;
         }
 
-        const connStringInfo = connStringMap[StorageConnectionSettings.GetConnStringHashKey(connString)];
-        if (!connStringInfo) {
-            return [];
-        }
-
-        return connStringInfo.taskHubNames ?? [];
+        return connStringMap[StorageConnectionSettings.GetConnStringHashKey(connString)];
     }
 
     private _monitorViews: { [key: string]: MonitorView } = {};
@@ -302,103 +298,131 @@ export class MonitorViewList {
         return new Promise<StorageConnectionSettings | null>((resolve, reject) => {
 
             // Asking the user for Connection String
-            var connStringToShow = '';
+            let connStringToShow = '';
             const connStringFromLocalSettings = this.getValueFromLocalSettings('AzureWebJobsStorage');
 
             if (!!connStringFromLocalSettings) {
                 connStringToShow = ConnStringUtils.MaskStorageConnString(connStringFromLocalSettings);
             }
 
-            vscode.window.showInputBox({ value: connStringToShow, prompt: 'Storage or MSSQL Connection String' }).then(connString => {
+            vscode.window.showInputBox({ value: connStringToShow, prompt: 'Storage or MSSQL Connection String' })
+                .then(connString => {
 
-                if (!connString) {
-                    resolve(null);
-                    return;
-                }
-
-                // If the user didn't change it
-                if (connString === connStringToShow) {
-                    // Then setting it back to non-masked one
-                    connString = connStringFromLocalSettings;
-                }
-
-                // Dealing with 'UseDevelopmentStorage=true' early
-                connString = ConnStringUtils.ExpandEmulatorShortcutIfNeeded(connString);
-
-                const isMsSql = !!ConnStringUtils.GetSqlServerName(connString);
-
-                // Asking the user for Hub Name
-                var hubName = '';
-                const hubPick = vscode.window.createQuickPick();
-
-                hubPick.onDidHide(() => {
-                    hubPick.dispose();
-                    resolve(null);
-                });
-
-                hubPick.onDidChangeSelection(items => {
-                    if (!!items && !!items.length) {
-                        hubName = items[0].label;
+                    if (!connString) {
+                        resolve(null);
+                        return;
                     }
-                });
 
-                // Still allowing to type free text
-                hubPick.onDidChangeValue(value => {
-                    hubName = value;
-                });
+                    // If the user didn't change it
+                    if (connString === connStringToShow) {
+                        // Then setting it back to non-masked one
+                        connString = connStringFromLocalSettings;
+                    }
 
-                hubPick.onDidAccept(() => {
+                    // Dealing with 'UseDevelopmentStorage=true' early
+                    connString = ConnStringUtils.ExpandEmulatorShortcutIfNeeded(connString);
 
-                    hubPick.hide();
-                    resolve(!hubName ? null : new StorageConnectionSettings(connString!, hubName));
-                });
-                
-                hubPick.title = 'Hub Name';
+                    const isMsSql = !!ConnStringUtils.GetSqlServerName(connString);
 
-                var hubNameFromHostJson = this.readHostJson().hubName;
-                if (!!hubNameFromHostJson) {
-
-                    hubPick.placeholder = hubNameFromHostJson;
-
-                } else {
-
-                    hubPick.placeholder = isMsSql ? 'dbo' : 'DurableFunctionsHub';
-                }
-
-                hubPick.items = [{
-                    label: hubPick.placeholder
-                }];
-
-                if (!isMsSql) {
+                    const hostJson = this.readHostJson();
                     
-                    // Loading other hub names directly from Table Storage
+                    // Asking the user for Hub Name
+                    let hubName = '';
+                    const hubPick = vscode.window.createQuickPick();
 
-                    const accountName = ConnStringUtils.GetAccountName(connString);
-                    const accountKey = ConnStringUtils.GetAccountKey(connString);
-                    const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
-            
-                    getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey).then(hubNames => {
-
-                        if (!!hubNames?.length) {
-
-                            // Adding loaded names to the list
-                            hubPick.items = hubNames.map(label => {
-                                return { label: label };
-                            });
-
-                            hubPick.placeholder = hubNames[0];
-                        }
-
-                    }).catch(err => {
-
-                        this._log(`Failed to list Task Hubs for Storage account ${accountName}. ${err.message ?? err}\n`);
+                    hubPick.onDidHide(() => {
+                        hubPick.dispose();
+                        resolve(null);
                     });
-                }
 
-                hubPick.show();
+                    hubPick.onDidChangeSelection(items => {
+                        if (!!items && !!items.length) {
+                            hubName = items[0].label;
+                        }
+                    });
 
-            }, reject);
+                    // Still allowing to type free text
+                    hubPick.onDidChangeValue(value => {
+                        hubName = value;
+                    });
+
+                    hubPick.onDidAccept(() => {
+
+                        hubPick.hide();
+
+                        resolve(!!hubName ? new StorageConnectionSettings(connString!, hubName) : null);
+                    });
+                    
+                    hubPick.title = 'Hub Name';
+
+                    if (!!hostJson.hubName) {
+
+                        hubPick.placeholder = hostJson.hubName;
+
+                    } else {
+
+                        hubPick.placeholder = isMsSql ? 'dbo' : 'DurableFunctionsHub';
+                    }
+
+                    hubPick.items = [{
+                        label: hubPick.placeholder
+                    }];
+
+                    if (!isMsSql) {
+                        
+                        // Loading other hub names directly from Table Storage
+
+                        const accountName = ConnStringUtils.GetAccountName(connString);
+                        const accountKey = ConnStringUtils.GetAccountKey(connString);
+                        const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
+                
+                        getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey).then(hubNames => {
+
+                            if (!!hubNames?.length) {
+
+                                // Adding loaded names to the list
+                                hubPick.items = hubNames.map(label => {
+                                    return { label: label };
+                                });
+
+                                hubPick.placeholder = hubNames[0];
+                            }
+
+                        }).catch(err => {
+
+                            this._log(`Failed to list Task Hubs for Storage account ${accountName}. ${err.message ?? err}\n`);
+                        });
+                    }
+
+                    hubPick.show();
+
+                }, reject);
+            
+        }).then(connSettings => {
+            
+            return this.askForDbSchemaNameIfNeeded(connSettings);
         });
+    }
+
+    private async askForDbSchemaNameIfNeeded(connSettings: StorageConnectionSettings | null): Promise<StorageConnectionSettings | null> {
+
+        if (!connSettings) {
+            return null;
+        }
+
+        if (!connSettings.isMsSql) {
+            return connSettings;
+        }
+
+        const schemaName = await vscode.window.showInputBox({ title: 'Database Schema Name', value: 'dt' });
+
+        if (!schemaName) {
+
+            return null;
+        }
+
+        connSettings.schemaName = schemaName;
+        return connSettings;
     }
 
     private getValueFromLocalSettings(valueName: string): string {
@@ -423,9 +447,9 @@ export class MonitorViewList {
         return '';
     }
 
-    private readHostJson(): { hubName?: string, storageProviderType: 'default' | 'mssql', connectionStringName: string } {
+    private readHostJson(): { hubName?: string, storageProviderType: 'default' | 'mssql', connectionStringName: string, schemaName?: string } {
 
-        const result = { hubName: '', storageProviderType: 'default' as any, connectionStringName: '' };
+        const result = { hubName: '', storageProviderType: 'default' as any, connectionStringName: '', schemaName: undefined };
 
         const ws = vscode.workspace;
         if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
@@ -451,6 +475,7 @@ export class MonitorViewList {
                 if (!!durableTask.storageProvider && durableTask.storageProvider.type === 'mssql') {
                     result.storageProviderType = 'mssql';
                     result.connectionStringName = durableTask.storageProvider.connectionStringName;
+                    result.schemaName = durableTask.storageProvider.schemaName;
                 }
             }
         }
@@ -464,7 +489,9 @@ export class MonitorViewList {
             connStringMap = {};
         }
 
-        connStringMap[connSettings.connStringHashKey] = {};
+        connStringMap[connSettings.connStringHashKey] = {
+            schemaName: connSettings.schemaName
+        };
 
         this._context.secrets.store(connSettings.connStringHashKey, connSettings.storageConnString);
 

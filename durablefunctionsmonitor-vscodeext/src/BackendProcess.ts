@@ -114,6 +114,12 @@ export class BackendProcess {
             // For MSSQL just need to set DFM_HUB_NAME to something, doesn't matter what it is so far
             env[SharedConstants.HubNameEnvironmentVariableName] = this._storageConnectionSettings.hubName;
 
+            if (!!this._storageConnectionSettings.schemaName) {
+                
+                // Also passing the custom DB schema name
+                env["AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName"] = this._storageConnectionSettings.schemaName;
+            }
+
         } else {
 
             // Need to unset this, in case it was set previously

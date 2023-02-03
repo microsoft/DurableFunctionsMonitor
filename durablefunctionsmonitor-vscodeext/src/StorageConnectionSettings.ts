@@ -16,6 +16,8 @@ export class StorageConnectionSettings {
 
     get storageConnString(): string { return this._connString; };
     get hubName(): string { return this._hubName; };
+    get schemaName(): string | undefined { return this._schemaName; };
+    set schemaName(val: string | undefined) { this._schemaName = val; };
     get connStringHashKey(): string { return this._connStringHashKey; }
     get hashKey(): string { return this._hashKey; }
     get isMsSql(): boolean { return !!ConnStringUtils.GetSqlServerName(this._connString); }
@@ -25,7 +27,8 @@ export class StorageConnectionSettings {
     get hashKeyForBackend(): string { return this.isMsSql ? this._hashKey : this._connStringHashKey; }
 
     constructor(private _connString: string,
-        private _hubName: string
+        private _hubName: string,
+        private _schemaName?: string
     ) {
 
         this._connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(this._connString);

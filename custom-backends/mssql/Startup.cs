@@ -15,6 +15,18 @@ namespace Dfm.MsSql
 {
     public class Startup : IWebJobsStartup
     {
+        private static readonly string SchemaName = "dt";
+
+        static Startup() 
+        {
+            // Getting custom schema name passed to us by VsCode ext
+            string schemaName = Environment.GetEnvironmentVariable("AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName");
+            if (!string.IsNullOrEmpty(schemaName))
+            {
+                SchemaName = schemaName;
+            }
+        }
+
         public void Configure(IWebJobsBuilder builder)
         {
             DfmEndpoint.Setup(null, new DfmExtensionPoints 
@@ -32,10 +44,10 @@ namespace Dfm.MsSql
             var result = new List<string>();
 
             string sql =
-                @"SELECT DISTINCT
+                $@"SELECT DISTINCT
                     i.TaskHub as TaskHub
                 FROM
-                    dt.Instances i";
+                    [{SchemaName}].Instances i";
 
             string sqlConnectionString = Environment.GetEnvironmentVariable("DFM_SQL_CONNECTION_STRING");
 
@@ -64,12 +76,12 @@ namespace Dfm.MsSql
         public static async Task<string> GetParentInstanceId(IDurableClient durableClient, string connName, string hubName, string instanceId)
         {
             string sql =
-                @"SELECT 
+                $@"SELECT 
                     i.ParentInstanceID as ParentInstanceID
                 FROM
-                    dt.Instances i
+                    [{SchemaName}].Instances i
                     LEFT JOIN
-                    dt.Instances i2
+                    [{SchemaName}].Instances i2
                     ON
                     (i2.InstanceID = i.InstanceID AND i2.TaskHub = @TaskHub)
                 WHERE
@@ -112,7 +124,7 @@ namespace Dfm.MsSql
         public static IEnumerable<HistoryEvent> GetInstanceHistory(IDurableClient durableClient, string connName, string hubName, string instanceId)
         {
             string sql =
-                @"SELECT 
+                $@"SELECT 
                     IIF(h2.TaskID IS NULL, h.Timestamp, h2.Timestamp) as Timestamp, 
                     IIF(h2.TaskID IS NULL, h.EventType, h2.EventType) as EventType,
                     h.TaskID as EventId,
@@ -122,13 +134,13 @@ namespace Dfm.MsSql
                     p.Reason as Details,
                     cih.InstanceID as SubOrchestrationId
                 FROM
-                    dt.Instances i
+                    [{SchemaName}].Instances i
                     INNER JOIN
-                    dt.History h
+                    [{SchemaName}].History h
                     ON
                     (i.InstanceID = h.InstanceID AND i.ExecutionID = h.ExecutionID AND i.TaskHub = h.TaskHub)
                     LEFT JOIN
-                    dt.History h2
+                    [{SchemaName}].History h2
                     ON
                     (
                         h.EventType IN ('TaskScheduled', 'SubOrchestrationInstanceCreated')
@@ -138,7 +150,7 @@ namespace Dfm.MsSql
                         h.InstanceID = h2.InstanceID AND h.ExecutionID = h2.ExecutionID AND h.TaskHub = h2.TaskHub AND h.TaskID = h2.TaskID AND h.SequenceNumber != h2.SequenceNumber
                     )
                     LEFT JOIN
-                    dt.Payloads p
+                    [{SchemaName}].Payloads p
                     ON
                     p.PayloadID = h2.DataPayloadID AND p.TaskHub = h2.TaskHub AND p.InstanceID = h2.InstanceID
                     LEFT JOIN
@@ -149,16 +161,16 @@ namespace Dfm.MsSql
                             cii.TaskHub,
                             chh.TaskID
                         from 
-                            dt.Instances cii
+                            [{SchemaName}].Instances cii
                             INNER JOIN
-                            dt.History chh
+                            [{SchemaName}].History chh
                             ON
                             (chh.InstanceID = cii.InstanceID AND chh.TaskHub = cii.TaskHub AND chh.EventType = 'ExecutionStarted')
                     ) cih
                     ON
                     (cih.ParentInstanceID = h.InstanceID AND cih.TaskHub = h.TaskHub AND cih.TaskID = h.TaskID AND h.EventType = 'SubOrchestrationInstanceCreated')
                     LEFT JOIN
-                    dt.Instances i2
+                    [{SchemaName}].Instances i2
                     ON
                     (i2.InstanceID = i.InstanceID AND i2.TaskHub = @TaskHub)
                 WHERE

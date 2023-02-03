@@ -179,7 +179,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                         for (const hub of accountNode.hubNames) {
 
-                            const storageConnectionSettings = new StorageConnectionSettings(accountNode.storageConnString, hub);
+                            const storageConnectionSettings = new StorageConnectionSettings(accountNode.storageConnString, hub, accountNode.schemaName);
                             const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
     
                             const node: TaskHubTreeItem = {
@@ -242,6 +242,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                         let iconPath: string = '';
                         let tooltip: string = '';
                         let description: string = '';
+                        let schemaName: string | undefined = undefined;
 
                         try {
                             
@@ -251,10 +252,13 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                                 tooltip = 'MSSQL Storage Provider';
                                 description = 'MSSQL Storage Provider';
 
-                                hubNames = this._monitorViews.getPersistedTaskHubNames(connString);
+                                const connStringData = this._monitorViews.getPersistedConnStringData(connString);
+                                if (!!connStringData) {
 
-                                if (hubNames.length <= 0) {
-                                    hubNames = ['dbo'];
+                                    hubNames = connStringData.taskHubNames ?? [];
+                                    if (!hubNames.length) {
+                                        hubNames = ['dbo'];
+                                    }
                                 }
                                 
                             } else {
@@ -286,6 +290,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
                             storageConnString: connString,
                             hubNames: hubNames ?? [],
+                            schemaName,
                             description,
                             tooltip
                         };
@@ -895,6 +900,7 @@ type StorageAccountTreeItem = vscode.TreeItem & {
     storageAccountId?: string,
     storageConnString: string,
     hubNames: string[],
+    schemaName?: string,
 };
 
 type TaskHubTreeItem = vscode.TreeItem & {
