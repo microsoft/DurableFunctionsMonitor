@@ -16,8 +16,7 @@ import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
 type PersistedConnStringHashes = {
     [hash: string]: {
-        taskHubNames?: string[],
-        schemaName?: string
+        taskHubs?: string []
     }
 };
 
@@ -112,7 +111,7 @@ export class MonitorViewList {
                 return null;
             }
 
-            return new StorageConnectionSettings(sqlConnectionString, hubName || 'TestHubName', hostJson.schemaName);
+            return new StorageConnectionSettings(sqlConnectionString, `${hostJson.schemaName || 'dt'}/${hubName || 'dbo'}`);
         }
 
         if (!hubName) {
@@ -258,7 +257,7 @@ export class MonitorViewList {
         return result;
     }
 
-    getPersistedConnStringData(connString: string): { taskHubNames?: string[], schemaName?: string } | undefined {
+    getPersistedConnStringData(connString: string): { taskHubs?: string [] } | undefined {
 
         const connStringMap = this.getConnStringHashes();
         if (!connStringMap) {
@@ -282,7 +281,7 @@ export class MonitorViewList {
                 this._context.extensionPath,
                 connSettings,
                 () => this.detachBackend(connSettings),
-                (storageConnString, taskHubs) => this.saveTaskHubs(storageConnString, taskHubs),
+                (storageConnString, schemaName, taskHubs) => this.saveTaskHubs(storageConnString, schemaName, taskHubs),
                 this._log
             );
 
@@ -421,8 +420,7 @@ export class MonitorViewList {
             return null;
         }
 
-        connSettings.schemaName = schemaName;
-        return connSettings;
+        return new StorageConnectionSettings(connSettings.storageConnString, `${schemaName}/${connSettings.hubName}`);
     }
 
     private getValueFromLocalSettings(valueName: string): string {
@@ -489,9 +487,10 @@ export class MonitorViewList {
             connStringMap = {};
         }
 
-        connStringMap[connSettings.connStringHashKey] = {
-            schemaName: connSettings.schemaName
-        };
+        if (!connStringMap[connSettings.connStringHashKey]) {
+            
+            connStringMap[connSettings.connStringHashKey] = {};
+        }
 
         this._context.secrets.store(connSettings.connStringHashKey, connSettings.storageConnString);
 
@@ -519,7 +518,7 @@ export class MonitorViewList {
         await this._context.globalState.update(MonitorViewList.ConnectionStringHashes, hashes)
     }
 
-    private async saveTaskHubs(storageConnString: string, taskHubs: string[]): Promise<void> {
+    private async saveTaskHubs(storageConnString: string, schemaName: string | undefined, taskHubs: string[]): Promise<void> {
 
         const connStringMap = this.getConnStringHashes();
         if (!connStringMap) {
@@ -531,7 +530,19 @@ export class MonitorViewList {
             return;
         }
 
-        connStringInfo.taskHubNames = taskHubs;
+        if (!connStringInfo.taskHubs) {
+            connStringInfo.taskHubs = [];
+        }
+
+        for (const hubName of taskHubs) {
+
+            const schemaAndHubName = `${schemaName || 'dt'}/${hubName}`;
+
+            if (!connStringInfo.taskHubs.includes(schemaAndHubName)) {
+                
+                connStringInfo.taskHubs.push(schemaAndHubName);
+            }
+        }
 
         await this.saveConnStringHashes(connStringMap);
     }

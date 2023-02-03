@@ -179,7 +179,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                         for (const hub of accountNode.hubNames) {
 
-                            const storageConnectionSettings = new StorageConnectionSettings(accountNode.storageConnString, hub, accountNode.schemaName);
+                            const storageConnectionSettings = new StorageConnectionSettings(accountNode.storageConnString, hub);
                             const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
     
                             const node: TaskHubTreeItem = {
@@ -242,7 +242,6 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                         let iconPath: string = '';
                         let tooltip: string = '';
                         let description: string = '';
-                        let schemaName: string | undefined = undefined;
 
                         try {
                             
@@ -255,9 +254,9 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                                 const connStringData = this._monitorViews.getPersistedConnStringData(connString);
                                 if (!!connStringData) {
 
-                                    hubNames = connStringData.taskHubNames ?? [];
+                                    hubNames = connStringData.taskHubs ?? [];
                                     if (!hubNames.length) {
-                                        hubNames = ['dbo'];
+                                        hubNames = ['dt/dbo'];
                                     }
                                 }
                                 
@@ -290,7 +289,6 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
                             storageConnString: connString,
                             hubNames: hubNames ?? [],
-                            schemaName,
                             description,
                             tooltip
                         };
@@ -900,7 +898,6 @@ type StorageAccountTreeItem = vscode.TreeItem & {
     storageAccountId?: string,
     storageConnString: string,
     hubNames: string[],
-    schemaName?: string,
 };
 
 type TaskHubTreeItem = vscode.TreeItem & {

@@ -108,7 +108,7 @@ export class MonitorView
         const headers: any = {};
         headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
 
-        await axios.post(`${this._backend.backendUrl}/--${this._hubName}/delete-task-hub`, {}, { headers });
+        await axios.post(`${this._backend.backendUrl}/--${this.hubNameWithoutSchema}/delete-task-hub`, {}, { headers });
 
         this.cleanup();
     }
@@ -326,7 +326,7 @@ export class MonitorView
         headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
 
         // Workaround for https://github.com/Azure/azure-functions-durable-extension/issues/1926
-        var hubName = this._hubName;
+        var hubName = this.hubNameWithoutSchema;
         if (hubName === 'TestHubName' && request.method === 'POST' && request.url.match(/\/(orchestrations|restart)$/i)) {
             // Turning task hub name into lower case, this allows to bypass function name validation
             hubName = 'testhubname';
@@ -345,6 +345,13 @@ export class MonitorView
 
             webView.postMessage({ id: requestId, err: { message: err.message, response: { data: !err.response ? undefined : err.response.data } } });
         });
+    }
+
+    private get hubNameWithoutSchema(): string {
+
+        const hub = this._hubName;
+        const slashPos = hub.lastIndexOf('/');
+        return slashPos < 0 ? hub : hub.substring(slashPos + 1);
     }
 
     // Embeds the current color theme
@@ -436,7 +443,7 @@ export class MonitorView
         const headers: any = {};
         headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
 
-        return axios.get(`${this._backend.backendUrl}/--${this._hubName}/id-suggestions(prefix='${prefix}')`, { headers })
+        return axios.get(`${this._backend.backendUrl}/--${this.hubNameWithoutSchema}/id-suggestions(prefix='${prefix}')`, { headers })
             .then(response => {
                 return response.data as string[];
             });

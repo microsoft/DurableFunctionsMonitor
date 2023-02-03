@@ -24,7 +24,7 @@ export class BackendProcess {
     constructor(private _extensionRootFolder: string,
         private _storageConnectionSettings: StorageConnectionSettings,
         private _removeMyselfFromList: () => void,
-        private _saveTaskHubs: (storageConnString: string, taskHubs: string[]) => Promise<void>,
+        private _saveTaskHubs: (storageConnString: string, schemaName: string | undefined, taskHubs: string[]) => Promise<void>,
         private _log: (l: string) => void)
     { }
 
@@ -113,14 +113,10 @@ export class BackendProcess {
 
             env[SharedConstants.MsSqlConnStringEnvironmentVariableName] = this._storageConnectionSettings.storageConnString;
 
-            // For MSSQL just need to set DFM_HUB_NAME to something, doesn't matter what it is so far
-            env[SharedConstants.HubNameEnvironmentVariableName] = this._storageConnectionSettings.hubName;
+            env[SharedConstants.HubNameEnvironmentVariableName] = this.hubName;
 
             // Also passing the custom DB schema name
-            if (!!this._storageConnectionSettings.schemaName) {
-                
-                env["AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName"] = this._storageConnectionSettings.schemaName;
-            }
+            env["AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName"] = this.schemaName;
 
         } else {
 
@@ -136,6 +132,20 @@ export class BackendProcess {
         }
 
         return env;
+    }
+
+    private get schemaName(): string {
+
+        const hub = this._storageConnectionSettings.hubName;
+        const slashPos = hub.lastIndexOf('/');
+        return slashPos < 0 ? 'dt' : hub.substring(0, slashPos);
+    }
+
+    private get hubName(): string {
+
+        const hub = this._storageConnectionSettings.hubName;
+        const slashPos = hub.lastIndexOf('/');
+        return slashPos < 0 ? hub : hub.substring(slashPos + 1);
     }
 
     // Runs the backend Function instance on some port
@@ -175,7 +185,7 @@ export class BackendProcess {
                 headers[SharedConstants.NonceHeaderName] = this._backendCommunicationNonce;
 
                 // Pinging the backend and returning its URL when ready
-                axios.get(`${backendUrl}/--${this._storageConnectionSettings.hubName}/about`, { headers }).then(response => {
+                axios.get(`${backendUrl}/--${this.hubName}/about`, { headers }).then(response => {
                     console.log(`The backend is now running on ${backendUrl}`);
                     clearInterval(intervalToken);
 
@@ -298,7 +308,7 @@ export class BackendProcess {
 
             const response = await axios.get(`${this.backendUrl}/task-hub-names`, { headers });
 
-            await this._saveTaskHubs(this.storageConnectionString, response.data);
+            await this._saveTaskHubs(this._storageConnectionSettings.storageConnString, this.schemaName, response.data);
             
         } catch (err: any) {
 
