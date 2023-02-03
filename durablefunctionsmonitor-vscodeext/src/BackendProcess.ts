@@ -106,6 +106,8 @@ export class BackendProcess {
         delete env['AzureWebJobsStorage'];
         delete env['AzureWebJobsStorage__accountName'];
         delete env[SharedConstants.MsSqlConnStringEnvironmentVariableName];
+        delete env[SharedConstants.HubNameEnvironmentVariableName];
+        delete env["AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName"];
 
         if (this._storageConnectionSettings.isMsSql) {
 
@@ -114,17 +116,14 @@ export class BackendProcess {
             // For MSSQL just need to set DFM_HUB_NAME to something, doesn't matter what it is so far
             env[SharedConstants.HubNameEnvironmentVariableName] = this._storageConnectionSettings.hubName;
 
+            // Also passing the custom DB schema name
             if (!!this._storageConnectionSettings.schemaName) {
                 
-                // Also passing the custom DB schema name
                 env["AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName"] = this._storageConnectionSettings.schemaName;
             }
 
         } else {
 
-            // Need to unset this, in case it was set previously
-            delete env[SharedConstants.HubNameEnvironmentVariableName];
-            
             if (!!this._storageConnectionSettings.isIdentityBasedConnection) {
 
                 const storageAccountName = ConnStringUtils.GetAccountName(this._storageConnectionSettings.storageConnString);

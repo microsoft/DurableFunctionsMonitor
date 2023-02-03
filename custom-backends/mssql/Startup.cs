@@ -15,10 +15,13 @@ namespace Dfm.MsSql
 {
     public class Startup : IWebJobsStartup
     {
+        private static readonly string ConnString;
         private static readonly string SchemaName = "dt";
 
         static Startup() 
         {
+            ConnString = Environment.GetEnvironmentVariable("DFM_SQL_CONNECTION_STRING");
+
             // Getting custom schema name passed to us by VsCode ext
             string schemaName = Environment.GetEnvironmentVariable("AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName");
             if (!string.IsNullOrEmpty(schemaName))
@@ -49,9 +52,7 @@ namespace Dfm.MsSql
                 FROM
                     [{SchemaName}].Instances i";
 
-            string sqlConnectionString = Environment.GetEnvironmentVariable("DFM_SQL_CONNECTION_STRING");
-
-            using (var conn = new SqlConnection(sqlConnectionString))
+            using (var conn = new SqlConnection(ConnString))
             {
                 conn.Open();
 
@@ -87,9 +88,7 @@ namespace Dfm.MsSql
                 WHERE
                     i.InstanceID = @OrchestrationInstanceId AND i.TaskHub = IIF(i2.InstanceID IS NULL, 'dbo', @TaskHub)";
 
-            string sqlConnectionString = Environment.GetEnvironmentVariable("DFM_SQL_CONNECTION_STRING");
-
-            using (var conn = new SqlConnection(sqlConnectionString))
+            using (var conn = new SqlConnection(ConnString))
             {
                 conn.Open();
 
@@ -185,9 +184,7 @@ namespace Dfm.MsSql
                     h.SequenceNumber";
 
 
-            string sqlConnectionString = Environment.GetEnvironmentVariable("DFM_SQL_CONNECTION_STRING");
-
-            using (var conn = new SqlConnection(sqlConnectionString))
+            using (var conn = new SqlConnection(ConnString))
             {
                 conn.Open();
 
