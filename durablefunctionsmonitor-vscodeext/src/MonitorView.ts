@@ -42,7 +42,6 @@ export class MonitorView
         private _functionGraphList: FunctionGraphList,
         private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureConnectionInfo | undefined>,
         private _onViewStatusChanged: () => void,
-        private _saveTaskHubs: (storageConnString: string, taskHubs: string[]) => Promise<void>,
         private _log: (line: string) => void) {
         
         const ws = vscode.workspace;
@@ -91,32 +90,12 @@ export class MonitorView
 
         await this._backend.getBackend();
 
-        // Reloading Task Hub names from backend and storing them for future use
-        await this.loadTaskHubNamesFromBackend();
-
         this._webViewPanel = this.showWebView('', messageToWebView);
 
         this._webViewPanel.onDidDispose(() => {
             this._webViewPanel = null;
             this._onViewStatusChanged();
         });
-    }
-
-    private async loadTaskHubNamesFromBackend(): Promise<void> {
-
-        const headers: any = {};
-        headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
-
-        try {
-
-            const response = await axios.get(`${this._backend.backendUrl}/task-hub-names`, { headers });
-
-            await this._saveTaskHubs(this._backend.storageConnectionString, response.data);
-            
-        } catch (err: any) {
-
-            this._log(`Failed to get Task Hub names from backend. ${err.message ?? err} \n`);
-        }        
     }
 
     // Permanently deletes all underlying Storage resources for this Task Hub

@@ -24,6 +24,7 @@ export class BackendProcess {
     constructor(private _extensionRootFolder: string,
         private _storageConnectionSettings: StorageConnectionSettings,
         private _removeMyselfFromList: () => void,
+        private _saveTaskHubs: (storageConnString: string, taskHubs: string[]) => Promise<void>,
         private _log: (l: string) => void)
     { }
 
@@ -267,6 +268,12 @@ export class BackendProcess {
                 // Now running func.exe in backend folder
                 await this.startBackendOnPort(funcExePath, portNr, backendUrl, token)
 
+                // Also fetching Task Hub names from backend, but by now only for MSSQL
+                if (this._storageConnectionSettings.isMsSql) {
+                 
+                    await this.loadTaskHubs();
+                }
+
             } catch (err) {
                 
                 // This call is important, without it a typo in connString would persist until vsCode restart
@@ -275,6 +282,23 @@ export class BackendProcess {
                 throw err;
             }
         });
+    }
+
+    private async loadTaskHubs(): Promise<void> {
+
+        const headers: any = {};
+        headers[SharedConstants.NonceHeaderName] = this.backendCommunicationNonce;
+
+        try {
+
+            const response = await axios.get(`${this.backendUrl}/task-hub-names`, { headers });
+
+            await this._saveTaskHubs(this.storageConnectionString, response.data);
+            
+        } catch (err: any) {
+
+            this._log(`Failed to get Task Hub names from backend. ${err.message ?? err} \n`);
+        }        
     }
 
     // Calculates the backend binaries folder to use, based on Settings

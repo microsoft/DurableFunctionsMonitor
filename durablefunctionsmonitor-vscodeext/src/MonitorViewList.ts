@@ -57,7 +57,6 @@ export class MonitorViewList {
             this._functionGraphList,
             this._getTokenCredentialsForGivenConnectionString,
             this._onViewStatusChanged,
-            (storageConnString, taskHubs) => this.saveTaskHubs(storageConnString, taskHubs),
             this._log);
         
         this._monitorViews[connSettings.hashKey] = monitorView;
@@ -287,6 +286,7 @@ export class MonitorViewList {
                 this._context.extensionPath,
                 connSettings,
                 () => this.detachBackend(connSettings),
+                (storageConnString, taskHubs) => this.saveTaskHubs(storageConnString, taskHubs),
                 this._log
             );
 

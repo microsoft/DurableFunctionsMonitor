@@ -44,7 +44,7 @@ suite('MonitorView Test Suite', () => {
 		
 		const functionGraphList: any = {};
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		var iAmReadyMessageSent = false;
 
@@ -147,7 +147,7 @@ suite('MonitorView Test Suite', () => {
 			method: 'IAmReady'
 		};
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		// Act
 
@@ -203,7 +203,7 @@ suite('MonitorView Test Suite', () => {
 			data: stateFieldValue
 		};
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		// Act
 
@@ -251,7 +251,7 @@ suite('MonitorView Test Suite', () => {
 			url: orchestrationId
 		};
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		// Act
 
@@ -296,7 +296,7 @@ suite('MonitorView Test Suite', () => {
 			data: `<svg id="${svgFileName}"></svg>`
 		};
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		(vscode.window as any).showSaveDialog = (options: vscode.SaveDialogOptions) => {
 
@@ -341,7 +341,7 @@ suite('MonitorView Test Suite', () => {
 		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
 		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backendFolder });
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		(monitorView as any)._functionsAndProxies[request.url] = {
 			filePath: path.join(backendFolder, 'Functions', 'About.cs'),
@@ -398,7 +398,7 @@ suite('MonitorView Test Suite', () => {
 		}
 		const log = (s: string) => { errorMessageThrown = s; }
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, getTokenCredentialsForGivenConnectionString, () => { }, () => Promise.resolve(), log);
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, getTokenCredentialsForGivenConnectionString, () => { }, log);
 
 		(monitorView as any)._functionsAndProxies[request.url] = {
 			bindings: [ {} ]
@@ -466,7 +466,7 @@ suite('MonitorView Test Suite', () => {
 			}
 		};
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		// Act
 
@@ -502,7 +502,7 @@ suite('MonitorView Test Suite', () => {
 		};
 		const hubName = 'my-hub-4321';
 
-		const monitorView = new MonitorView(context, backend, hubName, functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, hubName, functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		const request: any = {
 
@@ -568,7 +568,7 @@ suite('MonitorView Test Suite', () => {
 		};
 		const hubName = 'my-hub-6789';
 
-		const monitorView = new MonitorView(context, backend, hubName, functionGraphList, () => Promise.resolve(undefined), () => { }, () => Promise.resolve(), () => { });
+		const monitorView = new MonitorView(context, backend, hubName, functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
 
 		(axios as any).post = (url: string, data: any, config: any) => {
 

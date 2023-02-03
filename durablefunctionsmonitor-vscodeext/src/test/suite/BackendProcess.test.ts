@@ -56,7 +56,7 @@ suite('BackendProcess Test Suite', () => {
 
 		try {
 
-			const backendProcess = new BackendProcess('', connSettings, callbackFunc, logFunc);
+			const backendProcess = new BackendProcess('', connSettings, callbackFunc, () => Promise.resolve(), logFunc);
 
 			// Calling getBackend() twice. It should return the same promise.
 			try {
@@ -134,7 +134,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Act
 
-		const backendProcess = new BackendProcess('', connSettings, callbackFunc, logFunc);
+		const backendProcess = new BackendProcess('', connSettings, callbackFunc, () => Promise.resolve(), logFunc);
 
 		try {
 
@@ -227,7 +227,7 @@ suite('BackendProcess Test Suite', () => {
 		
 		// Act
 
-		const backendProcess = new BackendProcess('', connSettings, callbackFunc, logFunc);
+		const backendProcess = new BackendProcess('', connSettings, callbackFunc, () => Promise.resolve(), logFunc);
 
 		try {
 
@@ -276,7 +276,7 @@ suite('BackendProcess Test Suite', () => {
 
 		try {
 
-			const backendProcess = new BackendProcess(nonExistingFolder, connSettings, () => {}, () => {});
+			const backendProcess = new BackendProcess(nonExistingFolder, connSettings, () => {}, () => Promise.resolve(), () => {});
 
 			await backendProcess.getBackend();
 
@@ -299,7 +299,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const connSettings = new StorageConnectionSettings('AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http', 'my-task-hub');
 
-		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
+		const backendProcess = new BackendProcess('', connSettings, () => { }, () => Promise.resolve(), () => { });
 
 		// Act
 
@@ -324,7 +324,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const connSettings = new StorageConnectionSettings('Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;', 'my-task-hub');
 
-		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
+		const backendProcess = new BackendProcess('', connSettings, () => { }, () => Promise.resolve(), () => { });
 
 		// Act
 
@@ -349,7 +349,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const connSettings = new StorageConnectionSettings(`AccountName=mystorageaccount1;DefaultEndpointsProtocol=http;`, 'my-task-hub');
 
-		const backendProcess = new BackendProcess('', connSettings, () => { }, () => { });
+		const backendProcess = new BackendProcess('', connSettings, () => { }, () => Promise.resolve(), () => { });
 
 		// Act
 
@@ -376,7 +376,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const connSettings = new StorageConnectionSettings(`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`, 'my-task-hub');
 
-		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => { });
+		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => Promise.resolve(), () => { });
 
 		await UpdateSetting('backendVersionToUse', '.Net Core 3.1');
 
@@ -404,7 +404,7 @@ suite('BackendProcess Test Suite', () => {
 
 		const connSettings = new StorageConnectionSettings(`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`, 'my-task-hub');
 
-		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => { });
+		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => Promise.resolve(), () => { });
 
 		(BackendProcess as any)._funcVersion = '3.4.5';
 

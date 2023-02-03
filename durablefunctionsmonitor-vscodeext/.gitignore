@@ -1,3 +1,6 @@
+# custom backend binaries for local debugging
+custom-backends
+
 # vscode test files
 .vscode-test
 
