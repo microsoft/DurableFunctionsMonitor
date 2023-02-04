@@ -20,7 +20,7 @@
 
     <files>
         <file src="..\output\bin\durablefunctionsmonitor.dotnetbackend.dll" target="lib/netcoreapp2.1" />
-        <file src="..\output\bin\durablefunctionsmonitor.dotnetbackend.xml" target="lib/netcoreapp2.1" />
+        <file src="..\output\durablefunctionsmonitor.dotnetbackend.xml" target="lib/netcoreapp2.1" />
         <file src="..\output\**" target="/" />
         <file src="..\output\durablefunctionsmonitor.dotnetbackend.targets" target="build" />
     </files>
