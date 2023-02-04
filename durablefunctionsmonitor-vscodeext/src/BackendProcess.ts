@@ -103,6 +103,9 @@ export class BackendProcess {
         // Also setting AzureWebJobsSecretStorageType to 'files', so that the backend doesn't need Azure Storage
         env['AzureWebJobsSecretStorageType'] = 'files';
 
+        // Need to explicitly set this, to make sure it is not overshadowed by some global setting
+        env['FUNCTIONS_WORKER_RUNTIME'] = 'dotnet';
+
         delete env['AzureWebJobsStorage'];
         delete env['AzureWebJobsStorage__accountName'];
         delete env[SharedConstants.MsSqlConnStringEnvironmentVariableName];
