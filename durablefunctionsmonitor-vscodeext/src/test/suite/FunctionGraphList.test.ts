@@ -41,14 +41,15 @@ suite('FunctionGraphList Test Suite', () => {
 		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.filePath, path.join(functionProjectPath, 'Functions', 'About.cs'));
 		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.lineNr! > 1, true);
 		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.pos! > 1, true);
-		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.bindings.length, 1);
+		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.bindings.length, 2);
 
 		assert.deepStrictEqual(traversalResult1.functions.DfmAboutFunction.bindings[0], {
 			"type": "httpTrigger",
 			"route": "a/p/i/{connName}-{hubName}/about",
 			"methods": ["get"],
 			"authLevel": "anonymous",
-			"name": "req"
+			"name": "req",
+			"direction": undefined
 		});
 
 		assert.strictEqual(!!((funcGraphList as any)._watcher), true);
