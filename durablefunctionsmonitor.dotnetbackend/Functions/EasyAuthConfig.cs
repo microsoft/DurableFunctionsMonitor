@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
@@ -38,8 +39,18 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     return new UnauthorizedResult();
                 }
 
-                string unauthenticatedAction = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_UNAUTHENTICATED_ACTION);
-                if (unauthenticatedAction == Auth.UnauthenticatedActionRedirectToLoginPage)
+                // This new setting replaces older ones, so we need to try it as well
+                string authv2ConfigJsonString = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_V2_CONFIG_JSON);
+                dynamic authV2ConfigJson = JObject.Parse(string.IsNullOrEmpty(authv2ConfigJsonString) ? "{}" : authv2ConfigJsonString);
+
+                bool isServerDirectedLoginFlowEnabled = (
+
+                    Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_UNAUTHENTICATED_ACTION) == Auth.UnauthenticatedActionRedirectToLoginPage
+                    ||
+                    authV2ConfigJson?.globalValidation?.unauthenticatedClientAction == 0
+                );
+
+                if (isServerDirectedLoginFlowEnabled)
                 {
                     // Assuming it is the server-directed login flow to be used
                     // and returning just the user name (to speed up login process)
@@ -49,7 +60,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
                 // Trying to get tenantId from WEBSITE_AUTH_OPENID_ISSUER environment variable
                 string tenantId = "common";
-                string openIdIssuer = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER);
+                string openIdIssuer = Auth.GetEasyAuthIssuer();
                 if (!string.IsNullOrEmpty(openIdIssuer))
                 {
                     var match = GuidRegex.Match(openIdIssuer);

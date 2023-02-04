@@ -22,6 +22,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
     {
         public const string AzureWebJobsStorage = "AzureWebJobsStorage";
         public const string WEBSITE_SITE_NAME = "WEBSITE_SITE_NAME";
+        public const string WEBSITE_AUTH_V2_CONFIG_JSON = "WEBSITE_AUTH_V2_CONFIG_JSON";
         public const string WEBSITE_AUTH_CLIENT_ID = "WEBSITE_AUTH_CLIENT_ID";
         public const string WEBSITE_AUTH_OPENID_ISSUER = "WEBSITE_AUTH_OPENID_ISSUER";
         public const string WEBSITE_AUTH_UNAUTHENTICATED_ACTION = "WEBSITE_AUTH_UNAUTHENTICATED_ACTION";

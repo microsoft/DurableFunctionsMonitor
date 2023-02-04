@@ -43,6 +43,24 @@ namespace DurableFunctionsMonitor.DotNetBackend
         // Roles claim name
         public const string RolesClaim = "roles";
 
+        // Tries to get Easy Auth Issuer setting from env variables
+        public static string GetEasyAuthIssuer()
+        {
+            string result = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER);
+            if (!string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            // Now trying Auth V2 settings
+            string authv2ConfigJsonString = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_V2_CONFIG_JSON);
+            dynamic authV2ConfigJson = JObject.Parse(string.IsNullOrEmpty(authv2ConfigJsonString) ? "{}" : authv2ConfigJsonString);
+
+            result = authV2ConfigJson?.identityProviders?.azureActiveDirectory?.registration?.openIdIssuer;
+
+            return result ?? string.Empty;
+        }
+
         // If DFM_NONCE was passed as env variable, validates that the incoming request contains it. Throws UnauthorizedAccessException, if it doesn't.
         public static bool IsNonceSetAndValid(IHeaderDictionary headers)
         {
@@ -256,9 +274,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
         }
 
-        internal static string[] AlternativeConnectionStringNames = GetAlternativeConnectionStringNames().ToArray();
+        public static string[] AlternativeConnectionStringNames = GetAlternativeConnectionStringNames().ToArray();
 
-        internal static IEnumerable<string> GetAlternativeConnectionStringNames()
+        public static IEnumerable<string> GetAlternativeConnectionStringNames()
         {
             var envVars = Environment.GetEnvironmentVariables();
             foreach (DictionaryEntry kv in envVars)
@@ -310,7 +328,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 throw new UnauthorizedAccessException($"Specify the Valid Audience value via '{EnvVariableNames.WEBSITE_AUTH_CLIENT_ID}' config setting. Typically it is the ClientId of your AAD application.");
             }
 
-            string openIdIssuer = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER);
+            string openIdIssuer = GetEasyAuthIssuer();
             if (string.IsNullOrEmpty(openIdIssuer))
             {
                 throw new UnauthorizedAccessException($"Specify the Valid Issuer value via '{EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER}' config setting. Typically it looks like 'https://login.microsoftonline.com/<your-aad-tenant-id>/v2.0'.");
@@ -366,7 +384,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
         private static async Task<ICollection<SecurityKey>> GetSigningKeysAsync()
         {
-            string openIdIssuer = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER);
+            string openIdIssuer = GetEasyAuthIssuer();
             if (string.IsNullOrEmpty(openIdIssuer))
             {
                 throw new UnauthorizedAccessException($"Specify the Valid Issuer value via '{EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER}' config setting. Typically it looks like 'https://login.microsoftonline.com/<your-aad-tenant-id>/v2.0'.");
