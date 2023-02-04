@@ -10,8 +10,9 @@
         <license type="file">LICENSE</license>
 
         <dependencies>
-            <dependency id="Microsoft.Azure.WebJobs.Extensions.DurableTask" version="2.6.0" />
-            <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" version="6.8.0" />
+            <dependency id="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.9.0" />
+            <dependency id="Microsoft.NET.Sdk.Functions" Version="4.1.3" />
+            <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="6.10.2" />
             <dependency id="Fluid.Core" version="2.1.4" />
         </dependencies>
 
@@ -19,6 +20,7 @@
 
     <files>
         <file src="..\output\bin\durablefunctionsmonitor.dotnetbackend.dll" target="lib/netcoreapp2.1" />
+        <file src="..\output\bin\durablefunctionsmonitor.dotnetbackend.xml" target="lib/netcoreapp2.1" />
         <file src="..\output\**" target="/" />
         <file src="..\output\durablefunctionsmonitor.dotnetbackend.targets" target="build" />
     </files>
