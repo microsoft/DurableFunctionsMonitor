@@ -5,7 +5,6 @@ import * as vscode from 'vscode';
 
 import { MonitorTreeDataProvider } from './MonitorTreeDataProvider';
 import { FunctionGraphList } from './FunctionGraphList';
-import { Settings } from './Settings';
 
 var monitorTreeDataProvider: MonitorTreeDataProvider;
 var functionGraphList: FunctionGraphList;
@@ -16,10 +15,8 @@ const OutputChannelName = 'Durable Functions Monitor';
 export function activate(context: vscode.ExtensionContext) {
 
     // For logging
-    const logChannel = Settings().enableLogging ? vscode.window.createOutputChannel(OutputChannelName) : undefined;
-    if (!!logChannel) {
-        context.subscriptions.push(logChannel);
-    }
+    const logChannel = vscode.window.createOutputChannel(OutputChannelName);
+    context.subscriptions.push(logChannel);
 
     functionGraphList = new FunctionGraphList(context, logChannel);
     monitorTreeDataProvider = new MonitorTreeDataProvider(context, functionGraphList, logChannel);
