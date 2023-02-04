@@ -26,35 +26,35 @@ export class OrchestrationButtons extends React.Component<{ state: Orchestration
 
             {this.renderDialogs(state)}
 
-            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.suspendDialogOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.suspendDialogOpen = true}>
                 Suspend
             </Button>
             <Box width={7} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.resumeDialogOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.resumeDialogOpen = true}>
                 Resume
             </Button>
             <Box width={7} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.restartDialogOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.restartDialogOpen = true}>
                 Restart
             </Button>
             <Box width={7} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.rewindConfirmationOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.rewindConfirmationOpen = true}>
                 Rewind
             </Button>
             <Box width={7} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.terminateConfirmationOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.terminateConfirmationOpen = true}>
                 Terminate
             </Button>
             <Box width={7} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.raiseEventDialogOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.raiseEventDialogOpen = true}>
                 Raise Event
             </Button>
             <Box width={7} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.setCustomStatusDialogOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.setCustomStatusDialogOpen = true}>
                 Set Custom Status
             </Button>
             <Box width={7} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.purgeConfirmationOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="small" disabled={this.props.disabled} onClick={() => state.purgeConfirmationOpen = true}>
                 Purge
             </Button>           
             

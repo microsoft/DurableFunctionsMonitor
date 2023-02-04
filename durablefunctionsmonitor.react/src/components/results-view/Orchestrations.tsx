@@ -274,7 +274,7 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
 
                                         } else {
 
-                                            newStatuses = newStatuses.filter(s => !!s && s != allStatuses);
+                                            newStatuses = newStatuses.filter(s => !!s && s !== allStatuses);
                                             state.showStatuses = !newStatuses.length ? null : newStatuses;
                                         }
                                     }}
@@ -291,7 +291,7 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
 
                                         const result = [];
 
-                                        const orchestrationStatuses = statuses.filter(s => s != allStatuses && s != 'DurableEntities');
+                                        const orchestrationStatuses = statuses.filter(s => s !== allStatuses && s !== 'DurableEntities');
                                         if (!!orchestrationStatuses.length) {
                                             result.push('Orchestrations: ' + orchestrationStatuses.join(', '));
                                         }

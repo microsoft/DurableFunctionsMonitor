@@ -18,7 +18,7 @@ export function renderFilteredField(text: string, filterValue: string): string |
     const regex = new RegExp(filterValue, 'gi');
 
     var match: RegExpExecArray | null;
-    while (match = regex.exec(text)) {
+    while (!!(match = regex.exec(text))) {
 
         result.push(
             <>{text.substring(pos, match.index)}</>,

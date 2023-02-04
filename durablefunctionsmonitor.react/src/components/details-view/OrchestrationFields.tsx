@@ -194,7 +194,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                         Execution History
                         (
                             {(!totalItems || totalItems === itemsShown) ? `${itemsShown} items${!totalItems ? ' shown' : ''}` : `${itemsShown} of ${totalItems} items shown`}
-                            {(state.timeFromEnabled || (state.filteredColumn !== '0') && (!!state.filterValue)) ? `, filtered` : ''}
+                            {(state.timeFromEnabled || ((state.filteredColumn !== '0') && (!!state.filterValue))) ? `, filtered` : ''}
                         )
                     </Typography>
                     

@@ -22,3 +22,7 @@
 .raw-html-div {
     padding: 10px;
 }
+
+.instance-management-button {
+    white-space: nowrap;
+}

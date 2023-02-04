@@ -23,11 +23,11 @@ export class DurableEntityButtons extends React.Component<{ state: Orchestration
 
             {this.renderDialogs(state)}
 
-            <Button variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.purgeConfirmationOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.purgeConfirmationOpen = true}>
                 Purge
             </Button>
             <Box width={10} />
-            <Button variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.raiseEventDialogOpen = true}>
+            <Button className="instance-management-button" variant="outlined" color={PrimaryButtonColor} size="medium" disabled={this.props.disabled} onClick={() => state.raiseEventDialogOpen = true}>
                 Send Signal
             </Button>
         </>);
