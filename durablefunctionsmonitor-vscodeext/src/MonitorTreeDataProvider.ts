@@ -103,7 +103,12 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                     if (!this._azureAccount  || (!await this._azureAccount.waitForFilters())) {
 
                         result.push({
-                            label: 'Install Azure Account extension and sign in to Azure to see anything here'
+                            label: 'Sign in to Azure...',
+                            command: {
+                                title: 'Sign in to Azure...',
+                                command: 'azure-account.login',
+                                arguments: []
+                            }
                         });
 
                     } else {
@@ -279,7 +284,9 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                         } catch (err: any) {
 
-                            description = `Failed to load Task Hubs. ${err.message ?? err}`
+                            description = `Failed to load Task Hubs`;
+                            tooltip = err.message ?? err;
+                            this._log(`Failed to load Task Hubs from ${ConnStringUtils.GetStorageName(connString)}. ${err.message ?? err}\n`);
                         }
 
                         const node: StorageAccountTreeItem = {

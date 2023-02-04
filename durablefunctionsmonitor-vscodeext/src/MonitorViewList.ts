@@ -79,7 +79,7 @@ export class MonitorViewList {
         }
 
         if (!connSettings.connStringHashKey) {
-            throw new Error(`The provided Connection String seem to be invalid`);
+            throw new Error(`The provided Connection String seems to be invalid`);
         }
 
         // Persisting the provided connection string in ExtensionContext.secrets
