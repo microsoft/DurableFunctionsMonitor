@@ -328,7 +328,7 @@ export class BackendProcess {
 
             try {
 
-                BackendProcess._funcVersion = (await execAsync(`"${funcExePath}" --version`)).stdout;
+                BackendProcess._funcVersion = (await execAsync(`"${funcExePath}" --version`)).stdout?.trim();
 
             } catch(err: any) {
 
@@ -358,10 +358,12 @@ export class BackendProcess {
         // Default backend now expects at least Functions V4. Checking that it is installed
         if (!this.isFuncVersionUpToDate()) {
             
+            const msg = `Default backend now requires at least Azure Functions Core Tools v${MinimumFuncVersion.major}.${MinimumFuncVersion.minor}.${MinimumFuncVersion.patch} (currently discovered is v${BackendProcess._funcVersion}). Install latest Azure Functions Core Tools or, alternatively, select a custom backend in extension's settings.`;
+
             // Making sure the version is re-validated next time
             BackendProcess._funcVersion = '';
 
-            throw new Error(`Default backend now requires at least Azure Functions Core Tools v${MinimumFuncVersion.major}.${MinimumFuncVersion.minor}.${MinimumFuncVersion.patch}. Install latest Azure Functions Core Tools or, alternatively, select a custom backend in extension's settings.`);
+            throw new Error(msg);
         }
 
         return path.join(this._extensionRootFolder, 'backend');
@@ -377,9 +379,9 @@ export class BackendProcess {
         const versionParts = BackendProcess._funcVersion.split('.');
 
         const version = {
-            major: versionParts[0] || 0,
-            minor: versionParts[1] || 0,
-            patch: versionParts[2] || 0,
+            major: parseInt(versionParts[0]) || 0,
+            minor: parseInt(versionParts[1]) || 0,
+            patch: parseInt(versionParts[2]) || 0,
         }
 
         if (version.major !== MinimumFuncVersion.major) {

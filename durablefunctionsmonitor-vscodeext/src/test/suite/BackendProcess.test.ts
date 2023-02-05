@@ -418,7 +418,7 @@ suite('BackendProcess Test Suite', () => {
 
 			// Assert
 
-			assert.strictEqual(err.message, `Default backend now requires at least Azure Functions 4.x. Install Azure Functions Core Tools v4 or, alternatively, select a custom backend in extension's settings.`);
+			assert.strictEqual(err.message.startsWith(`Default backend now requires at least Azure Functions Core Tools v4.0.4629`), true);
 		}
 	});
 });
