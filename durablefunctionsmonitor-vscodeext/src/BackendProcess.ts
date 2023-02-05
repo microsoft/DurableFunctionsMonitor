@@ -18,6 +18,8 @@ import { Settings } from './Settings';
 import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { ConnStringUtils } from './ConnStringUtils';
 
+const MinimumFuncVersion = { major: 4, minor: 0, patch: 4629 };
+
 // Responsible for running the backend process
 export class BackendProcess {
 
@@ -354,18 +356,42 @@ export class BackendProcess {
         }
 
         // Default backend now expects at least Functions V4. Checking that it is installed
-        const minimumVersion = 4;
-        const versionParts = BackendProcess._funcVersion.split('.');
-        if (!!versionParts.length && (parseInt(versionParts[0]) < minimumVersion)) {
+        if (!this.isFuncVersionUpToDate()) {
             
             // Making sure the version is re-validated next time
             BackendProcess._funcVersion = '';
 
-            throw new Error(`Default backend now requires at least Azure Functions ${minimumVersion}.x. Install Azure Functions Core Tools v${minimumVersion} or, alternatively, select a custom backend in extension's settings.`);
+            throw new Error(`Default backend now requires at least Azure Functions Core Tools v${MinimumFuncVersion.major}.${MinimumFuncVersion.minor}.${MinimumFuncVersion.patch}. Install latest Azure Functions Core Tools or, alternatively, select a custom backend in extension's settings.`);
         }
 
         return path.join(this._extensionRootFolder, 'backend');
     }
+
+    private isFuncVersionUpToDate(): boolean {
+
+        if (!BackendProcess._funcVersion) {
+            // let's be permissive in this case
+            return true;
+        }
+
+        const versionParts = BackendProcess._funcVersion.split('.');
+
+        const version = {
+            major: versionParts[0] || 0,
+            minor: versionParts[1] || 0,
+            patch: versionParts[2] || 0,
+        }
+
+        if (version.major !== MinimumFuncVersion.major) {
+            return version.major > MinimumFuncVersion.major;
+        }
+
+        if (version.minor !== MinimumFuncVersion.minor) {
+            return version.minor > MinimumFuncVersion.minor;
+        }
+
+        return version.patch >= MinimumFuncVersion.patch;
+    } 
 
     private async getFuncExePath(): Promise<string> {
         
