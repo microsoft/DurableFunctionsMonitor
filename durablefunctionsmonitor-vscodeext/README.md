@@ -77,7 +77,7 @@ Orchestration's Execution History can be observed in form of:
 
   <img src="https://user-images.githubusercontent.com/5447190/217008072-ca5cf05c-712e-48a3-b77b-b163bf04ece7.png" width="500px" style="display:block; margin:auto"/>
 
-To Suspend/Resume/Restart/Rewind/Terminate/Raise Event/Set Custom Status/Purge an instance use the relevant buttons:
+To **Suspend/Resume/Restart/Rewind/Terminate/Raise Event/Set Custom Status/Purge** an instance use the relevant buttons:
 
   <img src="https://user-images.githubusercontent.com/5447190/217009843-49bda21b-1ea4-49e9-a123-96b4aa0de939.png" width="500px" style="display:block; margin:auto"/>
 
