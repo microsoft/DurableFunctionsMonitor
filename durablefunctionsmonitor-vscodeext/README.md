@@ -53,7 +53,7 @@ The list of instances is filterable/searchable/sortable/scrollable with infinite
 
   <img src="https://user-images.githubusercontent.com/5447190/217003248-0de23654-4e24-4a4d-9666-4e82ef38471c.png" width="600px" style="display:block; margin:auto"/>
 
-### Observing/managing Orchestration/Durable Entity instances
+### Monitoring/managing Orchestration/Durable Entity instances
 
 Clicking on an Orchestration/Entity instance show its **Details** page:
 
