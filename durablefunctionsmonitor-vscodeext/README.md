@@ -20,31 +20,83 @@ See the [complete list of features in our wiki](https://github.com/microsoft/Dur
 
 ## How to run
 
-After installing this extension from the Marketplace or from a VSIX-file you have multiple ways to show the **DfMon**'s main window:
-* (Most typical, but requires being logged in into Azure) go to **AZURE** view container, expand the **DURABLE FUNCTIONS** tab and click on a Task Hub that you wish to monitor:
+After installing this extension from the Marketplace or from a VSIX-file the **DURABLE FUNCTIONS** tab should appear on **AZURE** view container:
 
-  ![image](https://user-images.githubusercontent.com/5447190/148263305-d96cc6ab-9308-4253-9e19-8f4c987166d8.png)
+<img src="https://user-images.githubusercontent.com/5447190/216991871-b3f221e0-0bdc-4c4e-8c5a-a1e84b4b48a7.png" width="300px" style="display:block; margin:auto"/>
 
-  NOTE: if you don't see your Azure Subscription there, run the **Azure: Select Subscriptions** command and configure Subscription filtering.
+NOTE: if you don't have [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension installed, the tab will appear on the default **EXPLORER** view container.
 
-* Run the **Durable Functions Monitor** command via Command Palette, provide the storage connection string and a Task Hub name.
-* (If you have your Azure Functions project opened) right-click on the **host.json** file and use one of the context menus:
+**DURABLE FUNCTIONS** tab shows Task Hubs automatically discovered from:
+* Your Azure Subscription(s), if you're signed in into Azure. To sign in into Azure use `Azure: Sign In` command. To (un)filter the list of shown Azure Subscriptions, use `Azure: Select Subscriptions` command.
+* Your currently opened project, if it is an Azure Functions project.
+* Local Storage Emulator, if it is running.
 
-  ![image](https://user-images.githubusercontent.com/5447190/148263042-e91fac9b-f305-40aa-bc11-44fff495df06.png)
+In addition to that you can also connect to arbitrary Storage accounts or Microsoft SQL Server/Azure SQL databases. Either click on ![image](https://user-images.githubusercontent.com/5447190/216996327-8a31e4cf-9446-4302-b147-f85fb0a85b9c.png)
+ button or use `Attach to Task Hub...` command. You will be asked for a Connection String (it can be either Azure Storage or Microsoft SQL Server connection string) and a Task Hub name to connect to. The entered Connection Strings are persisted with [VsCode SecretStorage API](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) (On Windows you should be able to see them in Windows Credential Manager). 
 
-* **DfMon** will also propose to automatically open the current Task Hub when you start a debugging session for an Azure Functions project.
+### Listing Orchestrations/Durable Entities
 
-When attaching to Task Hubs, **DfMon** starts [the backend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) as a separate process (one process per each Storage account). You can use the tree view buttons/menu items to explicitly start/stop these backend processes:
+To connect to a Task Hub just click on it. This shows the main page with all Orchestrations/Durable Entities in that Task Hub:
 
-  ![image](https://user-images.githubusercontent.com/5447190/148265469-5cf645a7-4425-4684-9166-733be17fdb8b.png)
+<img src="https://user-images.githubusercontent.com/5447190/217001085-7a4fc4fa-1983-4c2e-8e11-d7648a570cd4.png" width="600px" style="display:block; margin:auto"/>
 
-You can also generate and view [Function Graphs](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-generate-and-use-Function-Graphs) for arbitrary Azure Functions projects. Use the **Visualize Functions as a Graph...** command for that.
+The list of instances is filterable/searchable/sortable/scrollable with infinite scroll. Other ways to visualize search results are:
+* **Time Histogram**:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217002540-bfa70639-2631-4c0d-b4cf-994097b3c1c9.png" width="600px" style="display:block; margin:auto"/>
+
+* **Gantt Chart**:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217002828-26ec711d-b744-44f6-bb1e-a7bb5fac263f.png" width="600px" style="display:block; margin:auto"/>
+
+* **Interactive (clickable) [Functions Graph](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-generate-and-use-Function-Graphs)**:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217003248-0de23654-4e24-4a4d-9666-4e82ef38471c.png" width="600px" style="display:block; margin:auto"/>
+
+### Observing/managing Orchestration/Durable Entity instances
+
+Clicking on an Orchestration/Entity instance show its **Details** page:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217006475-f3453bdc-95c6-4fb2-80c4-33cff6504863.png" width="600px" style="display:block; margin:auto"/>
+
+Orchestration's Execution History can be observed in form of:
+
+* **Filterable List**:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217007314-3b1263ec-570a-4eb9-9b86-9fb011e72587.png" width="500px" style="display:block; margin:auto"/>
+
+* **Sequence Diagram**:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217007695-b35a309d-602a-4388-b2e9-b2f46b873636.png" width="500px" style="display:block; margin:auto"/>
+
+* **Gantt Chart**:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217007915-f953ff4c-5c13-425e-9b1e-213b3f3c6ba3.png" width="500px" style="display:block; margin:auto"/>
+
+* **Interactive (clickable) [Functions Graph](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-generate-and-use-Function-Graphs)**:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217008072-ca5cf05c-712e-48a3-b77b-b163bf04ece7.png" width="500px" style="display:block; margin:auto"/>
+
+To Suspend/Resume/Restart/Rewind/Terminate/Raise Event/Set Custom Status/Purge an instance use the relevant buttons:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217009843-49bda21b-1ea4-49e9-a123-96b4aa0de939.png" width="500px" style="display:block; margin:auto"/>
+
+It is also possible to create/configure custom details tabs using [Liquid templates](https://shopify.github.io/liquid/). [Learn here how to do that](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-create-custom-Orchestration%5CEntity-status-tabs-with-Liquid-Templates).
+
+### Other tools
+
+To **Purge Orchestration History/Clean Entity Storage/Delete a Task Hub** right-click on a Task Hub:
+
+  <img src="https://user-images.githubusercontent.com/5447190/217011829-a2a06871-648e-4434-bcf3-2f7508fe996e.png" width="300px" style="display:block; margin:auto"/>
+
+and follow the flow.
+
 
 ## Prerequisites
 
 * Make sure you have the latest [Azure Functions Core Tools](https://www.npmjs.com/package/azure-functions-core-tools) globally installed on your devbox.
 
-* [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) extension is also required to be installed. To login into Azure execute the **Azure: Sign In** command in Command Palette. To filter the list of Azure subscriptions shown execute the **Azure: Select Subscriptions** command.
+* [Azure Account](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account) VsCode extension is not required, but highly recommended. To login into Azure execute the **Azure: Sign In** command in Command Palette. To filter the list of Azure subscriptions shown execute the **Azure: Select Subscriptions** command.
 
 ## How to compile and run this project locally
 
