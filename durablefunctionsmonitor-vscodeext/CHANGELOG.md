@@ -1,5 +1,23 @@
 # Change Log
 
+## Version 6.1
+
+- Multiple Task Hubs and custom DB schemas are now supported for MSSQL Durability Provider:
+
+    <img width="200px" src="https://user-images.githubusercontent.com/5447190/217019051-89752d66-076d-477e-8288-879b6a3cbe35.png"/>
+    
+    Thanks [@bhugot](https://github.com/bhugot) for this contribution.
+
+- Added `Task Hubs Discovery Mode` setting:
+
+    <img width="500px" src="https://user-images.githubusercontent.com/5447190/217019762-071d939c-237c-4879-b70b-007c48b3664f.png"/>
+
+    When discovering Task Hubs in Storage accounts, by default, DfMon first tries to use Storage Keys (and executes `listKeys` operation against each Storage account) and falls back to Identity-based connections. To prevent DfMon from doing `listKeys` set this setting to `Do not use Storage Keys`. To let DfMon always use Storage Keys only set this setting to `Do not use Azure Account`.
+
+- Committed latest version of [az-func-as-a-graph](https://github.com/scale-tone/az-func-as-a-graph), with support for .NET Isolated and Java projects.
+
+- Fixed the issue whereas DfMon would fail to discover Task Hubs in Azure Subscriptions due to some Storage account-wide Deny assignments created by Azure Databricks.
+
 ## Version 6.0
 
 - Default backend migrated to .NET 6 and Azure Functions 4.x. 
