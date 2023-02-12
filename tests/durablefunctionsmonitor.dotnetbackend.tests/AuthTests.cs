@@ -547,6 +547,8 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             result = await About.DfmAboutFunction(request, "-", hubName, logMoq.Object);
 
             // Assert
+            TableClient.MockedTableClient = null;
+
             Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
         }
 
@@ -591,6 +593,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             var result = await About.DfmAboutFunction(request, connName, hubName, logMoq.Object);
 
             // Assert
+
+            TableClient.MockedTableClient = null;
+
             Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
         }
 
@@ -668,6 +673,71 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             Assert.AreEqual(2, connStringNames.Length);
             Assert.IsTrue(connStringNames.Contains("one"));
             Assert.IsTrue(connStringNames.Contains("two"));
+        }
+
+        [TestMethod]
+        public async Task GetAllowedTaskHubNamesAsyncReturnsNullIfNamesCannotBeFetchedFromStorage()
+        {
+            // Act
+
+            var hubNames = await Auth.GetAllowedTaskHubNamesAsync();
+
+            // Assert
+            Assert.IsNull(hubNames);
+        }
+
+        [TestMethod]
+        public async Task ReturnsTaskHubNamesAsCaseInsensitiveHashSet()
+        {
+            // Arrange
+
+            DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine = async unused => new[] { "MyTaskHub" };
+
+            // Act
+
+            var hubNames = await Auth.GetAllowedTaskHubNamesAsync();
+
+            // Assert
+
+            DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine = null;
+
+            Assert.IsTrue(hubNames.Contains("mYtASKhUB"));
+        }
+
+        [TestMethod]
+        public async Task Returns_DFM_HUB_NAME_AsCaseInsensitiveHashSet()
+        {
+            // Arrange
+
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, "MyTaskHub");
+
+            // Act
+
+            var hubNames = await Auth.GetAllowedTaskHubNamesAsync();
+
+            // Assert
+
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+
+            Assert.IsTrue(hubNames.Contains("mYtASKhUB"));
+        }
+
+        [TestMethod]
+        public async Task ReturnsHubNameFromHostJsonAsCaseInsensitiveHashSet()
+        {
+            // Arrange
+
+            await File.WriteAllTextAsync("../host.json", $"{{\"extensions\":{{\"durableTask\": {{\"hubName\": \"MyTaskHub\"}}}}}}");
+
+            // Act
+
+            var hubNames = await Auth.GetAllowedTaskHubNamesAsync();
+
+            // Assert
+
+            File.Delete("../host.json");
+
+            Assert.IsTrue(hubNames.Contains("mYtASKhUB"));
         }
     }
 }

@@ -194,7 +194,10 @@ namespace DurableFunctionsMonitor.DotNetBackend
             // Otherwise trying to load table names from the Storage
             try
             {
-                var hubNames = new HashSet<string>(await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage));
+                var hubNames = new HashSet<string>(
+                    await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage),
+                    StringComparer.InvariantCultureIgnoreCase
+                );
 
                 // Also checking alternative connection strings
                 foreach (var connName in AlternativeConnectionStringNames)
