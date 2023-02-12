@@ -239,7 +239,7 @@ export async function findFileRecursivelyAsync(folder: string, fileName: string 
 export class TraversalRegexes {
 
     static getStartNewOrchestrationRegex(orchName: string): RegExp {
-        return new RegExp(`(StartNew|StartNewAsync|start_new)(\\s*<[\\w\\.-\\[\\]\\<\\>,\\s]+>)?\\s*\\(\\s*(["'\`]|nameof\\s*\\(\\s*[\\w\\.-]*|[\\w\\s\\.]+\\.\\s*)${orchName}\\s*["'\\),]{1}`, 'i');
+        return new RegExp(`(StartNew|StartNewAsync|start_new|scheduleNewOrchestrationInstance)(\\s*<[\\w\\.-\\[\\]\\<\\>,\\s]+>)?\\s*\\(\\s*(["'\`]|nameof\\s*\\(\\s*[\\w\\.-]*|[\\w\\s\\.]+\\.\\s*)${orchName}\\s*["'\\),]{1}`, 'i');
     }
 
     static getCallSubOrchestratorRegex(subOrchName: string): RegExp {

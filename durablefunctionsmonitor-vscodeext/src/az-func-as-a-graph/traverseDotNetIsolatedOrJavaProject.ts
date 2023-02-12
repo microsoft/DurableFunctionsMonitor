@@ -113,7 +113,7 @@ async function* findFunctionsRecursivelyAsync(folder: string, fileNameRegex: Reg
 
                 let functionName = cleanupFunctionName(match[functionNamePosInRegex]);
 
-                const body = getCodeInBrackets(code, match.index + match[0].length, '{', '}', ' \n');
+                const body = getCodeInBrackets(code, match.index + match[0].length, '{', '}', '\n');
 
                 if (body.openBracketPos >= 0 && !!body.code) {
 

@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -208,6 +209,8 @@ async function mapOrchestratorsAndActivitiesAsync(functions: FunctionsMap, proje
 
             // If this function seems to be calling that orchestrator
             if (!!regex.exec(func.code)) {
+
+                functions[orch.name].isCalledBy = functions[orch.name].isCalledBy ?? [];
                 functions[orch.name].isCalledBy.push(func.name);
             }
         }
@@ -223,6 +226,7 @@ async function mapOrchestratorsAndActivitiesAsync(functions: FunctionsMap, proje
             if (!!regex.exec(orch.code)) {
 
                 // Mapping that suborchestrator to this orchestrator
+                functions[subOrch.name].isCalledBy = functions[subOrch.name].isCalledBy ?? [];
                 functions[subOrch.name].isCalledBy.push(orch.name);
             }
         }
@@ -244,6 +248,7 @@ async function mapOrchestratorsAndActivitiesAsync(functions: FunctionsMap, proje
 
                 // If this function seems to be sending that event
                 if (!!regex.exec(func.code)) {
+                    functions[orch.name].isSignalledBy = functions[orch.name].isSignalledBy ?? [];
                     functions[orch.name].isSignalledBy.push({ name: func.name, signalName: eventName });
                 }
             }
@@ -258,6 +263,7 @@ async function mapOrchestratorsAndActivitiesAsync(functions: FunctionsMap, proje
             // If this function seems to be calling that entity
             const regex = TraversalRegexes.getSignalEntityRegex(entity.name);
             if (!!regex.exec(func.code)) {
+                functions[entity.name].isCalledBy = functions[entity.name].isCalledBy ?? [];
                 functions[entity.name].isCalledBy.push(func.name);
             }
         }
@@ -346,7 +352,7 @@ async function getFunctionsAndTheirCodesAsync(functionNames: string[], projectKi
             return undefined;
         }
 
-        const code = projectKind === 'other' ? match.code : getCodeInBrackets(match.code!, match.pos! + match.length!, '{', '}', ' \n').code;
+        const code = projectKind === 'other' ? match.code : getCodeInBrackets(match.code!, match.pos! + match.length!, '{', '}', '\n').code;
         const pos = !match.pos ? 0 : match.pos;
         const lineNr = posToLineNr(match.code, pos);
 
@@ -366,9 +372,7 @@ function mapActivitiesToOrchestrator(functions: FunctionsMap, orch: {name: strin
         if (!!regex.exec(orch.code)) {
 
             // Then mapping this activity to this orchestrator
-            if (!functions[activityName].isCalledBy) {
-                functions[activityName].isCalledBy = [];
-            }
+            functions[activityName].isCalledBy = functions[activityName].isCalledBy ?? [];
             functions[activityName].isCalledBy.push(orch.name);
         }
     }
