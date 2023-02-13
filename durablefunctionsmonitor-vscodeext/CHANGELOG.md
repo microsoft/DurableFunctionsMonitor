@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 6.1.1
+
+- ([#89](https://github.com/microsoft/DurableFunctionsMonitor/issues/89)) Fixed a regression, whereas starting new Orchestration instances on a Task Hub named `TestTaskName` resulted in `401 Unauthorized`.
+- Minor fix to Function Graph generation for Java projects.
+- Made TreeView auto-refresh upon Azure Account-related events (sign in/sign out etc.) and changes to `host.json` file.
+
 ## Version 6.1
 
 - Multiple Task Hubs and custom DB schemas are now supported for MSSQL Durability Provider:
