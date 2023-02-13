@@ -215,6 +215,9 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                     if (!!storageConnectionSettings) {
                         
+                        // Creating a watcher to refresh the tree once host.json file changes
+                        this.monitorHostJson();
+
                         const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
 
                         const node: TaskHubTreeItem = {
@@ -670,6 +673,24 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
     private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> = new vscode.EventEmitter<vscode.TreeItem | undefined>();
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> = this._onDidChangeTreeData.event;
+
+    private _hostJsonWatcher?: vscode.FileSystemWatcher;
+
+    // Refreshes TreeView when host.json file changes
+    private monitorHostJson(): void {
+
+        if (!vscode.workspace.rootPath || !!this._hostJsonWatcher) {
+            return;
+        }
+
+        this._hostJsonWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.workspace.rootPath, 'host.json'));
+
+        this._hostJsonWatcher.onDidChange(() => this._onDidChangeTreeData.fire(undefined));
+        this._hostJsonWatcher.onDidCreate(() => this._onDidChangeTreeData.fire(undefined));
+        this._hostJsonWatcher.onDidDelete(() => this._onDidChangeTreeData.fire(undefined));
+
+        this._context.subscriptions.push(this._hostJsonWatcher);
+    }
 
     // Shows or makes active the main view
     async createOrActivateMonitorView(alwaysCreateNew: boolean, messageToWebView: any = undefined): Promise<MonitorView | null> {
