@@ -36,10 +36,29 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
         this._resourcesFolderPath = this._context.asAbsolutePath('resources');
         
-        if (!!this._azureAccount && !!this._azureAccount.onFiltersChanged) {
+        if (!!this._azureAccount) {
 
             // When user changes their list of filtered subscriptions (or just relogins to Azure)...
-            this._context.subscriptions.push(this._azureAccount.onFiltersChanged(() => this.refresh()));
+
+            if (!!this._azureAccount.onStatusChanged) {
+                
+                this._context.subscriptions.push(this._azureAccount.onStatusChanged(() => this.refresh()));
+            }
+
+            if (!!this._azureAccount.onFiltersChanged) {
+                
+                this._context.subscriptions.push(this._azureAccount.onFiltersChanged(() => this.refresh()));
+            }
+
+            if (!!this._azureAccount.onSessionsChanged) {
+                
+                this._context.subscriptions.push(this._azureAccount.onSessionsChanged(() => this.refresh()));
+            }
+
+            if (!!this._azureAccount.onSubscriptionsChanged) {
+                
+                this._context.subscriptions.push(this._azureAccount.onSubscriptionsChanged(() => this.refresh()));
+            }
         }
     }
 
