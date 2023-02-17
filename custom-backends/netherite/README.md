@@ -18,6 +18,9 @@ This is different than with Azure Storage provider or the Microsoft SQL provider
     "DFM_NONCE": "i_sure_know_what_i_am_doing",
     "AzureWebJobsStorage": "insert-azure-storage-connection-string-here",
     "EventHubsConnection": "insert-eventhubs-sas-connection-string-here"
+  },
+  "Host": {
+    "LocalHttpPort": 7072
   }
 }
 ```
@@ -32,3 +35,8 @@ If you prefer to no enter the connection strings into a file, you can omit the r
 
 CAUTION: the configuration settings as above do not protect this endpoint.
 
+# How to deploy to Azure
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2FDurableFunctionsMonitor%2Fmain%2Fcustom-backends%2Fnetherite%2Farm-template.json)
+
+The above button will deploy *these sources* into *your newly created* Function App instance.
