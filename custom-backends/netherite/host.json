@@ -7,7 +7,8 @@
     "durableTask": {
       "hubName": "insert-task-hub-name-here",
       "storageProvider": {
-        "type": "netherite"
+        "type": "netherite",
+        "PartitionManagement": "ClientOnly"
       }
     }
   }

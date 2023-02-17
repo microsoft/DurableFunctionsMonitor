@@ -15,12 +15,9 @@ This is different than with Azure Storage provider or the Microsoft SQL provider
 {
   "IsEncrypted": false,
   "Values": {
-    "DFM_NONCE": "i_sure_know_what_i_am_doing_with_no_authentication",
+    "DFM_NONCE": "i_sure_know_what_i_am_doing",
     "AzureWebJobsStorage": "insert-azure-storage-connection-string-here",
     "EventHubsConnection": "insert-eventhubs-sas-connection-string-here"
-  },
-  "Host": {
-    "LocalHttpPort": 7072
   }
 }
 ```
@@ -30,7 +27,8 @@ If you prefer to no enter the connection strings into a file, you can omit the r
 
 4. Enter the Dfm.Netherite directory from a console, and enter `func start`
 
-5. Direct your browser to http://localhost:7072/. 
+5. If it does not open by itself, direct your browser to http://localhost:7072/. 
+   You can change this port and whether to open the browser in Prperties/launchSettings.json
 
 CAUTION: the configuration settings as above do not protect this endpoint.
 
