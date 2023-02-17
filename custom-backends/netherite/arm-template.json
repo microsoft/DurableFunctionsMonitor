@@ -1,0 +1,170 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "functionAppName": {
+            "type": "string",
+            "defaultValue": "[concat('dfm-',uniqueString(resourceGroup().id))]",
+            "metadata": {
+                "description": "Name for the Function App, that will host your DFM instance. NOTE: there will be a NEW app created, and it will be different from the one that hosts your Durable Functions."
+            }
+        },
+        "storageConnectionString": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Storage Connection String to the Storage your Durable Functions reside in. Copy it from your Durable Functions App Settings."
+            }
+        },
+        "eventHubsConnectionString": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Connection String for the Event Hubs namespace your Netherite storage provider is using. Copy it from your Durable Functions App Settings."
+            }
+        },
+        "taskHubName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "(optional) Comma-separated list of Task Hub names to be monitored. WARNING: if not set, this instance will expose ALL Task Hubs in your Storage account!"
+            }
+        },
+        "aadAppClientId": {
+            "type": "string",
+            "metadata": {
+                "description": "In Azure Portal->Azure Active Directory->App Registrations create a new AAD App. Set its 'Redirect URI' setting to 'https://[your-function-app].azurewebsites.net/.auth/login/aad/callback'. Then on 'Authentication' page enable ID Tokens. Then copy that AAD App's ClientId into here."
+            }
+        },
+        "aadAppTenantId": {
+            "type": "string",
+            "defaultValue": "[subscription().tenantId]",
+            "metadata": {
+                "description": "Put your AAD TenantId here (you can find it on Azure Portal->Azure Active Directory page), or leave as default to use the current subscription's TenantId."
+            }
+        },
+        "allowedUserNames": {
+            "type": "string",
+            "metadata": {
+                "description": "Comma-separated list of users (emails), that will be allowed to access this DFM instance. Specify at least yourself here."
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2016-09-01",
+            "name": "[parameters('functionAppName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Y1",
+                "tier": "Dynamic"
+            },
+            "properties": {
+                "name": "[parameters('functionAppName')]",
+                "computeMode": "Dynamic"
+            }
+        },
+
+        {
+            "apiVersion": "2018-11-01",
+            "type": "Microsoft.Web/sites",
+            "name": "[parameters('functionAppName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "functionapp",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('functionAppName'))]"
+            ],
+
+            "resources": [
+                {
+                    "apiVersion": "2015-08-01",
+                    "name": "web",
+                    "type": "sourcecontrols",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+                    ],
+                    "properties": {
+                        "RepoUrl": "https://github.com/microsoft/DurableFunctionsMonitor",
+                        "branch": "main",
+                        "IsManualIntegration": true
+                    }
+                },
+
+                {
+                    "name": "[concat(parameters('functionAppName'), '/authsettings')]",
+                    "apiVersion": "2018-11-01",
+                    "type": "Microsoft.Web/sites/config",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+                    ],
+                    "properties": {
+                        "enabled": true,
+                        "unauthenticatedClientAction": "RedirectToLoginPage",
+                        "tokenStoreEnabled": true,
+                        "defaultProvider": "AzureActiveDirectory",
+                        "clientId": "[parameters('aadAppClientId')]",
+                        "issuer": "[concat('https://login.microsoftonline.com/', parameters('aadAppTenantId'), '/v2.0')]"
+                    }
+                },
+
+                {
+                    "name": "[concat(parameters('functionAppName'), '/web')]",
+                    "type": "Microsoft.Web/sites/config",
+                    "apiVersion": "2022-03-01",
+                    "location": "North Europe",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+                    ],
+                    "properties": {
+                        "use32BitWorkerProcess": false
+                    }
+                }        
+            ],
+    
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('functionAppName'))]",
+                "siteConfig": {
+                    "netFrameworkVersion": "v6.0",
+                    "appSettings": [
+                        {
+                            "name": "DFM_HUB_NAME",
+                            "value": "[parameters('taskHubName')]"
+                        },
+                        {
+                            "name": "DFM_ALLOWED_USER_NAMES",
+                            "value": "[parameters('allowedUserNames')]"
+                        },
+                        {
+                            "name": "EventHubsConnection",
+                            "value": "[parameters('eventHubsConnectionString')]"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[parameters('storageConnectionString')]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                            "value": "[parameters('storageConnectionString')]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTSHARE",
+                            "value": "[toLower(parameters('functionAppName'))]"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~4"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "dotnet"
+                        },
+                        {
+                            "name": "Project",
+                            "value": "custom-backends/netherite"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
