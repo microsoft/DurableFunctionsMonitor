@@ -111,7 +111,7 @@
                     "name": "[concat(parameters('functionAppName'), '/web')]",
                     "type": "Microsoft.Web/sites/config",
                     "apiVersion": "2022-03-01",
-                    "location": "North Europe",
+                    "location": "[resourceGroup().location]",
                     "dependsOn": [
                         "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
                     ],
