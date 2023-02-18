@@ -33,7 +33,20 @@ If you prefer to not enter the connection strings into a file, you can omit the 
 5. If it does not open by itself, direct your browser to http://localhost:7072/. 
    You can change this port and whether to open the browser in Properties/launchSettings.json
 
-CAUTION: the configuration settings as above do not protect this endpoint.
+WARNING: setting **DFM_NONCE** to `i_sure_know_what_i_am_doing` **turns authentication off**. Please, protect your endpoint as appropriate.
+
+
+## How to run [as a Docker container](https://hub.docker.com/repository/docker/scaletone/durablefunctionsmonitor.mssql)
+
+* `docker pull scaletone/durablefunctionsmonitor.netherite:[put-latest-tag-here]`
+* `docker run -p 7072:80 -e AzureWebJobsStorage="your-storage-connection-string"  -e EventHubsConnection="your-event-hubs-connection-string" -e DFM_NONCE="i_sure_know_what_i_am_doing" scaletone/durablefunctionsmonitor.netherite:[put-latest-tag-here]`
+
+   WARNING: setting **DFM_NONCE** to `i_sure_know_what_i_am_doing` **turns authentication off**. Please, protect your endpoint as appropriate.
+   
+   If you are using a custom database schema name, then specify that schema name via `AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName` config setting.
+
+* Navigate to http://localhost:7072
+
 
 # How to deploy to Azure
 
