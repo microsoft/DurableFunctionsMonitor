@@ -39,7 +39,7 @@ WARNING: setting **DFM_NONCE** to `i_sure_know_what_i_am_doing` **turns authenti
 ## How to run [as a Docker container](https://hub.docker.com/repository/docker/scaletone/durablefunctionsmonitor.mssql)
 
 * `docker pull scaletone/durablefunctionsmonitor.netherite:[put-latest-tag-here]`
-* `docker run -p 7072:80 -e AzureWebJobsStorage="your-storage-connection-string"  -e EventHubsConnection="your-event-hubs-connection-string" -e DFM_NONCE="i_sure_know_what_i_am_doing" scaletone/durablefunctionsmonitor.netherite:[put-latest-tag-here]`
+* `docker run -p 7072:80 -e AzureWebJobsStorage="your-storage-connection-string" -e EventHubsConnection="your-event-hubs-connection-string" -e DFM_NONCE="i_sure_know_what_i_am_doing" scaletone/durablefunctionsmonitor.netherite:[put-latest-tag-here]`
 
    WARNING: setting **DFM_NONCE** to `i_sure_know_what_i_am_doing` **turns authentication off**. Please, protect your endpoint as appropriate.
    
