@@ -24,14 +24,14 @@ This is different than with Azure Storage provider or the Microsoft SQL provider
   }
 }
 ```
-If you prefer to no enter the connection strings into a file, you can omit the respective lines and use environment variables (same names) instead. 
+If you prefer to not enter the connection strings into a file, you can omit the respective lines and use environment variables (same names) instead. 
 
 3. Edit the host.json file, specifying the correct *taskhub name*. It must match the taskhub name of the app you wish to monitor.
 
 4. Enter the Dfm.Netherite directory from a console, and enter `func start`
 
 5. If it does not open by itself, direct your browser to http://localhost:7072/. 
-   You can change this port and whether to open the browser in Prperties/launchSettings.json
+   You can change this port and whether to open the browser in Properties/launchSettings.json
 
 CAUTION: the configuration settings as above do not protect this endpoint.
 
