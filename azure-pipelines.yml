@@ -44,6 +44,13 @@ steps:
     TargetFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend'
     OverWrite: true
 
+- task: CopyFiles@2
+  displayName: 'copy custom-backends to ArtifactStagingDirectory'
+  inputs:
+    SourceFolder: custom-backends
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/custom-backends'
+    OverWrite: true
+
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests'
   inputs:
