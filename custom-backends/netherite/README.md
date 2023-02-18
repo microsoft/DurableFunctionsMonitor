@@ -43,8 +43,6 @@ WARNING: setting **DFM_NONCE** to `i_sure_know_what_i_am_doing` **turns authenti
 
    WARNING: setting **DFM_NONCE** to `i_sure_know_what_i_am_doing` **turns authentication off**. Please, protect your endpoint as appropriate.
    
-   If you are using a custom database schema name, then specify that schema name via `AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName` config setting.
-
 * Navigate to http://localhost:7072
 
 
