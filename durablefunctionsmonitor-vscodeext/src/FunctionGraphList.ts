@@ -7,8 +7,11 @@ import * as path from 'path';
 import * as rimraf from 'rimraf';
 
 import { FunctionGraphView } from "./FunctionGraphView";
-import { traverseFunctionProject } from './az-func-as-a-graph/traverseFunctionProject';
-import { FunctionsMap, ProxiesMap } from './az-func-as-a-graph/FunctionsMap';
+
+import { FunctionProjectParser } from 'az-func-as-a-graph.core/dist/functionProjectParser';
+import { FileSystemWrapper } from 'az-func-as-a-graph.core/dist/fileSystemWrapper';
+import { FunctionsMap, ProxiesMap } from 'az-func-as-a-graph.core/dist/FunctionsMap';
+import { cloneFromGitHub } from 'az-func-as-a-graph.core/dist/gitUtils';
 
 export type TraversalResult = {
     functions: FunctionsMap;
@@ -22,46 +25,56 @@ export class FunctionGraphList {
         this._log = !logChannel ? (s: any) => { } : (s: any) => logChannel!.append(s);
     }
 
-    traverseFunctions(projectPath: string): Promise<TraversalResult> {
+    async traverseFunctions(projectPath: string): Promise<TraversalResult> {
 
         const isCurrentProject = projectPath === vscode.workspace.rootPath;
 
         if (isCurrentProject && !!this._traversalResult) {
-            return Promise.resolve(this._traversalResult);
+            return this._traversalResult;
         }
 
-        return traverseFunctionProject(projectPath, this._log).then(result => {
+        // If it is a git repo, cloning it
+        if (projectPath.toLowerCase().startsWith('http')) {
 
-            this._tempFolders.push(...result.tempFolders);
+            this._log(`Cloning ${projectPath}`);
 
-            // Caching current project's functions
-            if (isCurrentProject) {
+            const gitInfo = await cloneFromGitHub(projectPath);
 
-                this._traversalResult = { functions: result.functions, proxies: result.proxies };
+            this._log(`Successfully cloned to ${gitInfo.gitTempFolder}`);
 
-                // And cleanup the cache on any change to the file system
+            this._tempFolders.push(gitInfo.gitTempFolder);
+            projectPath = gitInfo.projectFolder;
+        }
+
+        const result = await FunctionProjectParser.parseFunctions(projectPath, new FileSystemWrapper(), this._log);
+        
+        // Caching current project's functions
+        if (isCurrentProject) {
+
+            this._traversalResult = { functions: result.functions, proxies: result.proxies };
+
+            // And cleanup the cache on any change to the file system
+            if (!!this._watcher) {
+                this._watcher.dispose();
+            }
+            this._watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(projectPath, '**/*'));
+
+            const cacheCleanupRoutine = () => {
+                
+                this._traversalResult = undefined;
+
                 if (!!this._watcher) {
                     this._watcher.dispose();
+                    this._watcher = undefined;
                 }
-                this._watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(projectPath, '**/*'));
-
-                const cacheCleanupRoutine = () => {
-                    
-                    this._traversalResult = undefined;
-
-                    if (!!this._watcher) {
-                        this._watcher.dispose();
-                        this._watcher = undefined;
-                    }
-                }
-
-                this._watcher.onDidCreate(cacheCleanupRoutine);
-                this._watcher.onDidDelete(cacheCleanupRoutine);
-                this._watcher.onDidChange(cacheCleanupRoutine);
             }
 
-            return { functions: result.functions, proxies: result.proxies };
-        });
+            this._watcher.onDidCreate(cacheCleanupRoutine);
+            this._watcher.onDidDelete(cacheCleanupRoutine);
+            this._watcher.onDidChange(cacheCleanupRoutine);
+        }
+
+        return { functions: result.functions, proxies: result.proxies };
     }
 
     visualize(item?: vscode.Uri): void {

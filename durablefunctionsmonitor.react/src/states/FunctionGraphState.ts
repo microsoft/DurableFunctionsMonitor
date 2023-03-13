@@ -4,7 +4,7 @@
 import { observable, computed } from 'mobx';
 import mermaid from 'mermaid';
 
-import { buildFunctionDiagramCode } from './az-func-as-a-graph/buildFunctionDiagramCode';
+import { buildFunctionDiagramCode } from 'az-func-as-a-graph.core/dist/buildFunctionDiagramCode';
 import { FunctionGraphStateBase } from './FunctionGraphStateBase';
 
 // State of FunctionGraph view

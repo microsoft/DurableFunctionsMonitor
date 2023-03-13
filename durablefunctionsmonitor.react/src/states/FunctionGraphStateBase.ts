@@ -5,7 +5,7 @@ import { observable, computed } from 'mobx';
 
 import { IBackendClient } from '../services/IBackendClient';
 import { MermaidDiagramStateBase } from './MermaidDiagramStateBase';
-import { FunctionsMap, ProxiesMap } from './az-func-as-a-graph/FunctionsMap';
+import { FunctionsMap, ProxiesMap } from 'az-func-as-a-graph.core/dist/FunctionsMap';
 
 export type TraversalResult = {
     functions: FunctionsMap;

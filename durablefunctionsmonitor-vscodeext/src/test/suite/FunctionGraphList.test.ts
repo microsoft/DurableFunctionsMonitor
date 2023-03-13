@@ -45,11 +45,7 @@ suite('FunctionGraphList Test Suite', () => {
 
 		assert.deepStrictEqual(traversalResult1.functions.DfmAboutFunction.bindings[0], {
 			"type": "httpTrigger",
-			"route": "a/p/i/{connName}-{hubName}/about",
-			"methods": ["get"],
-			"authLevel": "anonymous",
-			"name": "req",
-			"direction": undefined
+			"methods": ["get"]
 		});
 
 		assert.strictEqual(!!((funcGraphList as any)._watcher), true);

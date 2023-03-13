@@ -9,7 +9,7 @@ import { DurableOrchestrationStatus } from '../DurableOrchestrationStatus';
 import { CancelToken } from '../../CancelToken';
 import { IResultsTabState } from './ResultsListTabState';
 import { FunctionGraphStateBase } from '../FunctionGraphStateBase';
-import { buildFunctionDiagramCode } from '../az-func-as-a-graph/buildFunctionDiagramCode';
+import { buildFunctionDiagramCode } from 'az-func-as-a-graph.core/dist/buildFunctionDiagramCode';
 
 export class MetricsItem {
     completed: number = 0;

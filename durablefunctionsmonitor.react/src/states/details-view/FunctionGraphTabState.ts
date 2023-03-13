@@ -8,7 +8,7 @@ import { IBackendClient } from '../../services/IBackendClient';
 import { DurableOrchestrationStatus, HistoryEvent, EventWithHistory, RuntimeStatus } from '../DurableOrchestrationStatus';
 import { ICustomTabState, CustomTabTypeEnum } from './ICustomTabState';
 import { FunctionGraphStateBase, TraversalResult } from '../FunctionGraphStateBase';
-import { buildFunctionDiagramCode } from '../az-func-as-a-graph/buildFunctionDiagramCode';
+import { buildFunctionDiagramCode } from 'az-func-as-a-graph.core/dist/buildFunctionDiagramCode';
 import { CancelToken } from '../../CancelToken';
 import { MetricsMap, MetricsItem } from '../results-view/ResultsFunctionGraphTabState';
 

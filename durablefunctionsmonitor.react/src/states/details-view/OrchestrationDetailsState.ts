@@ -14,7 +14,7 @@ import { ICustomTabState } from './ICustomTabState';
 import { GanttDiagramTabState } from './GanttDiagramTabState';
 import { LiquidMarkupTabState } from './LiquidMarkupTabState';
 import { CancelToken } from '../../CancelToken';
-import { FunctionsMap } from '../az-func-as-a-graph/FunctionsMap';
+import { FunctionsMap } from 'az-func-as-a-graph.core/dist/FunctionsMap';
 import { FilterOperatorEnum, toOdataFilterQuery } from '../FilterOperatorEnum';
 import { QueryString } from '../QueryString';
 import { DateTimeHelpers } from '../../DateTimeHelpers';
