@@ -15,7 +15,7 @@ const execAsync = util.promisify(cp.exec);
 
 import * as SharedConstants from './SharedConstants';
 import { Settings } from './Settings';
-import { StorageConnectionSettings } from "./StorageConnectionSettings";
+import { StorageConnectionSettings } from './StorageConnectionSettings';
 import { ConnStringUtils } from './ConnStringUtils';
 
 const MinimumFuncVersion = { major: 4, minor: 0, patch: 4629 };
@@ -98,7 +98,10 @@ export class BackendProcess {
     private getEnvVariables(): {} {
 
         // Important to inherit the context from VsCode, so that globally installed tools can be found
-        const env = process.env;
+        const env: any = {};
+        for (const envVarName in process.env) {
+            env[envVarName] = process.env[envVarName];
+        }
 
         env[SharedConstants.NonceEnvironmentVariableName] = this._backendCommunicationNonce;
 
@@ -108,6 +111,7 @@ export class BackendProcess {
         // Need to explicitly set this, to make sure it is not overshadowed by some global setting
         env['FUNCTIONS_WORKER_RUNTIME'] = 'dotnet';
 
+        // To make sure we do not interfere with user's dev setup
         delete env['AzureWebJobsStorage'];
         delete env['AzureWebJobsStorage__accountName'];
         delete env[SharedConstants.MsSqlConnStringEnvironmentVariableName];
@@ -122,6 +126,20 @@ export class BackendProcess {
 
             // Also passing the custom DB schema name
             env["AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName"] = this.schemaName;
+
+        } else if (this._storageConnectionSettings.isNetherite) {
+
+            if (!!this._storageConnectionSettings.isIdentityBasedConnection) {
+
+                const storageAccountName = ConnStringUtils.GetAccountName(this._storageConnectionSettings.storageConnString);
+                env['AzureWebJobsStorage__accountName'] = storageAccountName;
+
+            } else {
+
+                env['AzureWebJobsStorage'] = this._storageConnectionSettings.storageConnString;
+            }
+
+            env[SharedConstants.EventHubsConnStringEnvironmentVariableName] = this._storageConnectionSettings.eventHubsConnString;
 
         } else {
 
@@ -345,6 +363,10 @@ export class BackendProcess {
         } else if (!!this._storageConnectionSettings.isMsSql) {
             
             return path.join(this._extensionRootFolder, 'custom-backends', 'mssql');
+
+        } else if (!!this._storageConnectionSettings.isNetherite) {
+            
+            return path.join(this._extensionRootFolder, 'custom-backends', 'netherite');
 
         } else if (Settings().backendVersionToUse === '.Net Core 2.1') {
 

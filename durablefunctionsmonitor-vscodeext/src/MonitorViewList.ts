@@ -4,29 +4,30 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import axios from 'axios';
 
 import { ConnStringUtils } from "./ConnStringUtils";
 
 import { AzureConnectionInfo, MonitorView } from "./MonitorView";
 import { BackendProcess } from './BackendProcess';
-import { StorageConnectionSettings, CreateAuthHeadersForTableStorage, CreateIdentityBasedAuthHeadersForTableStorage } from "./StorageConnectionSettings";
+import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { FunctionGraphList } from './FunctionGraphList';
-import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
+import { ConnStringRepository } from './ConnStringRepository';
+import { TaskHubsCollector } from './TaskHubsCollector';
 
-type PersistedConnStringHashes = {
-    [hash: string]: {
-        taskHubs?: string []
-    }
+type HostJsonInfo = {
+    hubName?: string,
+    storageProviderType: 'default' | 'mssql' | 'netherite',
+    connectionStringName: string,
+    schemaName?: string,
+    otherConnectionStringName?: string
 };
 
 // Represents all MonitorViews created so far
 export class MonitorViewList {
 
-    public static readonly ConnectionStringHashes = 'ConnectionStringHashes';
-
     constructor(private _context: vscode.ExtensionContext,
         private _functionGraphList: FunctionGraphList,
+        private _connStringRepo: ConnStringRepository,        
         private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureConnectionInfo | undefined>,
         private _onViewStatusChanged: () => void,
         private _log: (line: string) => void) {
@@ -83,7 +84,7 @@ export class MonitorViewList {
         }
 
         // Persisting the provided connection string in ExtensionContext.secrets
-        await this.saveConnectionString(connSettings);
+        await this._connStringRepo.saveConnectionString(connSettings);
 
         return await this.getOrCreateFromStorageConnectionSettings(connSettings);
     }
@@ -120,6 +121,25 @@ export class MonitorViewList {
             if (!hubName) {
                 return null;
             }
+        }
+
+        if (hostJson.storageProviderType === 'netherite') {
+            
+            const storageConnString = this.getValueFromLocalSettings(hostJson.connectionStringName);
+            if (!storageConnString) {
+                return null;
+            }
+
+            if (!hostJson.otherConnectionStringName) {
+                return null;
+            }
+
+            const hubsConnString = this.getValueFromLocalSettings(hostJson.otherConnectionStringName);
+            if (!hubsConnString) {
+                return null;
+            }
+    
+            return new StorageConnectionSettings(ConnStringUtils.ExpandEmulatorShortcutIfNeeded(storageConnString), hubName, hubsConnString);
         }
 
         const storageConnString = this.getValueFromLocalSettings('AzureWebJobsStorage');
@@ -196,22 +216,6 @@ export class MonitorViewList {
         delete this._backends[connSettings.hashKeyForBackend];
     }
 
-    async forgetConnectionString(storageConnString: string): Promise<any> {
-
-        const connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(storageConnString);
-
-        this._context.secrets.delete(connStringHashKey);
-
-        let connStringHashes = this.getConnStringHashes();
-        if (!connStringHashes) {
-            return;
-        }
-
-        delete connStringHashes[connStringHashKey];
-
-        await this.saveConnStringHashes(connStringHashes);
-    }
-
     isBackendAttached(storageConnString: string): boolean {
 
         for (const backendHashKey in this._backends) {
@@ -235,38 +239,6 @@ export class MonitorViewList {
         return Promise.resolve(this.getOrCreateFromStorageConnectionSettings(connSettingsFromCurrentProject));
     }
 
-    async getPersistedConnStrings(): Promise<string[]> {
-
-        const connStringHashes = this.getConnStringHashes();
-        if (!connStringHashes) {
-            return [];
-        }
-
-        const result: string[] = [];
-
-        for (const connStringHash in connStringHashes) {
-
-            const connString = await this._context.secrets.get(connStringHash);
-
-            if (!!connString) {
-                
-                result.push(connString);
-            }
-        }
-
-        return result;
-    }
-
-    getPersistedConnStringData(connString: string): { taskHubs?: string [] } | undefined {
-
-        const connStringMap = this.getConnStringHashes();
-        if (!connStringMap) {
-            return undefined;
-        }
-
-        return connStringMap[StorageConnectionSettings.GetConnStringHashKey(connString)];
-    }
-
     private _monitorViews: { [key: string]: MonitorView } = {};
     private _backends: { [key: string]: BackendProcess } = {};
 
@@ -281,7 +253,7 @@ export class MonitorViewList {
                 this._context.extensionPath,
                 connSettings,
                 () => this.detachBackend(connSettings),
-                (storageConnString, schemaName, taskHubs) => this.saveTaskHubs(storageConnString, schemaName, taskHubs),
+                (storageConnString, schemaName, taskHubs) => this._connStringRepo.saveTaskHubs(storageConnString, schemaName, taskHubs),
                 this._log
             );
 
@@ -294,6 +266,9 @@ export class MonitorViewList {
     // Obtains Storage Connection String and Hub Name from user
     private askForStorageConnectionSettings(): Promise<StorageConnectionSettings | null> {
 
+        let isMsSql = false;
+        let isNetherite = false;
+
         return new Promise<StorageConnectionSettings | null>((resolve, reject) => {
 
             // Asking the user for Connection String
@@ -304,7 +279,7 @@ export class MonitorViewList {
                 connStringToShow = ConnStringUtils.MaskStorageConnString(connStringFromLocalSettings);
             }
 
-            vscode.window.showInputBox({ value: connStringToShow, prompt: 'Storage or MSSQL Connection String' })
+            vscode.window.showInputBox({ value: connStringToShow, prompt: 'Storage or MSSQL Connection String', ignoreFocusOut: true })
                 .then(connString => {
 
                     if (!connString) {
@@ -321,13 +296,15 @@ export class MonitorViewList {
                     // Dealing with 'UseDevelopmentStorage=true' early
                     connString = ConnStringUtils.ExpandEmulatorShortcutIfNeeded(connString);
 
-                    const isMsSql = !!ConnStringUtils.GetSqlServerName(connString);
+                    isMsSql = !!ConnStringUtils.GetSqlServerName(connString);
 
                     const hostJson = this.readHostJson();
                     
                     // Asking the user for Hub Name
                     let hubName = '';
                     const hubPick = vscode.window.createQuickPick();
+
+                    hubPick.ignoreFocusOut = true;
 
                     hubPick.onDidHide(() => {
                         hubPick.dispose();
@@ -371,26 +348,27 @@ export class MonitorViewList {
                         
                         // Loading other hub names directly from Table Storage
 
-                        const accountName = ConnStringUtils.GetAccountName(connString);
-                        const accountKey = ConnStringUtils.GetAccountKey(connString);
-                        const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
-                
-                        getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey).then(hubNames => {
+                        const taskHubsCollector = new TaskHubsCollector(ConnStringUtils.GetTableEndpoint(connString), ConnStringUtils.GetAccountName(connString));
 
-                            if (!!hubNames?.length) {
+                        taskHubsCollector.getTaskHubNamesWithKey(ConnStringUtils.GetAccountKey(connString))
+                            .then(result => { 
 
-                                // Adding loaded names to the list
-                                hubPick.items = hubNames.map(label => {
-                                    return { label: label };
-                                });
+                                isNetherite = result.storageType === 'netherite';
 
-                                hubPick.placeholder = hubNames[0];
-                            }
+                                if (!!result.hubNames?.length) {
 
-                        }).catch(err => {
+                                    // Adding loaded names to the list
+                                    hubPick.items = result.hubNames.map(label => {
+                                        return { label: label };
+                                    });
+    
+                                    hubPick.placeholder = result.hubNames[0];
+                                }
+                            })
+                            .catch(err => { 
 
-                            this._log(`Failed to list Task Hubs for Storage account ${accountName}. ${err.message ?? err}\n`);
-                        });
+                                this._log(`Failed to list Task Hubs for Storage account. ${err.message ?? err}\n`);
+                            });
                     }
 
                     hubPick.show();
@@ -398,22 +376,28 @@ export class MonitorViewList {
                 }, reject);
             
         }).then(connSettings => {
+
+            if (!connSettings) {
+                return connSettings;
+            }
             
-            return this.askForDbSchemaNameIfNeeded(connSettings);
+            if (!!isMsSql) {
+                
+                return this.askForDbSchemaName(connSettings);
+            }
+
+            if (!!isNetherite) {
+                
+                return this.askForEventHubsConnString(connSettings);
+            }
+
+            return connSettings;
         });
     }
 
-    private async askForDbSchemaNameIfNeeded(connSettings: StorageConnectionSettings | null): Promise<StorageConnectionSettings | null> {
+    private async askForDbSchemaName(connSettings: StorageConnectionSettings): Promise<StorageConnectionSettings | null> {
 
-        if (!connSettings) {
-            return null;
-        }
-
-        if (!connSettings.isMsSql) {
-            return connSettings;
-        }
-
-        const schemaName = await vscode.window.showInputBox({ title: 'Database Schema Name', value: 'dt' });
+        const schemaName = await vscode.window.showInputBox({ title: 'Database Schema Name', value: 'dt', ignoreFocusOut: true });
 
         if (!schemaName) {
 
@@ -421,6 +405,18 @@ export class MonitorViewList {
         }
 
         return new StorageConnectionSettings(connSettings.storageConnString, `${schemaName}/${connSettings.hubName}`);
+    }
+
+    private async askForEventHubsConnString(connSettings: StorageConnectionSettings): Promise<StorageConnectionSettings | null> {
+
+        const eventHubsConnString = await vscode.window.showInputBox({ prompt: 'Event Hubs Connection String', ignoreFocusOut: true });
+
+        if (!eventHubsConnString) {
+
+            return null;
+        }
+
+        return new StorageConnectionSettings(connSettings.storageConnString, connSettings.hubName, eventHubsConnString);
     }
 
     private getValueFromLocalSettings(valueName: string): string {
@@ -445,9 +441,15 @@ export class MonitorViewList {
         return '';
     }
 
-    private readHostJson(): { hubName?: string, storageProviderType: 'default' | 'mssql', connectionStringName: string, schemaName?: string } {
+    private readHostJson(): HostJsonInfo {
 
-        const result = { hubName: '', storageProviderType: 'default' as any, connectionStringName: '', schemaName: undefined };
+        const result: HostJsonInfo = {
+            hubName: '',
+            storageProviderType: 'default',
+            connectionStringName: '',
+            otherConnectionStringName: undefined,
+            schemaName: undefined
+        };
 
         const ws = vscode.workspace;
         if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
@@ -470,135 +472,23 @@ export class MonitorViewList {
                     result.hubName = !!durableTask.HubName ? durableTask.HubName : durableTask.hubName
                 }
 
-                if (!!durableTask.storageProvider && durableTask.storageProvider.type === 'mssql') {
-                    result.storageProviderType = 'mssql';
-                    result.connectionStringName = durableTask.storageProvider.connectionStringName;
-                    result.schemaName = durableTask.storageProvider.schemaName;
+                if (!!durableTask.storageProvider) {
+
+                    switch (durableTask.storageProvider.type?.toLowerCase()) {
+                        case 'mssql':
+                            result.storageProviderType = 'mssql';
+                            result.connectionStringName = durableTask.storageProvider.connectionStringName;
+                            result.schemaName = durableTask.storageProvider.schemaName;
+                        break;
+                        case 'netherite':
+                            result.storageProviderType = 'netherite';
+                            result.connectionStringName = durableTask.storageProvider.StorageConnectionName || 'AzureWebJobsStorage';
+                            result.otherConnectionStringName = durableTask.storageProvider.EventHubsConnectionName || 'EventHubsConnection';
+                        break;
+                    }
                 }
             }
         }
         return result;
     }
-
-    private async saveConnectionString(connSettings: StorageConnectionSettings): Promise<void> {
-
-        let connStringMap = this.getConnStringHashes();
-        if (!connStringMap) {
-            connStringMap = {};
-        }
-
-        if (!connStringMap[connSettings.connStringHashKey]) {
-            
-            connStringMap[connSettings.connStringHashKey] = {};
-        }
-
-        this._context.secrets.store(connSettings.connStringHashKey, connSettings.storageConnString);
-
-        await this.saveConnStringHashes(connStringMap);
-    }
-
-    private getConnStringHashes(): PersistedConnStringHashes | undefined {
-
-        let connStringMap = this._context.globalState.get(MonitorViewList.ConnectionStringHashes);
-
-        if (!connStringMap) {
-            return undefined;
-        }
-
-        if (Array.isArray(connStringMap)) {
-            // supporting legacy format
-            return connStringMap.reduce((a, c) => { a[c] = {}; return a; }, {});
-        }
-
-        return connStringMap as PersistedConnStringHashes;
-    }
-
-    private async saveConnStringHashes(hashes: PersistedConnStringHashes): Promise<void>{
-
-        await this._context.globalState.update(MonitorViewList.ConnectionStringHashes, hashes)
-    }
-
-    private async saveTaskHubs(storageConnString: string, schemaName: string | undefined, taskHubs: string[]): Promise<void> {
-
-        const connStringMap = this.getConnStringHashes();
-        if (!connStringMap) {
-            return;
-        }
-
-        const connStringInfo = connStringMap[StorageConnectionSettings.GetConnStringHashKey(storageConnString)];
-        if (!connStringInfo) {
-            return;
-        }
-
-        if (!connStringInfo.taskHubs) {
-            connStringInfo.taskHubs = [];
-        }
-
-        for (const hubName of taskHubs) {
-
-            const schemaAndHubName = `${schemaName || 'dt'}/${hubName}`;
-
-            if (!connStringInfo.taskHubs.includes(schemaAndHubName)) {
-                
-                connStringInfo.taskHubs.push(schemaAndHubName);
-            }
-        }
-
-        await this.saveConnStringHashes(connStringMap);
-    }
-}
-
-function getTaskHubNamesFromTableNames(tableNames: string[]): string[] {
-
-    const instancesTables: string[] = tableNames.map((table: any) => table.TableName)
-        .filter((tableName: string) => tableName.endsWith('Instances'))
-        .map((tableName: string) => tableName.substr(0, tableName.length - 'Instances'.length));
-
-    const historyTables: string[] = tableNames.map((table: any) => table.TableName)
-        .filter((tableName: string) => tableName.endsWith('History'))
-        .map((tableName: string) => tableName.substr(0, tableName.length - 'History'.length));
-
-    // Considering it to be a hub, if it has both *Instances and *History tables
-    return instancesTables.filter(name => historyTables.indexOf(name) >= 0);
-}
-
-function fixTableEndpointUrl(tableEndpointUrl: string, accountName: string): string {
-
-    if (!tableEndpointUrl) {
-        tableEndpointUrl = `https://${accountName}.table.core.windows.net/`;
-    } else if (!tableEndpointUrl.endsWith('/')) {
-        tableEndpointUrl += '/';
-    }
-
-    return tableEndpointUrl;
-}
-
-// Tries to load the list of TaskHub names from a storage account.
-export async function getTaskHubNamesFromTableStorage(tableEndpointUrl: string, accountName: string, accountKey: string): Promise<string[] | null> {
-
-    tableEndpointUrl = fixTableEndpointUrl(tableEndpointUrl, accountName);
-
-    const authHeaders = CreateAuthHeadersForTableStorage(accountName, accountKey, tableEndpointUrl);
-    const response = await axios.get(`${tableEndpointUrl}Tables`, { headers: authHeaders });
-
-    if (!response || !response.data || !response.data.value || response.data.value.length <= 0) {
-        return null;
-    }
-
-    return getTaskHubNamesFromTableNames(response.data.value);
-}
-
-// Tries to load the list of TaskHub names from a storage account.
-export async function getTaskHubNamesFromTableStorageWithUserToken(tableEndpointUrl: string, accountName: string, tokenCredential: DeviceTokenCredentials): Promise<string[] | null> {
-
-    tableEndpointUrl = fixTableEndpointUrl(tableEndpointUrl, accountName);
-
-    const authHeaders = await CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential);
-    const response = await axios.get(`${tableEndpointUrl}Tables`, { headers: authHeaders });
- 
-    if (!response || !response.data || !response.data.value || response.data.value.length <= 0) {
-        return null;
-    }
-
-    return getTaskHubNamesFromTableNames(response.data.value);
 }

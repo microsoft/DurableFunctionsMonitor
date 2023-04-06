@@ -3,20 +3,23 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { StorageManagementClient } from "@azure/arm-storage";
-import { StorageAccount, StorageAccountKey } from "@azure/arm-storage/src/models";
+import { StorageManagementClient } from '@azure/arm-storage';
+import { StorageAccount, StorageAccountKey } from '@azure/arm-storage/src/models';
 
-import { AzureConnectionInfo, MonitorView } from "./MonitorView";
-import { MonitorViewList, getTaskHubNamesFromTableStorage, getTaskHubNamesFromTableStorageWithUserToken } from "./MonitorViewList";
+import { AzureConnectionInfo, MonitorView } from './MonitorView';
+import { MonitorViewList } from './MonitorViewList';
 import { FunctionGraphList } from './FunctionGraphList';
 import { Settings, UpdateSetting } from './Settings';
-import { StorageConnectionSettings, AzureSubscription } from "./StorageConnectionSettings";
+import { StorageConnectionSettings } from './StorageConnectionSettings';
 import { ConnStringUtils } from './ConnStringUtils';
+import { ConnStringRepository } from './ConnStringRepository';
+import { StorageType, TaskHubsCollector } from './TaskHubsCollector';
+
+// Full typings for this can be found here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
+export type AzureSubscription = { session: { credentials2: any }, subscription: { subscriptionId: string, displayName: string } };
 
 // Root object in the hierarchy. Also serves data for the TreeView.
 export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> { 
-
-    private readonly _log: (line: string) => void;
 
     constructor(private _context: vscode.ExtensionContext, functionGraphList: FunctionGraphList, logChannel?: vscode.OutputChannel) {
 
@@ -28,8 +31,11 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         // Typings for azureAccount are here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
         this._azureAccount = !!azureAccountExtension ? azureAccountExtension.exports : undefined;
 
+        this._connStringRepo = new ConnStringRepository(this._context);
+
         this._monitorViews = new MonitorViewList(this._context,
             functionGraphList,
+            this._connStringRepo,
             (connString) => this.getTokenCredentialsForGivenConnectionString(connString),
             () => this._onDidChangeTreeData.fire(undefined),
             this._log);
@@ -158,10 +164,12 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                         const storageConnString = ConnStringUtils.getConnectionStringForStorageAccount(acc.account, acc.storageKey);
 
-                        const isAttached = this._monitorViews.isBackendAttached(storageConnString)
+                        const isAttached = this._monitorViews.isBackendAttached(storageConnString);
 
                         let iconPath = '';
-                        if (acc.account.kind == 'StorageV2') {
+                        if (acc.storageType == 'netherite') {
+                            iconPath = path.join(this._resourcesFolderPath, isAttached ? 'netheriteAttached.svg' : 'netherite.svg');
+                        } else if (acc.account.kind == 'StorageV2') {
                             iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountV2Attached.svg' : 'storageAccountV2.svg');
                         } else {
                             iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountAttached.svg' : 'storageAccount.svg');
@@ -173,6 +181,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             iconPath,
                             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
                             storageAccountId: acc.account.id,
+                            storageType: acc.storageType,
                             storageConnString,
                             hubNames: acc.hubNames,
                             description: `${acc.hubNames.length} Task Hub${acc.hubNames.length === 1 ? '' : 's'}`,
@@ -203,15 +212,16 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                         for (const hub of accountNode.hubNames) {
 
-                            const storageConnectionSettings = new StorageConnectionSettings(accountNode.storageConnString, hub);
-                            const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
+                            const isVisible = this._monitorViews.isMonitorViewVisible(new StorageConnectionSettings(accountNode.storageConnString, hub));
     
                             const node: TaskHubTreeItem = {
                                 label: hub,
                                 contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
                                 iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
                                 storageAccountId: accountNode.storageAccountId,
-                                storageConnectionSettings,
+                                storageConnString: accountNode.storageConnString,
+                                hubName: hub,
+                                storageType: accountNode.storageType
                             };
     
                             node.command = {
@@ -243,7 +253,9 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             label: storageConnectionSettings.hubName,
                             contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
                             iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
-                            storageConnectionSettings: storageConnectionSettings
+                            storageConnString: storageConnectionSettings.storageConnString,
+                            hubName: storageConnectionSettings.hubName,
+                            storageType: storageConnectionSettings.isNetherite ? 'netherite' : 'default'
                         };
     
                         node.command = {
@@ -259,26 +271,44 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 
                 case 'connectionStrings':
 
-                    const connStrings = await this._monitorViews.getPersistedConnStrings();
+                    const connStrings = await this._connStringRepo.getPersistedConnStrings();
                     
                     for (const connString of connStrings) {
                         
                         const isAttached = this._monitorViews.isBackendAttached(connString)
 
-                        let hubNames: string[] | null = null;
+                        let hubNames: string[] | undefined = undefined;
                         let iconPath: string = '';
                         let tooltip: string = '';
                         let description: string = '';
+                        let storageType: StorageType = 'default';
 
                         try {
+
+                            const eventHubsConnString = await this._connStringRepo.getEventHubsConnString(connString);
                             
-                            if (ConnStringUtils.GetSqlServerName(connString)) {
+                            if (!!eventHubsConnString) {
+
+                                // This looks like Netherite
+
+                                storageType = 'netherite';
+                                iconPath = path.join(this._resourcesFolderPath, isAttached ? 'netheriteAttached.svg' : 'netherite.svg');
+                                tooltip = 'Netherite Storage Provider';
+                                description = 'Netherite Storage Provider';
+
+                                const taskHubsCollector = new TaskHubsCollector(ConnStringUtils.GetTableEndpoint(connString), ConnStringUtils.GetAccountName(connString));
+
+                                hubNames = await taskHubsCollector.getTaskHubNamesFromNetheriteStorageWithKey(ConnStringUtils.GetAccountKey(connString));
+
+                            } else if (ConnStringUtils.GetSqlServerName(connString)) {
+
+                                // This looks like MSSQL
 
                                 iconPath = path.join(this._resourcesFolderPath, isAttached ? 'mssqlAttached.svg' : 'mssql.svg');
                                 tooltip = 'MSSQL Storage Provider';
                                 description = 'MSSQL Storage Provider';
 
-                                const connStringData = this._monitorViews.getPersistedConnStringData(connString);
+                                const connStringData = this._connStringRepo.getPersistedConnStringData(connString);
                                 if (!!connStringData) {
 
                                     hubNames = connStringData.taskHubs ?? [];
@@ -289,14 +319,14 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                                 
                             } else {
 
+                                // Just regular storage
+
                                 iconPath = path.join(this._resourcesFolderPath, isAttached ? 'storageAccountAttached.svg' : 'storageAccount.svg');
                                 tooltip = ConnStringUtils.MaskStorageConnString(connString);
 
-                                const tableEndpoint = ConnStringUtils.GetTableEndpoint(connString);
-                                const accountName = ConnStringUtils.GetAccountName(connString);
-                                const accountKey = ConnStringUtils.GetAccountKey(connString);
+                                const taskHubsCollector = new TaskHubsCollector(ConnStringUtils.GetTableEndpoint(connString), ConnStringUtils.GetAccountName(connString));
 
-                                hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey);
+                                hubNames = await taskHubsCollector.getTaskHubNamesFromTableStorageWithKey(ConnStringUtils.GetAccountKey(connString));
                             }
 
                             if (!!hubNames) {
@@ -317,6 +347,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             iconPath,
                             collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
                             storageConnString: connString,
+                            storageType,
                             hubNames: hubNames ?? [],
                             description,
                             tooltip
@@ -344,16 +375,13 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 case 'storageEmulator':
                     
                     const emulatorConnString = Settings().storageEmulatorConnectionString;
-
-                    const accountName = ConnStringUtils.GetAccountName(emulatorConnString);
-                    const accountKey = ConnStringUtils.GetAccountKey(emulatorConnString);
-                    const tableEndpoint = ConnStringUtils.GetTableEndpoint(emulatorConnString);
+                    const taskHubsCollector = new TaskHubsCollector(ConnStringUtils.GetTableEndpoint(emulatorConnString), ConnStringUtils.GetAccountName(emulatorConnString));
 
                     let hubNames: string[] | null = null;
             
                     try {
 
-                        hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, accountName, accountKey) ?? [];
+                        hubNames = await taskHubsCollector.getTaskHubNamesFromTableStorageWithKey(ConnStringUtils.GetAccountKey(emulatorConnString)) ?? [];
                         
                     } catch (err: any) {
                         
@@ -374,14 +402,15 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                             for (const hub of hubNames) {
 
-                                const storageConnectionSettings = new StorageConnectionSettings(emulatorConnString, hub);
-                                const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
+                                const isVisible = this._monitorViews.isMonitorViewVisible(new StorageConnectionSettings(emulatorConnString, hub));
         
                                 const node: TaskHubTreeItem = {
                                     label: hub,
                                     contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
                                     iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
-                                    storageConnectionSettings,
+                                    storageConnString: emulatorConnString,
+                                    hubName: hub,
+                                    storageType: 'default'
                                 };
         
                                 node.command = {
@@ -408,16 +437,24 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     }
 
     // Handles 'Attach' context menu item or a click on a tree node
-    attachToTaskHub(taskHubItem: TaskHubTreeItem, messageToWebView: any = undefined): void {
+    async attachToTaskHub(taskHubItem: TaskHubTreeItem, messageToWebView: any = undefined): Promise<void> {
 
         if (!!this._inProgress) {
             console.log(`Another operation already in progress...`);
             return;
         }
 
-        this._inProgress = true;
-        const monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(taskHubItem.storageConnectionSettings);
+        const connSettings = await this.getConnSettingsForTaskHub(taskHubItem);
+        if (!connSettings) {
+            return;
+        }
 
+        // TODO: check if getOrCreateFromStorageConnectionSettings() can throw
+        const monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(connSettings);
+
+        this._inProgress = true;
+
+        // TODO: rewrite to async
         monitorView.show(messageToWebView).then(() => {
 
             this._onDidChangeTreeData.fire(undefined);
@@ -495,7 +532,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         this._inProgress = true;
 
         this._monitorViews.detachBackends(storageAccountItem.storageConnString)
-            .then(() => this._monitorViews.forgetConnectionString(storageAccountItem.storageConnString))
+            .then(() => this._connStringRepo.forgetConnectionString(storageAccountItem.storageConnString))
             .then(() => {
 
                 this._onDidChangeTreeData.fire(undefined);
@@ -545,12 +582,19 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             return;
         }
 
-        if (!!taskHubItem.storageConnectionSettings.isMsSql) {
+        if (taskHubItem.storageType === 'netherite') {
+            vscode.window.showErrorMessage('Deleting Task Hubs is not supported for Netherite Durability Provider');
+            return;
+        }
+
+        const connSettings = new StorageConnectionSettings(taskHubItem.storageConnString, taskHubItem.hubName);
+
+        if (!!connSettings.isMsSql) {
             vscode.window.showErrorMessage('Deleting Task Hubs is not supported for MSSQL Durability Provider');
             return;
         }
 
-        const monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(taskHubItem.storageConnectionSettings);
+        const monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(connSettings);
         if (!monitorView) {
             console.log(`Tried to delete a detached Task Hub`);
             return;
@@ -649,13 +693,26 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     }
     
     // Handles 'Go to instanceId...' context menu item
-    gotoInstanceId(taskHubItem: TaskHubTreeItem | null) {
+    async gotoInstanceId(taskHubItem: TaskHubTreeItem | null): Promise<void> {
+
+        let monitorView: MonitorView | null;
 
         // Trying to get a running backend instance.
         // If the relevant MonitorView is currently not visible, don't want to show it - that's why all the custom logic here.
-        var monitorView = !taskHubItem ?
-            this._monitorViews.firstOrDefault() :
-            this._monitorViews.getOrCreateFromStorageConnectionSettings(taskHubItem.storageConnectionSettings);
+        if (!taskHubItem) {
+
+            monitorView = this._monitorViews.firstOrDefault();
+            
+        } else {
+
+            const connSettings = await this.getConnSettingsForTaskHub(taskHubItem);
+
+            if (!connSettings) {
+                return;
+            }
+
+            monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(connSettings);
+        }
 
         if (!!monitorView) {
 
@@ -679,6 +736,10 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     cleanup(): Promise<any> {
         return this._monitorViews.cleanup();
     }
+
+    private readonly _log: (line: string) => void;
+
+    private readonly _connStringRepo: ConnStringRepository;
 
     private readonly _azureAccount: any;
     private readonly _resourcesFolderPath: string;
@@ -770,7 +831,12 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                 if (!!taskHubsAndStorageKey && taskHubsAndStorageKey.hubNames?.length > 0) {
 
-                    result.push({ account: acc, hubNames: taskHubsAndStorageKey.hubNames, storageKey: taskHubsAndStorageKey.storageKey });
+                    result.push({
+                        account: acc,
+                        hubNames: taskHubsAndStorageKey.hubNames,
+                        storageKey: taskHubsAndStorageKey.storageKey,
+                        storageType: taskHubsAndStorageKey.storageType
+                    });
                 }
             })
         );
@@ -858,7 +924,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         storageManagementClient: StorageManagementClient,
         storageAccount: StorageAccount,
         subscription: AzureSubscription
-    ): Promise<{ storageKey?: string, hubNames: string[] } | undefined> {
+    ): Promise<{ storageKey?: string, hubNames: string[], storageType: StorageType } | undefined> {
 
         try {
 
@@ -867,12 +933,13 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 tableEndpoint = storageAccount.primaryEndpoints.table!;
             }
 
+            const taskHubsCollector = new TaskHubsCollector(tableEndpoint, storageAccount.name!);
+
             switch (Settings().taskHubsDiscoveryMode) {
                 case 'Do not use Storage keys':
 
                     // Only using token
-                    const hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
-                    return { hubNames: hubNames ?? [] };
+                    return await taskHubsCollector.getTaskHubNamesWithUserToken(subscription.session.credentials2);
                 
                 case 'Do not use Azure account':
 
@@ -889,8 +956,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             } catch (err) {
 
                 // Falling back to token
-                const hubNames = await getTaskHubNamesFromTableStorageWithUserToken(tableEndpoint, storageAccount.name!, subscription.session.credentials2);
-                return { hubNames: hubNames ?? [] };
+                return await taskHubsCollector.getTaskHubNamesWithUserToken(subscription.session.credentials2);
             }
             
         } catch (err: any) {
@@ -903,7 +969,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         storageManagementClient: StorageManagementClient,
         storageAccount: StorageAccount,
         tableEndpoint: string
-    ): Promise<{storageKey?: string, hubNames: string[]}> {
+    ): Promise<{storageKey?: string, hubNames: string[], storageType: StorageType }> {
 
         // Extracting resource group name
         const match = /\/resourceGroups\/([^\/]+)\/providers/gi.exec(storageAccount.id!);
@@ -929,9 +995,41 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             throw new Error(`No Storage keys were returned.`);
         }
 
-        const hubNames = await getTaskHubNamesFromTableStorage(tableEndpoint, storageAccount.name!, storageKey.value);
+        const taskHubsCollector = new TaskHubsCollector(tableEndpoint, storageAccount.name!);
 
-        return { storageKey: storageKey.value, hubNames: hubNames ?? [] };
+        const hubNames = await taskHubsCollector.getTaskHubNamesWithKey(storageKey.value);
+
+        return { storageKey: storageKey.value, ...hubNames };        
+    }
+
+    private async getConnSettingsForTaskHub(treeItem: TaskHubTreeItem): Promise<StorageConnectionSettings | undefined> {
+
+        if (treeItem.storageType != 'netherite') {
+            
+            return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName);
+        }
+
+        let eventHubsConnString = await this._connStringRepo.getEventHubsConnString(treeItem.storageConnString);
+
+        if (!!eventHubsConnString) {
+            
+            return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName, eventHubsConnString);
+        }
+
+        eventHubsConnString = await vscode.window.showInputBox({ prompt: 'Event Hubs Connection String', ignoreFocusOut: true });
+
+        if (!eventHubsConnString) {
+
+            return;
+        }
+
+        const connSettings = new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName, eventHubsConnString);
+
+        // Need to persist this combination of connection strings to VsCode Secret Storage,
+        // so that Event Hubs conn string can be managed (updated/deleted)
+        await this._connStringRepo.saveConnectionString(connSettings);
+
+        return connSettings;
     }
 }
 
@@ -945,12 +1043,15 @@ type StorageAccountTreeItem = vscode.TreeItem & {
     storageAccountId?: string,
     storageConnString: string,
     hubNames: string[],
+    storageType: StorageType;
 };
 
 type TaskHubTreeItem = vscode.TreeItem & {
 
     storageAccountId?: string,
-    storageConnectionSettings: StorageConnectionSettings,
+    storageConnString: string,
+    hubName: string,
+    storageType: StorageType;
 };
 
-type StorageAccountAndTaskHubs = { account: StorageAccount, storageKey?: string, hubNames: string[] };
+type StorageAccountAndTaskHubs = { account: StorageAccount, storageKey?: string, hubNames: string[], storageType: StorageType };

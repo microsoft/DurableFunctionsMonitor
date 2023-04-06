@@ -3,29 +3,29 @@
 
 import * as CryptoJS from 'crypto-js';
 import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
-import { Environment } from "@azure/ms-rest-azure-env";
-import { TokenResponse } from "adal-node";
+import { Environment } from '@azure/ms-rest-azure-env';
+import { TokenResponse } from 'adal-node';
 
-import { ConnStringUtils } from "./ConnStringUtils";
-
-// Full typings for this can be found here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
-export type AzureSubscription = { session: { credentials2: any }, subscription: { subscriptionId: string, displayName: string } };
+import { ConnStringUtils } from './ConnStringUtils';
 
 // Aggregates parameters for connecting to a particular Task Hub
 export class StorageConnectionSettings {
 
     get storageConnString(): string { return this._connString; };
+    get eventHubsConnString(): string | undefined { return this._eventHubsConnString; };
     get hubName(): string { return this._hubName; };
     get connStringHashKey(): string { return this._connStringHashKey; }
     get hashKey(): string { return this._hashKey; }
     get isMsSql(): boolean { return !!ConnStringUtils.GetSqlServerName(this._connString); }
+    get isNetherite(): boolean { return !!this._eventHubsConnString; }
     get isIdentityBasedConnection(): boolean { return !this.isMsSql && !ConnStringUtils.GetAccountKey(this._connString); }
 
     // For Storage we have one backed per account. For SQL - one backend per each Task Hub (because SQL Durability Provider does not support connections to multiple hubs)
     get hashKeyForBackend(): string { return this.isMsSql ? this._hashKey : this._connStringHashKey; }
 
     constructor(private _connString: string,
-        private _hubName: string
+        private _hubName: string,
+        private _eventHubsConnString?: string
     ) {
 
         this._connStringHashKey = StorageConnectionSettings.GetConnStringHashKey(this._connString);
@@ -48,14 +48,14 @@ export class StorageConnectionSettings {
 }
 
 // Creates the SharedKeyLite signature to query Table Storage REST API, also adds other needed headers
-export function CreateAuthHeadersForTableStorage(accountName: string, accountKey: string, tableEndpointUrl: string): {} {
+export function CreateAuthHeadersForTableStorage(accountName: string, accountKey: string, tableEndpointUrl: string, resource: string = 'Tables'): {} {
 
     // Local emulator URLs contain account name _after_ host (like http://127.0.0.1:10002/devstoreaccount1/ ),
     // and this part should be included when obtaining SAS
     const tableEndpointUrlParts = tableEndpointUrl.split('/');
     const tableQueryUrl = (tableEndpointUrlParts.length > 3 && !!tableEndpointUrlParts[3]) ?
-        `${tableEndpointUrlParts[3]}/Tables` :
-        'Tables';
+        `${tableEndpointUrlParts[3]}/${resource}` :
+        resource;
 
     const dateInUtc = new Date().toUTCString();
     const signature = CryptoJS.HmacSHA256(`${dateInUtc}\n/${accountName}/${tableQueryUrl}`, CryptoJS.enc.Base64.parse(accountKey));

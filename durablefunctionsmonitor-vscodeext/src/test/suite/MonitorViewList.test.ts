@@ -10,6 +10,7 @@ import { MonitorView } from '../../MonitorView';
 import { Settings } from "../../Settings";
 import axios from 'axios';
 import { BackendProcess } from '../../BackendProcess';
+import { ConnStringRepository } from '../../ConnStringRepository';
 
 suite('MonitorViewList Test Suite', () => {
 
@@ -26,13 +27,16 @@ suite('MonitorViewList Test Suite', () => {
 				update: () => undefined
 			},
 			secrets: {
-				store: () => undefined
+				store: () => undefined,
+				delete: () => undefined
 			}
 		};
 
 		const functionGraphList: any = {};
 
-		const monitorViewList = new MonitorViewList(context, functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
+		const connStringRepository = new ConnStringRepository(context);
+
+		const monitorViewList = new MonitorViewList(context, functionGraphList, connStringRepository, () => Promise.resolve(undefined), () => { }, () => { });
 
 		(vscode.window as any).showInputBox = () => Promise.resolve('UseDevelopmentStorage=true');
 
