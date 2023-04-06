@@ -254,6 +254,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
                             iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
                             storageConnString: storageConnectionSettings.storageConnString,
+                            eventHubsConnStringFromCurrentProject: storageConnectionSettings.eventHubsConnString,
                             hubName: storageConnectionSettings.hubName,
                             storageType: storageConnectionSettings.isNetherite ? 'netherite' : 'default'
                         };
@@ -377,53 +378,51 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                     const emulatorConnString = Settings().storageEmulatorConnectionString;
                     const taskHubsCollector = new TaskHubsCollector(ConnStringUtils.GetTableEndpoint(emulatorConnString), ConnStringUtils.GetAccountName(emulatorConnString));
 
-                    let hubNames: string[] | null = null;
-            
                     try {
 
-                        hubNames = await taskHubsCollector.getTaskHubNamesFromTableStorageWithKey(ConnStringUtils.GetAccountKey(emulatorConnString)) ?? [];
-                        
+                        const taskHubs = await taskHubsCollector.getTaskHubNamesWithKey(ConnStringUtils.GetAccountKey(emulatorConnString)) ?? [];
+
+                        if (!!taskHubs.hubNames) {
+
+                            if (!taskHubs.hubNames.length) {
+    
+                                result.push({
+                                    label: 'No Task Hubs found'
+                                });
+                                    
+                            } else {
+    
+                                for (const hub of taskHubs.hubNames) {
+    
+                                    const isVisible = this._monitorViews.isMonitorViewVisible(new StorageConnectionSettings(emulatorConnString, hub));
+            
+                                    const node: TaskHubTreeItem = {
+                                        label: hub,
+                                        contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
+                                        iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
+                                        storageConnString: emulatorConnString,
+                                        hubName: hub,
+                                        storageType: taskHubs.storageType
+                                    };
+            
+                                    node.command = {
+                                        title: 'Attach',
+                                        command: 'durableFunctionsMonitorTreeView.attachToTaskHub',
+                                        arguments: [node]
+                                    };
+                                    
+                                    // Sorting by name on the fly
+                                    const index = result.findIndex(n => n.label! > node.label!);
+                                    result.splice(index < 0 ? result.length : index, 0, node);
+                                }
+                            }                    
+                        }                            
+
                     } catch (err: any) {
                         
                         result.push({
                             label: `Failed to load Task Hubs. ${err.message ?? err}`
                         });
-                    }
-
-                    if (!!hubNames) {
-
-                        if (!hubNames.length) {
-
-                            result.push({
-                                label: 'No Task Hubs found'
-                            });
-                                
-                        } else {
-
-                            for (const hub of hubNames) {
-
-                                const isVisible = this._monitorViews.isMonitorViewVisible(new StorageConnectionSettings(emulatorConnString, hub));
-        
-                                const node: TaskHubTreeItem = {
-                                    label: hub,
-                                    contextValue: isVisible ? 'taskHub-attached' : 'taskHub-detached',
-                                    iconPath: path.join(this._resourcesFolderPath, isVisible ? 'taskHubAttached.svg' : 'taskHub.svg'),
-                                    storageConnString: emulatorConnString,
-                                    hubName: hub,
-                                    storageType: 'default'
-                                };
-        
-                                node.command = {
-                                    title: 'Attach',
-                                    command: 'durableFunctionsMonitorTreeView.attachToTaskHub',
-                                    arguments: [node]
-                                };
-                                
-                                // Sorting by name on the fly
-                                const index = result.findIndex(n => n.label! > node.label!);
-                                result.splice(index < 0 ? result.length : index, 0, node);
-                            }
-                        }                    
                     }
 
                     break;
@@ -1009,6 +1008,11 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName);
         }
 
+        if (!!treeItem.eventHubsConnStringFromCurrentProject) {
+            
+            return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName, treeItem.eventHubsConnStringFromCurrentProject);
+        }
+
         let eventHubsConnString = await this._connStringRepo.getEventHubsConnString(treeItem.storageConnString);
 
         if (!!eventHubsConnString) {
@@ -1050,6 +1054,7 @@ type TaskHubTreeItem = vscode.TreeItem & {
 
     storageAccountId?: string,
     storageConnString: string,
+    eventHubsConnStringFromCurrentProject?: string,
     hubName: string,
     storageType: StorageType;
 };
