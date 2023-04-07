@@ -30,7 +30,12 @@ export class BackendProcess {
         private _log: (l: string) => void)
     { }
 
-    // Underlying Storage Connection Strings
+    // Underlying StorageConnectionSettings
+    get storageConnectionSettings(): StorageConnectionSettings {
+        return this._storageConnectionSettings;
+    }
+
+    // Underlying Storage Connection String
     get storageConnectionString(): string {
         return this._storageConnectionSettings.storageConnString;
     }

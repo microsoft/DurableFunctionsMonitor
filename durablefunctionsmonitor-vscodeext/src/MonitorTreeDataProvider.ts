@@ -1010,6 +1010,13 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName);
         }
 
+        // The user might already have selected an Event Hub
+        const backend = this._monitorViews.getBackend(new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName));
+        if (!!backend) {
+            
+            return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName, backend.storageConnectionSettings.eventHubsConnString);
+        }
+
         // If this Task Hub was inferred from current project
         if (!!treeItem.eventHubsConnStringFromCurrentProject) {
             

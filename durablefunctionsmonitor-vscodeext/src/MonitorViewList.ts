@@ -239,6 +239,11 @@ export class MonitorViewList {
         return Promise.resolve(this.getOrCreateFromStorageConnectionSettings(connSettingsFromCurrentProject));
     }
 
+    getBackend(connSettings: StorageConnectionSettings): BackendProcess | undefined {
+        
+        return this._backends[connSettings.hashKeyForBackend];
+    }
+
     private _monitorViews: { [key: string]: MonitorView } = {};
     private _backends: { [key: string]: BackendProcess } = {};
 
