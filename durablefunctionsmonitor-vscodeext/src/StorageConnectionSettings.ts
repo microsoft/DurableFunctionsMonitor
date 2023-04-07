@@ -1,11 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as CryptoJS from 'crypto-js';
-import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
-import { Environment } from '@azure/ms-rest-azure-env';
-import { TokenResponse } from 'adal-node';
-
 import { ConnStringUtils } from './ConnStringUtils';
 
 // Aggregates parameters for connecting to a particular Task Hub
@@ -45,86 +40,4 @@ export class StorageConnectionSettings {
 
     private readonly _connStringHashKey: string;
     private readonly _hashKey: string;
-}
-
-// Creates the SharedKeyLite signature to query Table Storage REST API, also adds other needed headers
-export function CreateAuthHeadersForTableStorage(accountName: string, accountKey: string, tableEndpointUrl: string, resource: string = 'Tables'): {} {
-
-    // Local emulator URLs contain account name _after_ host (like http://127.0.0.1:10002/devstoreaccount1/ ),
-    // and this part should be included when obtaining SAS
-    const tableEndpointUrlParts = tableEndpointUrl.split('/');
-    const tableQueryUrl = (tableEndpointUrlParts.length > 3 && !!tableEndpointUrlParts[3]) ?
-        `${tableEndpointUrlParts[3]}/${resource}` :
-        resource;
-
-    const dateInUtc = new Date().toUTCString();
-    const signature = CryptoJS.HmacSHA256(`${dateInUtc}\n/${accountName}/${tableQueryUrl}`, CryptoJS.enc.Base64.parse(accountKey));
-
-    return {
-        'Authorization': `SharedKeyLite ${accountName}:${signature.toString(CryptoJS.enc.Base64)}`,
-        'x-ms-date': dateInUtc,
-        'x-ms-version': '2015-12-11',
-        'Accept': 'application/json;odata=nometadata'
-    };
-}
-
-// Parallel execution of super.getToken() leads to https://github.com/microsoft/vscode-azure-account/issues/53
-// Therefore we need to make sure the super.getToken() is always invoked sequentially, and we're doing that 
-// with this simple Active Object pattern implementation
-export class SequentialDeviceTokenCredentials extends DeviceTokenCredentials {
-
-    public getToken(): Promise<TokenResponse> {
-
-        return SequentialDeviceTokenCredentials.executeSequentially(() => super.getToken());
-    }
-
-    private static _workQueue: Promise<any> = Promise.resolve();
-
-    private static executeSequentially<T>(action: () => Promise<T>): Promise<T> {
-    
-        // What goes to _workQueue should never throw (otherwise that exception will always get re-thrown later).
-        // That's why we wrap it all with a new Promise(). This promise will resolve only _after_ action completes (or fails).
-        return new Promise((resolve, reject) => {
-    
-            this._workQueue = this._workQueue.then(() => action().then(resolve, reject));
-        });
-    }
-}
-
-// Creates a user-specific access token for accessing Storage, also adds other needed headers
-export async function CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential: DeviceTokenCredentials): Promise<{}> {
-
-    // The default resourceId ('https://management.core.windows.net/') doesn't work for Storage.
-    // So we need to replace it with the proper one.
-    const storageResourceId = 'https://storage.azure.com';
-
-    const environment = tokenCredential.environment;
-
-    const credentials = new SequentialDeviceTokenCredentials(
-
-        tokenCredential.clientId,
-        tokenCredential.domain,
-        tokenCredential.username,
-        tokenCredential.tokenAudience,
-        new Environment({
-            name: environment.name,
-            portalUrl: environment.portalUrl,
-            managementEndpointUrl: environment.managementEndpointUrl,
-            resourceManagerEndpointUrl: environment.resourceManagerEndpointUrl,
-            activeDirectoryEndpointUrl: environment.activeDirectoryEndpointUrl,
-            activeDirectoryResourceId: storageResourceId
-        }),
-        tokenCredential.tokenCache
-    );
-
-    const token = await credentials.getToken();
-
-    const dateInUtc = new Date().toUTCString();
-    
-    return {
-        'Authorization': `Bearer ${token.accessToken}`,
-        'x-ms-date': dateInUtc,
-        'x-ms-version': '2020-12-06',
-        'Accept': 'application/json;odata=nometadata'
-    };
 }

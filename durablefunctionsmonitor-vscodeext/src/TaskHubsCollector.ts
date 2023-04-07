@@ -3,7 +3,9 @@
 
 import axios from 'axios';
 
-import { CreateAuthHeadersForTableStorage, CreateIdentityBasedAuthHeadersForTableStorage } from "./StorageConnectionSettings";
+import * as CryptoJS from 'crypto-js';
+import { Environment } from '@azure/ms-rest-azure-env';
+import { TokenResponse } from 'adal-node';
 import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
 export type StorageType = 'default' | 'netherite';
@@ -59,22 +61,22 @@ export class TaskHubsCollector {
 
     async getTaskHubNamesFromTableStorageWithKey(accountKey: string): Promise<string[] | undefined> {
 
-        return this.getTaskHubNamesFromTableStorage(CreateAuthHeadersForTableStorage(this._accountName, accountKey, this._tableEndpointUrl));
+        return this.getTaskHubNamesFromTableStorage(this.CreateAuthHeadersForTableStorage(this._accountName, accountKey, this._tableEndpointUrl));
     }
 
     async getTaskHubNamesFromTableStorageWithUserToken(tokenCredential: DeviceTokenCredentials): Promise<string[] | undefined> {
 
-        return this.getTaskHubNamesFromTableStorage(await CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential));
+        return this.getTaskHubNamesFromTableStorage(await this.CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential));
     }
 
     async getTaskHubNamesFromNetheriteStorageWithKey(accountKey: string): Promise<string[] | undefined> {
 
-        return this.getTaskHubNamesFromNetheriteStorage(CreateAuthHeadersForTableStorage(this._accountName, accountKey, this._tableEndpointUrl, `DurableTaskPartitions()`));
+        return this.getTaskHubNamesFromNetheriteStorage(this.CreateAuthHeadersForTableStorage(this._accountName, accountKey, this._tableEndpointUrl, `DurableTaskPartitions()`));
     }
 
     async getTaskHubNamesFromNetheriteStorageWithUserToken(tokenCredential: DeviceTokenCredentials): Promise<string[] | undefined> {
 
-        return this.getTaskHubNamesFromNetheriteStorage(await CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential));
+        return this.getTaskHubNamesFromNetheriteStorage(await this.CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential));
     }
 
     private readonly _tableEndpointUrl: string;
@@ -124,5 +126,87 @@ export class TaskHubsCollector {
             
             return;
         }
+    }
+
+    // Creates the SharedKeyLite signature to query Table Storage REST API, also adds other needed headers
+    private CreateAuthHeadersForTableStorage(accountName: string, accountKey: string, tableEndpointUrl: string, resource: string = 'Tables'): {} {
+
+        // Local emulator URLs contain account name _after_ host (like http://127.0.0.1:10002/devstoreaccount1/ ),
+        // and this part should be included when obtaining SAS
+        const tableEndpointUrlParts = tableEndpointUrl.split('/');
+        const tableQueryUrl = (tableEndpointUrlParts.length > 3 && !!tableEndpointUrlParts[3]) ?
+            `${tableEndpointUrlParts[3]}/${resource}` :
+            resource;
+
+        const dateInUtc = new Date().toUTCString();
+        const signature = CryptoJS.HmacSHA256(`${dateInUtc}\n/${accountName}/${tableQueryUrl}`, CryptoJS.enc.Base64.parse(accountKey));
+
+        return {
+            'Authorization': `SharedKeyLite ${accountName}:${signature.toString(CryptoJS.enc.Base64)}`,
+            'x-ms-date': dateInUtc,
+            'x-ms-version': '2015-12-11',
+            'Accept': 'application/json;odata=nometadata'
+        };
+    }
+
+    // Creates a user-specific access token for accessing Storage, also adds other needed headers
+    private async CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential: DeviceTokenCredentials): Promise<{}> {
+
+        // The default resourceId ('https://management.core.windows.net/') doesn't work for Storage.
+        // So we need to replace it with the proper one.
+        const storageResourceId = 'https://storage.azure.com';
+
+        const environment = tokenCredential.environment;
+
+        const credentials = new SequentialDeviceTokenCredentials(
+
+            tokenCredential.clientId,
+            tokenCredential.domain,
+            tokenCredential.username,
+            tokenCredential.tokenAudience,
+            new Environment({
+                name: environment.name,
+                portalUrl: environment.portalUrl,
+                managementEndpointUrl: environment.managementEndpointUrl,
+                resourceManagerEndpointUrl: environment.resourceManagerEndpointUrl,
+                activeDirectoryEndpointUrl: environment.activeDirectoryEndpointUrl,
+                activeDirectoryResourceId: storageResourceId
+            }),
+            tokenCredential.tokenCache
+        );
+
+        const token = await credentials.getToken();
+
+        const dateInUtc = new Date().toUTCString();
+        
+        return {
+            'Authorization': `Bearer ${token.accessToken}`,
+            'x-ms-date': dateInUtc,
+            'x-ms-version': '2020-12-06',
+            'Accept': 'application/json;odata=nometadata'
+        };
+    }
+}
+
+// Parallel execution of super.getToken() leads to https://github.com/microsoft/vscode-azure-account/issues/53
+// Therefore we need to make sure the super.getToken() is always invoked sequentially, and we're doing that 
+// with this simple Active Object pattern implementation
+export class SequentialDeviceTokenCredentials extends DeviceTokenCredentials {
+
+    public getToken(): Promise<TokenResponse> {
+
+        return SequentialDeviceTokenCredentials.executeSequentially(() => super.getToken());
+    }
+
+    private static _workQueue: Promise<any> = Promise.resolve();
+
+    private static executeSequentially<T>(action: () => Promise<T>): Promise<T> {
+    
+        // What goes to _workQueue should never throw (otherwise that exception will always get re-thrown later).
+        // That's why we wrap it all with a new Promise(). This promise will resolve only _after_ action completes (or fails).
+        return new Promise((resolve, reject) => {
+    
+            this._workQueue = this._workQueue.then(() => action().then(resolve, reject));
+        });
     }
 }

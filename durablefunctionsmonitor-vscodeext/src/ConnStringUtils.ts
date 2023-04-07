@@ -3,6 +3,8 @@
 
 import { StorageAccount } from '@azure/arm-storage/esm/models';
 import { Settings } from './Settings';
+import { ResourceGraphClient } from '@azure/arm-resourcegraph';
+import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
 export class ConnStringUtils {
     
@@ -101,5 +103,15 @@ export class ConnStringUtils {
     
         return `DefaultEndpointsProtocol=https;AccountName=${account.name};AccountKey=${storageKey};${endpoints}`;
     }
-    
+
+    static async getAzureResources(creds: DeviceTokenCredentials, subscriptionId: string, resourceType: string, resourceName?: string): Promise<any[]>{
+
+        const resourceGraphClient = new ResourceGraphClient(creds);
+        const response = await resourceGraphClient.resources({
+            subscriptions: [subscriptionId],
+            query: `resources | where type == "${resourceType}"${ !!resourceName ? ` and name == "${resourceName}"` : '' }`
+        });
+
+        return response.data ?? [];
+    }
 }

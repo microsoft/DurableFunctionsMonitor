@@ -14,9 +14,7 @@ import { StorageConnectionSettings } from './StorageConnectionSettings';
 import { ConnStringUtils } from './ConnStringUtils';
 import { ConnStringRepository } from './ConnStringRepository';
 import { StorageType, TaskHubsCollector } from './TaskHubsCollector';
-
-// Full typings for this can be found here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
-export type AzureSubscription = { session: { credentials2: any }, subscription: { subscriptionId: string, displayName: string } };
+import { AzureSubscription, EventHubPicker } from './EventHubPicker';
 
 // Root object in the hierarchy. Also serves data for the TreeView.
 export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> { 
@@ -66,6 +64,8 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 this._context.subscriptions.push(this._azureAccount.onSubscriptionsChanged(() => this.refresh()));
             }
         }
+
+        this._eventHubPicker = new EventHubPicker(this._log);
     }
 
     // Does nothing, actually
@@ -158,7 +158,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
                     const subscriptionsNode = parent as SubscriptionTreeItem;
 
-                    const storageAccountsAndTaskHubs = await this.getStorageAccountsAndTaskHubs(subscriptionsNode.azureSubscription!);
+                    const storageAccountsAndTaskHubs = await this.getStorageAccountsAndTaskHubs(subscriptionsNode.azureSubscription);
 
                     for (const acc of storageAccountsAndTaskHubs) {
 
@@ -181,6 +181,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             iconPath,
                             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
                             storageAccountId: acc.account.id,
+                            azureSubscription: subscriptionsNode.azureSubscription,
                             storageType: acc.storageType,
                             storageConnString,
                             hubNames: acc.hubNames,
@@ -221,7 +222,8 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                                 storageAccountId: accountNode.storageAccountId,
                                 storageConnString: accountNode.storageConnString,
                                 hubName: hub,
-                                storageType: accountNode.storageType
+                                storageType: accountNode.storageType,
+                                azureSubscription: accountNode.azureSubscription,
                             };
     
                             node.command = {
@@ -443,29 +445,27 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             return;
         }
 
-        const connSettings = await this.getConnSettingsForTaskHub(taskHubItem);
-        if (!connSettings) {
-            return;
+        try {
+
+            const connSettings = await this.getConnSettingsForTaskHub(taskHubItem);
+            if (!connSettings) {
+                return;
+            }
+    
+            const monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(connSettings);
+    
+            this._inProgress = true;
+    
+            await monitorView.show(messageToWebView);
+    
+            this._onDidChangeTreeData.fire(undefined);
+                
+        } catch (err: any) {
+            
+            vscode.window.showErrorMessage(err.message ?? err);
         }
 
-        // TODO: check if getOrCreateFromStorageConnectionSettings() can throw
-        const monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(connSettings);
-
-        this._inProgress = true;
-
-        // TODO: rewrite to async
-        monitorView.show(messageToWebView).then(() => {
-
-            this._onDidChangeTreeData.fire(undefined);
-            this._inProgress = false;
-
-        }, (err: any) => {
-            // .finally() doesn't work here - vscode.window.showErrorMessage() blocks it until user 
-            // closes the error message. As a result, _inProgress remains true until then, which blocks all commands
-
-            this._inProgress = false;
-            vscode.window.showErrorMessage(!err.message ? err : err.message);
-        });
+        this._inProgress = false;
     }
 
     // Triggers when F5 is being hit
@@ -743,6 +743,8 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     private readonly _azureAccount: any;
     private readonly _resourcesFolderPath: string;
 
+    private readonly _eventHubPicker;
+
     private _inProgress: boolean = false;
 
     private _monitorViews: MonitorViewList;
@@ -1003,16 +1005,18 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
     private async getConnSettingsForTaskHub(treeItem: TaskHubTreeItem): Promise<StorageConnectionSettings | undefined> {
 
-        if (treeItem.storageType != 'netherite') {
+        if (treeItem.storageType !== 'netherite') {
             
             return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName);
         }
 
+        // If this Task Hub was inferred from current project
         if (!!treeItem.eventHubsConnStringFromCurrentProject) {
             
             return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName, treeItem.eventHubsConnStringFromCurrentProject);
         }
 
+        // Trying to get a stored Event Hubs conn string, in a hope that it was persisted for this storage account previously
         let eventHubsConnString = await this._connStringRepo.getEventHubsConnString(treeItem.storageConnString);
 
         if (!!eventHubsConnString) {
@@ -1020,6 +1024,15 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName, eventHubsConnString);
         }
 
+        // If it is an auto-discovered Task Hub, then just asking user to pick an Event Hub
+        if (!!treeItem.azureSubscription) {
+            
+            eventHubsConnString = await this._eventHubPicker.pickEventHubConnectionString(treeItem.azureSubscription);
+
+            return !eventHubsConnString ? undefined : new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName, eventHubsConnString);
+        }
+
+        // Asking a direct question
         eventHubsConnString = await vscode.window.showInputBox({ prompt: 'Event Hubs Connection String', ignoreFocusOut: true });
 
         if (!eventHubsConnString) {
@@ -1039,7 +1052,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
 type SubscriptionTreeItem = vscode.TreeItem & {
 
-    azureSubscription?: AzureSubscription,
+    azureSubscription: AzureSubscription,
 };
 
 type StorageAccountTreeItem = vscode.TreeItem & {
@@ -1048,6 +1061,7 @@ type StorageAccountTreeItem = vscode.TreeItem & {
     storageConnString: string,
     hubNames: string[],
     storageType: StorageType;
+    azureSubscription?: AzureSubscription;
 };
 
 type TaskHubTreeItem = vscode.TreeItem & {
@@ -1057,6 +1071,7 @@ type TaskHubTreeItem = vscode.TreeItem & {
     eventHubsConnStringFromCurrentProject?: string,
     hubName: string,
     storageType: StorageType;
+    azureSubscription?: AzureSubscription;
 };
 
 type StorageAccountAndTaskHubs = { account: StorageAccount, storageKey?: string, hubNames: string[], storageType: StorageType };

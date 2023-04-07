@@ -514,7 +514,7 @@ export class MonitorView
 
     private async navigateToStorageBlob(creds: AzureConnectionInfo, storageAccountName: string, blobPath: string): Promise<void> {
 
-        const storageAccounts = await this.getAzureResources(creds, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        const storageAccounts = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
         if (storageAccounts.length !== 1) {
             return;
         }
@@ -526,7 +526,7 @@ export class MonitorView
 
     private async navigateToStorageQueue(creds: AzureConnectionInfo, storageAccountName: string, queueName: string): Promise<void> {
 
-        const storageAccounts = await this.getAzureResources(creds, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        const storageAccounts = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
         if (storageAccounts.length !== 1) {
             return;
         }
@@ -538,7 +538,7 @@ export class MonitorView
 
     private async navigateToStorageTable(creds: AzureConnectionInfo, storageAccountName: string, tableName: string): Promise<void> {
 
-        const storageAccounts = await this.getAzureResources(creds, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        const storageAccounts = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
         if (storageAccounts.length !== 1) {
             return;
         }
@@ -573,7 +573,7 @@ export class MonitorView
 
     private async navigateToServiceBusQueueOrTopic(creds: AzureConnectionInfo, queueOrTopicName: string): Promise<void> {
 
-        const namespaces = await this.getAzureResources(creds, 'microsoft.servicebus/namespaces') as { id: string, name: string, sku: any, location: string }[];
+        const namespaces = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.servicebus/namespaces') as { id: string, name: string, sku: any, location: string }[];
         if (!namespaces.length) {
             return;
         }
@@ -642,7 +642,7 @@ export class MonitorView
 
     private async navigateToEventHub(creds: AzureConnectionInfo, hubName: string): Promise<void> {
 
-        const namespaces = await this.getAzureResources(creds, 'microsoft.eventhub/namespaces') as { id: string, name: string, sku: any, location: string }[];
+        const namespaces = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.eventhub/namespaces') as { id: string, name: string, sku: any, location: string }[];
         if (!namespaces.length) {
             return;
         }
@@ -699,16 +699,5 @@ export class MonitorView
         const portalUrl = `https://ms.portal.azure.com/#@${creds.tenantId}/resource/${namespace.matchedHubId}`;
 
         await open(portalUrl);
-    }
-
-    private async getAzureResources(creds: AzureConnectionInfo, resourceType: string, resourceName?: string): Promise<any[]>{
-
-        const resourceGraphClient = new ResourceGraphClient(creds.credentials);
-        const response = await resourceGraphClient.resources({
-            subscriptions: [creds.subscriptionId],
-            query: `resources | where type == "${resourceType}"${ !!resourceName ? ` and name == "${resourceName}"` : '' }`
-        });
-
-        return response.data ?? [];
     }
 }
