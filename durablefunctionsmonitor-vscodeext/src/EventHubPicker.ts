@@ -23,7 +23,12 @@ export class EventHubPicker {
             creds,
             subscriptionId,
             'microsoft.eventhub/namespaces'
-        )  as { id: string, name: string, sku: any, location: string }[];
+        ) as { id: string, name: string, sku: any, location: string }[];
+        
+        if (!namespaces.length) {
+            
+            throw new Error(`No Event Hubs namespaces found in current subscription. Connect to your Task Hub by explicitly providing connection strings (use 'Attach to Task Hub...' command for that).`);
+        }
 
         const namespacePickResult = await vscode.window.showQuickPick(
             namespaces.map(n => {

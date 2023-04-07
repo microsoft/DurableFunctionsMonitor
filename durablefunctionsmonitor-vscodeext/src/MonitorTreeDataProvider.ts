@@ -1024,8 +1024,10 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             return new StorageConnectionSettings(treeItem.storageConnString, treeItem.hubName, eventHubsConnString);
         }
 
+        const doingListKeysIsNotAllowed = Settings().taskHubsDiscoveryMode == 'Do not use Storage keys';
+
         // If it is an auto-discovered Task Hub, then just asking user to pick an Event Hub
-        if (!!treeItem.azureSubscription) {
+        if (!!treeItem.azureSubscription && !doingListKeysIsNotAllowed) {
             
             eventHubsConnString = await this._eventHubPicker.pickEventHubConnectionString(treeItem.azureSubscription);
 
