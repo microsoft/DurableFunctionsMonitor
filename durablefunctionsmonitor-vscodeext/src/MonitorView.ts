@@ -6,7 +6,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
 import * as open from 'open';
-import { ResourceGraphClient } from '@azure/arm-resourcegraph';
 import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
 import * as SharedConstants from './SharedConstants';
@@ -570,7 +569,6 @@ export class MonitorView
         });
     }
 
-
     private async navigateToServiceBusQueueOrTopic(creds: AzureConnectionInfo, queueOrTopicName: string): Promise<void> {
 
         const namespaces = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.servicebus/namespaces') as { id: string, name: string, sku: any, location: string }[];
@@ -578,7 +576,7 @@ export class MonitorView
             return;
         }
 
-        const accessToken = (await creds.credentials.getToken()).accessToken;
+        const accessToken = await ConnStringUtils.getAccessTokenForAzureResourceManager(creds.credentials);
 
         const promises = namespaces.map(async ns => {
 
@@ -647,7 +645,7 @@ export class MonitorView
             return;
         }
 
-        const accessToken = (await creds.credentials.getToken()).accessToken;
+        const accessToken = await ConnStringUtils.getAccessTokenForAzureResourceManager(creds.credentials);
 
         const promises = namespaces.map(async ns => {
 

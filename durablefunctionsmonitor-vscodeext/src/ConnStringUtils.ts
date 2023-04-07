@@ -104,6 +104,7 @@ export class ConnStringUtils {
         return `DefaultEndpointsProtocol=https;AccountName=${account.name};AccountKey=${storageKey};${endpoints}`;
     }
 
+    // Queries Azure Resource Manager API for the list of resources of a given type
     static async getAzureResources(creds: DeviceTokenCredentials, subscriptionId: string, resourceType: string, resourceName?: string): Promise<any[]>{
 
         const resourceGraphClient = new ResourceGraphClient(creds);
@@ -113,5 +114,15 @@ export class ConnStringUtils {
         });
 
         return response.data ?? [];
+    }
+
+    // Polyfills ADAL's and MSAL's getToken()
+    static async getAccessTokenForAzureResourceManager(creds: any): Promise<string>{
+
+        const tokenWrapper = await creds.getToken();
+        // Depending on whether ADAL or MSAL is used, the field is called either 'accessToken' or 'token'
+        const accessToken = tokenWrapper.accessToken ?? tokenWrapper.token;
+
+        return accessToken;
     }
 }

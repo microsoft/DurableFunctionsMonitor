@@ -42,7 +42,7 @@ export class TaskHubsCollector {
         return { hubNames: defaultHubs ?? [], storageType: 'default' };
     }
 
-    async getTaskHubNamesWithUserToken(tokenCredential: DeviceTokenCredentials): Promise<{ hubNames: string[], storageType: StorageType }> {
+    async getTaskHubNamesWithUserToken(tokenCredential: any): Promise<{ hubNames: string[], storageType: StorageType }> {
 
         const netheriteHubsPromise = this.getTaskHubNamesFromNetheriteStorageWithUserToken(tokenCredential);
         const defaultHubsPromise = this.getTaskHubNamesFromTableStorageWithUserToken(tokenCredential);
@@ -64,7 +64,7 @@ export class TaskHubsCollector {
         return this.getTaskHubNamesFromTableStorage(this.CreateAuthHeadersForTableStorage(this._accountName, accountKey, this._tableEndpointUrl));
     }
 
-    async getTaskHubNamesFromTableStorageWithUserToken(tokenCredential: DeviceTokenCredentials): Promise<string[] | undefined> {
+    async getTaskHubNamesFromTableStorageWithUserToken(tokenCredential: any): Promise<string[] | undefined> {
 
         return this.getTaskHubNamesFromTableStorage(await this.CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential));
     }
@@ -74,7 +74,7 @@ export class TaskHubsCollector {
         return this.getTaskHubNamesFromNetheriteStorage(this.CreateAuthHeadersForTableStorage(this._accountName, accountKey, this._tableEndpointUrl, `DurableTaskPartitions()`));
     }
 
-    async getTaskHubNamesFromNetheriteStorageWithUserToken(tokenCredential: DeviceTokenCredentials): Promise<string[] | undefined> {
+    async getTaskHubNamesFromNetheriteStorageWithUserToken(tokenCredential: any): Promise<string[] | undefined> {
 
         return this.getTaskHubNamesFromNetheriteStorage(await this.CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential));
     }
@@ -150,37 +150,52 @@ export class TaskHubsCollector {
     }
 
     // Creates a user-specific access token for accessing Storage, also adds other needed headers
-    private async CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential: DeviceTokenCredentials): Promise<{}> {
+    private async CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential: any): Promise<{}> {
 
-        // The default resourceId ('https://management.core.windows.net/') doesn't work for Storage.
-        // So we need to replace it with the proper one.
-        const storageResourceId = 'https://storage.azure.com';
+        let token = '';
 
-        const environment = tokenCredential.environment;
+        if (!tokenCredential.environment && !tokenCredential.clientId && !tokenCredential.username) {
 
-        const credentials = new SequentialDeviceTokenCredentials(
+            // It looks like MSAL is being used
 
-            tokenCredential.clientId,
-            tokenCredential.domain,
-            tokenCredential.username,
-            tokenCredential.tokenAudience,
-            new Environment({
-                name: environment.name,
-                portalUrl: environment.portalUrl,
-                managementEndpointUrl: environment.managementEndpointUrl,
-                resourceManagerEndpointUrl: environment.resourceManagerEndpointUrl,
-                activeDirectoryEndpointUrl: environment.activeDirectoryEndpointUrl,
-                activeDirectoryResourceId: storageResourceId
-            }),
-            tokenCredential.tokenCache
-        );
+            const scope = 'https://storage.azure.com/user_impersonation';
+            
+            token = (await tokenCredential.getToken(scope)).token;
 
-        const token = await credentials.getToken();
+        } else {
+
+            // It looks like ADAL is being used
+
+            // The default resourceId ('https://management.core.windows.net/') doesn't work for Storage.
+            // So we need to replace it with the proper one.
+            const storageResourceId = 'https://storage.azure.com';
+
+            const environment = tokenCredential.environment;
+
+            const credentials = new SequentialDeviceTokenCredentials(
+
+                tokenCredential.clientId,
+                tokenCredential.domain,
+                tokenCredential.username,
+                tokenCredential.tokenAudience,
+                new Environment({
+                    name: environment.name,
+                    portalUrl: environment.portalUrl,
+                    managementEndpointUrl: environment.managementEndpointUrl,
+                    resourceManagerEndpointUrl: environment.resourceManagerEndpointUrl,
+                    activeDirectoryEndpointUrl: environment.activeDirectoryEndpointUrl,
+                    activeDirectoryResourceId: storageResourceId
+                }),
+                tokenCredential.tokenCache
+            );
+
+            token = (await credentials.getToken()).accessToken;
+        }
 
         const dateInUtc = new Date().toUTCString();
         
         return {
-            'Authorization': `Bearer ${token.accessToken}`,
+            'Authorization': `Bearer ${token}`,
             'x-ms-date': dateInUtc,
             'x-ms-version': '2020-12-06',
             'Accept': 'application/json;odata=nometadata'

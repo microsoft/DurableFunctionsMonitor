@@ -3,7 +3,6 @@
 
 import * as vscode from 'vscode';
 import axios from 'axios';
-import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 import { ConnStringUtils } from './ConnStringUtils';
 
 // Full typings for this can be found here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
@@ -16,7 +15,8 @@ export class EventHubPicker {
     // Asks user to choose an Event Hub connection string
     async pickEventHubConnectionString(subscription: AzureSubscription): Promise<string | undefined> {
 
-        const creds: DeviceTokenCredentials = subscription.session.credentials2;
+        // Depending on whether ADAL or MSAL is used, this will contain either DeviceTokenCredentials or TokenCredential
+        const creds: any = subscription.session.credentials2;
         const subscriptionId = subscription.subscription.subscriptionId;
 
         const namespaces = await ConnStringUtils.getAzureResources(
@@ -41,7 +41,7 @@ export class EventHubPicker {
             return;
         }
 
-        const accessToken = (await creds.getToken()).accessToken;
+        const accessToken = await ConnStringUtils.getAccessTokenForAzureResourceManager(creds);
 
         let authRule: string | undefined = '';
 
