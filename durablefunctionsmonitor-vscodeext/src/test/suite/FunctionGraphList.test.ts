@@ -23,7 +23,7 @@ suite('FunctionGraphList Test Suite', () => {
 
 		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
 
-		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => functionProjectPath });
+		Object.defineProperty(vscode.workspace, 'workspaceFolders', { get: () => [{ uri: vscode.Uri.file(functionProjectPath) }] });
 
 		// Act
 

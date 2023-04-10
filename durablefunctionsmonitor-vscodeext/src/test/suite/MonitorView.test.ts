@@ -40,11 +40,9 @@ suite('MonitorView Test Suite', () => {
 			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend')
 		};
 
-		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backend.binariesFolder });
-		
 		const functionGraphList: any = {};
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { }, backend.binariesFolder);
 
 		var iAmReadyMessageSent = false;
 
@@ -339,9 +337,8 @@ suite('MonitorView Test Suite', () => {
 		};
 
 		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
-		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backendFolder });
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { }, backendFolder);
 
 		(monitorView as any)._functionsAndProxies[request.url] = {
 			filePath: path.join(backendFolder, 'Functions', 'About.cs'),
@@ -385,7 +382,6 @@ suite('MonitorView Test Suite', () => {
 		};
 
 		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
-		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backendFolder });
 
 		const errorMessageToThrow = 'TestErrorMessageToCheckGotoBinding';
 		let errorMessageThrown: string = '';
@@ -398,7 +394,7 @@ suite('MonitorView Test Suite', () => {
 		}
 		const log = (s: string) => { errorMessageThrown = s; }
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, getTokenCredentialsForGivenConnectionString, () => { }, log);
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, getTokenCredentialsForGivenConnectionString, () => { }, log, backendFolder);
 
 		(monitorView as any)._functionsAndProxies[request.url] = {
 			bindings: [ {} ]
@@ -454,7 +450,6 @@ suite('MonitorView Test Suite', () => {
 		};
 
 		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
-		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => backendFolder });
 
 		const functionGraphList: any = {
 
@@ -466,7 +461,7 @@ suite('MonitorView Test Suite', () => {
 			}
 		};
 
-		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { });
+		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { }, backendFolder);
 
 		// Act
 
