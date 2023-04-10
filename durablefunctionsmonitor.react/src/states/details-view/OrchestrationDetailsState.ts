@@ -601,13 +601,6 @@ export class OrchestrationDetailsState extends ErrorMessageState {
         }
     }
 
-    showFunctionsGraph(): void {
-
-        this.backendClient.call('VisualizeFunctionsAsAGraph', '').then(() => {}, err => {
-            console.log(`Failed to goto functions graph: ${err.message}`);
-        });
-    }
-
     applyTimeFrom() {
         if (DateTimeHelpers.isValidMoment(this._timeFrom) && this._oldTimeFrom !== this._timeFrom) {
             this.reloadHistory();

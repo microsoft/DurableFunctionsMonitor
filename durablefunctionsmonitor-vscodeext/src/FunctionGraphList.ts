@@ -27,10 +27,8 @@ export class FunctionGraphList {
 
     async traverseFunctions(projectPath: string): Promise<TraversalResult> {
 
-        const isCurrentProject = projectPath === vscode.workspace.rootPath;
-
-        if (isCurrentProject && !!this._traversalResult) {
-            return this._traversalResult;
+        if (!!this._traversalResults[projectPath]) {
+            return this._traversalResults[projectPath]; 
         }
 
         // If it is a git repo, cloning it
@@ -49,9 +47,9 @@ export class FunctionGraphList {
         const result = await FunctionProjectParser.parseFunctions(projectPath, new FileSystemWrapper(), this._log);
         
         // Caching current project's functions
-        if (isCurrentProject) {
+        if (vscode.workspace.workspaceFolders?.some(f => f.uri.fsPath === projectPath)) {
 
-            this._traversalResult = { functions: result.functions, proxies: result.proxies };
+            this._traversalResults[projectPath] = { functions: result.functions, proxies: result.proxies };
 
             // And cleanup the cache on any change to the file system
             if (!!this._watcher) {
@@ -61,7 +59,7 @@ export class FunctionGraphList {
 
             const cacheCleanupRoutine = () => {
                 
-                this._traversalResult = undefined;
+                this._traversalResults = {};
 
                 if (!!this._watcher) {
                     this._watcher.dispose();
@@ -86,7 +84,7 @@ export class FunctionGraphList {
             return;
         }
 
-        var defaultProjectPath = '';
+        let defaultProjectPath = '';
         const ws = vscode.workspace;
         if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
             defaultProjectPath = ws.rootPath;
@@ -131,7 +129,7 @@ export class FunctionGraphList {
     }
 
     private _views: FunctionGraphView[] = [];
-    private _traversalResult?: TraversalResult;
+    private _traversalResults: { [path: string] : TraversalResult } = {};
     private _watcher?: vscode.FileSystemWatcher;
     private _tempFolders: string[] = [];
     private _log: (line: string) => void;

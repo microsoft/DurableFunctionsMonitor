@@ -41,12 +41,9 @@ export class MonitorView
         private _functionGraphList: FunctionGraphList,
         private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureConnectionInfo | undefined>,
         private _onViewStatusChanged: () => void,
-        private _log: (line: string) => void) {
-        
-        const ws = vscode.workspace;
-        if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
-            this._functionProjectPath = ws.rootPath;
-        }
+        private _log: (line: string) => void,
+        private _functionProjectPath?: string
+    ) {
     }
 
     // Closes all WebViews
@@ -157,8 +154,6 @@ export class MonitorView
 
     // Functions and proxies currently shown
     private _functionsAndProxies: { [name: string]: { filePath?: string, pos?: number, bindings?: any[] } } = {};
-
-    private _functionProjectPath: string = '';
 
     private static readonly ViewType = 'durableFunctionsMonitor';
     private static readonly GlobalStateName = MonitorView.ViewType + 'WebViewState';
@@ -274,14 +269,6 @@ export class MonitorView
 
                 return;
             }
-            case 'VisualizeFunctionsAsAGraph':
-
-                const ws = vscode.workspace;
-                if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
-                    this._functionGraphList.visualizeProjectPath(ws.rootPath);
-                }
-
-                return;
         }
 
         // Intercepting request for Function Map

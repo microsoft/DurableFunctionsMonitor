@@ -43,11 +43,24 @@ export class MonitorViewList {
     }
 
     // Creates a new MonitorView with provided connection settings
-    getOrCreateFromStorageConnectionSettings(connSettings: StorageConnectionSettings): MonitorView {
+    getOrCreateFromStorageConnectionSettings(connSettings: StorageConnectionSettings, projectPath?: string): MonitorView {
 
         var monitorView = this._monitorViews[connSettings.hashKey];
         if (!!monitorView) {
             return monitorView;
+        }
+
+        if (!!vscode.workspace.workspaceFolders && !projectPath) {
+
+            for (const workspaceFolder of vscode.workspace.workspaceFolders) {
+
+                // Using the first Functions project in the workspace for generating Functions graph
+                if (fs.existsSync(path.join(workspaceFolder.uri.fsPath, 'host.json'))) {
+                
+                    projectPath = workspaceFolder.uri.fsPath;
+                    break;
+                }
+            }
         }
 
         const backendProcess = this.getOrAddBackend(connSettings);
@@ -58,7 +71,9 @@ export class MonitorViewList {
             this._functionGraphList,
             this._getTokenCredentialsForGivenConnectionString,
             this._onViewStatusChanged,
-            this._log);
+            this._log,
+            projectPath
+        );
         
         this._monitorViews[connSettings.hashKey] = monitorView;
         return monitorView;
@@ -100,14 +115,14 @@ export class MonitorViewList {
     }
 
     // Parses local project files and tries to infer connction settings from them
-    getStorageConnectionSettingsFromCurrentProject(defaultTaskHubName?: string): StorageConnectionSettings | null {
+    getStorageConnectionSettingsFromCurrentProject(defaultTaskHubName?: string, projectPath?: string): StorageConnectionSettings | null {
 
-        const hostJson = this.readHostJson();
+        const hostJson = this.readHostJson(projectPath);
         let hubName = hostJson.hubName;
 
         if (hostJson.storageProviderType === 'mssql') {
             
-            const sqlConnectionString = this.getValueFromLocalSettings(hostJson.connectionStringName);
+            const sqlConnectionString = this.getValueFromLocalSettings(hostJson.connectionStringName, projectPath);
             if (!sqlConnectionString) {
                 return null;
             }
@@ -125,7 +140,7 @@ export class MonitorViewList {
 
         if (hostJson.storageProviderType === 'netherite') {
             
-            const storageConnString = this.getValueFromLocalSettings(hostJson.connectionStringName);
+            const storageConnString = this.getValueFromLocalSettings(hostJson.connectionStringName, projectPath);
             if (!storageConnString) {
                 return null;
             }
@@ -134,7 +149,7 @@ export class MonitorViewList {
                 return null;
             }
 
-            const hubsConnString = this.getValueFromLocalSettings(hostJson.otherConnectionStringName);
+            const hubsConnString = this.getValueFromLocalSettings(hostJson.otherConnectionStringName, projectPath);
             if (!hubsConnString) {
                 return null;
             }
@@ -142,7 +157,7 @@ export class MonitorViewList {
             return new StorageConnectionSettings(ConnStringUtils.ExpandEmulatorShortcutIfNeeded(storageConnString), hubName, hubsConnString);
         }
 
-        const storageConnString = this.getValueFromLocalSettings('AzureWebJobsStorage');
+        const storageConnString = this.getValueFromLocalSettings('AzureWebJobsStorage', projectPath);
         if (!storageConnString) {
             return null;
         }
@@ -424,14 +439,17 @@ export class MonitorViewList {
         return new StorageConnectionSettings(connSettings.storageConnString, connSettings.hubName, eventHubsConnString);
     }
 
-    private getValueFromLocalSettings(valueName: string): string {
+    private getValueFromLocalSettings(valueName: string, projectPath?: string): string {
 
         try {
+
+            if (!projectPath) {
+                projectPath = vscode.workspace.rootPath;
+            }
         
-            const ws = vscode.workspace;
-            if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'local.settings.json'))) {
+            if (!!projectPath && fs.existsSync(path.join(projectPath, 'local.settings.json'))) {
     
-                const localSettings = JSON.parse(fs.readFileSync(path.join(ws.rootPath, 'local.settings.json'), 'utf8'));
+                const localSettings = JSON.parse(fs.readFileSync(path.join(projectPath, 'local.settings.json'), 'utf8'));
     
                 if (!!localSettings.Values && !!localSettings.Values[valueName]) {
                     return localSettings.Values[valueName];
@@ -446,7 +464,7 @@ export class MonitorViewList {
         return '';
     }
 
-    private readHostJson(): HostJsonInfo {
+    private readHostJson(projectPath?: string): HostJsonInfo {
 
         const result: HostJsonInfo = {
             hubName: '',
@@ -456,13 +474,16 @@ export class MonitorViewList {
             schemaName: undefined
         };
 
-        const ws = vscode.workspace;
-        if (!!ws.rootPath && fs.existsSync(path.join(ws.rootPath, 'host.json'))) {
+        if (!projectPath) {
+            projectPath = vscode.workspace.rootPath;
+        }
+
+        if (!!projectPath && fs.existsSync(path.join(projectPath, 'host.json'))) {
 
             var hostJson;
             try {
 
-                hostJson = JSON.parse(fs.readFileSync(path.join(ws.rootPath, 'host.json'), 'utf8'));
+                hostJson = JSON.parse(fs.readFileSync(path.join(projectPath, 'host.json'), 'utf8'));
                 
             } catch (err) {
 

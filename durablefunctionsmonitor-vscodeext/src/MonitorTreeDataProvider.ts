@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as path from 'path';
 import { StorageManagementClient } from '@azure/arm-storage';
 import { StorageAccount, StorageAccountKey } from '@azure/arm-storage/src/models';
@@ -98,19 +99,25 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
                     });
 
-                    const curConnSettings = this._monitorViews.getStorageConnectionSettingsFromCurrentProject('TestHubName');
-                    if (!!curConnSettings) {
+                    if (!!vscode.workspace.workspaceFolders) {
+                        
+                        for (const folder of vscode.workspace.workspaceFolders) {
 
-                        result.push({
-                            contextValue: 'localProject',
-                            label: 'Local Project',
-                            tooltip: 'Task Hub used by your currently opened project',
-                            iconPath: {
-                                light: path.join(this._resourcesFolderPath, 'light', 'localProject.svg'),
-                                dark: path.join(this._resourcesFolderPath, 'dark', 'localProject.svg')
-                            },
-                            collapsibleState: vscode.TreeItemCollapsibleState.Expanded
-                        });
+                            if (!!fs.existsSync(path.join(folder.uri.fsPath, 'host.json'))) {
+                                
+                                result.push({
+                                    contextValue: 'localProject',
+                                    label: 'Local Project',
+                                    tooltip: folder.uri.fsPath,
+                                    description: folder.name,
+                                    iconPath: {
+                                        light: path.join(this._resourcesFolderPath, 'light', 'localProject.svg'),
+                                        dark: path.join(this._resourcesFolderPath, 'dark', 'localProject.svg')
+                                    },
+                                    collapsibleState: vscode.TreeItemCollapsibleState.Expanded
+                                });
+                            }
+                        }
                     }
 
                     result.push({
@@ -242,12 +249,13 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 
                 case 'localProject':
 
-                    const storageConnectionSettings = this._monitorViews.getStorageConnectionSettingsFromCurrentProject('TestHubName');
+                    const projectPath = parent.tooltip as string;
+                    const storageConnectionSettings = this._monitorViews.getStorageConnectionSettingsFromCurrentProject('TestHubName', projectPath);
 
                     if (!!storageConnectionSettings) {
                         
                         // Creating a watcher to refresh the tree once host.json file changes
-                        this.monitorHostJson();
+                        this.monitorHostJson(projectPath);
 
                         const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
 
@@ -258,7 +266,8 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                             storageConnString: storageConnectionSettings.storageConnString,
                             eventHubsConnStringFromCurrentProject: storageConnectionSettings.eventHubsConnString,
                             hubName: storageConnectionSettings.hubName,
-                            storageType: storageConnectionSettings.isNetherite ? 'netherite' : 'default'
+                            storageType: storageConnectionSettings.isNetherite ? 'netherite' : 'default',
+                            projectPath
                         };
     
                         node.command = {
@@ -452,7 +461,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 return;
             }
     
-            const monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(connSettings);
+            const monitorView = this._monitorViews.getOrCreateFromStorageConnectionSettings(connSettings, taskHubItem.projectPath);
     
             this._inProgress = true;
     
@@ -755,22 +764,23 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> = new vscode.EventEmitter<vscode.TreeItem | undefined>();
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> = this._onDidChangeTreeData.event;
 
-    private _hostJsonWatcher?: vscode.FileSystemWatcher;
+    private _hostJsonWatchers: { [path: string] : vscode.FileSystemWatcher } = {};
 
     // Refreshes TreeView when host.json file changes
-    private monitorHostJson(): void {
+    private monitorHostJson(projectPath: string): void {
 
-        if (!vscode.workspace.rootPath || !!this._hostJsonWatcher) {
+        if (!!this._hostJsonWatchers[projectPath]) {
             return;
         }
 
-        this._hostJsonWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.workspace.rootPath, 'host.json'));
+        const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(projectPath, 'host.json'));
 
-        this._hostJsonWatcher.onDidChange(() => this._onDidChangeTreeData.fire(undefined));
-        this._hostJsonWatcher.onDidCreate(() => this._onDidChangeTreeData.fire(undefined));
-        this._hostJsonWatcher.onDidDelete(() => this._onDidChangeTreeData.fire(undefined));
+        watcher.onDidChange(() => this._onDidChangeTreeData.fire(undefined));
+        watcher.onDidCreate(() => this._onDidChangeTreeData.fire(undefined));
+        watcher.onDidDelete(() => this._onDidChangeTreeData.fire(undefined));
 
-        this._context.subscriptions.push(this._hostJsonWatcher);
+        this._hostJsonWatchers[projectPath] = watcher;
+        this._context.subscriptions.push(watcher);
     }
 
     // Shows or makes active the main view
@@ -1081,6 +1091,7 @@ type TaskHubTreeItem = vscode.TreeItem & {
     hubName: string,
     storageType: StorageType;
     azureSubscription?: AzureSubscription;
+    projectPath?: string;
 };
 
 type StorageAccountAndTaskHubs = { account: StorageAccount, storageKey?: string, hubNames: string[], storageType: StorageType };
