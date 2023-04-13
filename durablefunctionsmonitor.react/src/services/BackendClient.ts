@@ -19,6 +19,9 @@ export class BackendClient implements IBackendClient {
     get routePrefixAndTaskHubName(): string { return RoutePrefix + this._getTaskHubName(); }
 
     constructor(private _getTaskHubName: () => string, private _getAuthorizationHeaderAsync: () => Promise<{}>) {
+
+        // Turning redirects off, as we don't ever need them anyway
+        axios.defaults.maxRedirects = 0;
     }
 
     call(method: Method, url: string, data?: any): Promise<any> {

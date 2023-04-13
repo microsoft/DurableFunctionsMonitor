@@ -71,18 +71,11 @@ export class LoginState extends ErrorMessageState {
             );
     }
 
-    constructor() {
-        super();
-
-        // Turning redirects off, as we don't ever need them anyway
-        axios.defaults.maxRedirects = 0;
-
-        this.login();
-    }
-
-    login() {
+    login(): Promise<void> {
+        
         const uri = `${BackendUri}/easyauth-config`;
-        axios.get(uri).then(response => this.loginWithEasyAuthConfig(response.data), err => this.showError('Failed to load auth config', err));
+        return axios.get(uri)
+            .then(response => this.loginWithEasyAuthConfig(response.data), err => this.showError('Failed to load auth config', err));
     }
 
     logout() {
@@ -237,6 +230,7 @@ export class LoginState extends ErrorMessageState {
                     
                     // Redirecting to that Task Hub
                     window.location.pathname = this.locationPathName + hubNames[0];
+
                 } else {
 
                     // Asking the user to choose from

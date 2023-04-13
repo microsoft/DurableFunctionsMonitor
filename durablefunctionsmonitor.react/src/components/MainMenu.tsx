@@ -23,11 +23,6 @@ export class MainMenu extends React.Component<{ state: MainMenuState, doRefresh:
     static contextType = DfmContextType;
     context!: React.ContextType<typeof DfmContextType>;
 
-    componentDidMount() {
-        // Querying the backend for connection info and displaying it in window title
-        this.props.state.setWindowTitle();
-    }
-
     render(): JSX.Element {
         const state = this.props.state;
 
@@ -54,10 +49,10 @@ export class MainMenu extends React.Component<{ state: MainMenuState, doRefresh:
                     <FormControlLabel control={<Radio color="primary"/>} label="Local" value={'true'} />
                 </RadioGroup>
 
-                <MenuItem onClick={() => state.showConnectionParamsDialog()}>Manage Storage Connection Settings...</MenuItem>
-                <MenuItem onClick={() => state.showPurgeHistoryDialog()}>Purge Instance History...</MenuItem>
-                <MenuItem onClick={() => state.showCleanEntityStorageDialog()}>Clean Entity Storage...</MenuItem>
-                <MenuItem onClick={() => state.showStartNewInstanceDialog()}>Start New Orchestration Instance...</MenuItem>
+                <MenuItem onClick={() => state.showConnectionParamsDialog()}>View Storage Connection Settings...</MenuItem>
+                <MenuItem disabled={this.context.readOnlyMode} onClick={() => state.showPurgeHistoryDialog()}>Purge Instance History...</MenuItem>
+                <MenuItem disabled={this.context.readOnlyMode} onClick={() => state.showCleanEntityStorageDialog()}>Clean Entity Storage...</MenuItem>
+                <MenuItem disabled={this.context.readOnlyMode} onClick={() => state.showStartNewInstanceDialog()}>Start New Orchestration Instance...</MenuItem>
             </Menu>
         </>);
     }

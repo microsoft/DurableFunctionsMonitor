@@ -26,10 +26,14 @@ import { OrchestrationFields } from './OrchestrationFields';
 import { CustomTabStyle } from '../../theme';
 import { SaveAsSvgButton, getStyledSvg } from '../SaveAsSvgButton';
 import { OrchestrationDetailsFunctionGraph } from './OrchestrationDetailsFunctionGraph';
+import { DfmContextType } from '../../DfmContext';
 
 // Orchestration Details view
 @observer
 export class OrchestrationDetails extends React.Component<{ state: OrchestrationDetailsState }> {
+
+    static contextType = DfmContextType;
+    context!: React.ContextType<typeof DfmContextType>;
 
     componentDidMount() {
 
@@ -61,10 +65,10 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
                 <Toolbar variant="dense" className="details-top-toolbar">
 
                     {state.details.entityType === "Orchestration" && (
-                        <OrchestrationButtons state={state} disabled={state.inProgress} />
+                        <OrchestrationButtons state={state} disabled={this.context.readOnlyMode || state.inProgress} />
                     )}
                     {state.details.entityType === "DurableEntity" && (
-                        <DurableEntityButtons state={state} disabled={state.inProgress} />
+                        <DurableEntityButtons state={state} disabled={this.context.readOnlyMode || state.inProgress} />
                     )}
                     
                     <Box width={20} />

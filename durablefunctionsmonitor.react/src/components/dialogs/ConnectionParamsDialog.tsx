@@ -22,17 +22,13 @@ export class ConnectionParamsDialog extends React.Component<{ state: ConnectionP
 
         return (<Dialog open={state.dialogOpen} onClose={() => state.dialogOpen = false}>
             
-            <DialogTitle>Manage Storage Connection Settings</DialogTitle>
+            <DialogTitle>View Storage Connection Settings</DialogTitle>
             <DialogContent>
 
                 {state.inProgress ? (<LinearProgress />) : (<Box height={4} />)}
                 
                 <DialogContentText>
-                    {
-                        state.isReadonly ?
-                            "Change the below values via your application settings ('DFM_HUB_NAME' and 'AzureWebJobsStorage' respectively)" :
-                            "The below values will be saved to local.settings.json file."
-                    }
+                    Change the below values via your application settings ('DFM_HUB_NAME' and 'AzureWebJobsStorage' respectively)
                 </DialogContentText>
 
                 <TextField
@@ -54,7 +50,7 @@ export class ConnectionParamsDialog extends React.Component<{ state: ConnectionP
                     label="Azure Storage Connection String"
                     fullWidth
                     disabled={state.inProgress}
-                    InputProps={{ readOnly: state.isReadonly }}
+                    InputProps={{ readOnly: true }}
                     InputLabelProps={{ shrink: true }}
                     value={state.connectionString}
                     onChange={(evt) => state.connectionString = evt.target.value as string}
@@ -65,18 +61,8 @@ export class ConnectionParamsDialog extends React.Component<{ state: ConnectionP
             </DialogContent>
             <DialogActions>
                 <Button onClick={() => state.dialogOpen = false} color={PrimaryButtonColor}>
-                    Cancel
+                    Close
                 </Button>
-
-                {(!state.isReadonly) && (
-                    <Button
-                        onClick={() => state.saveConnectionParams()}
-                        disabled={!state.isDirty || !state.hubName || !state.connectionString || state.inProgress}
-                        color="secondary"
-                    >
-                        Save
-                    </Button>
-                )}
 
             </DialogActions>
                 

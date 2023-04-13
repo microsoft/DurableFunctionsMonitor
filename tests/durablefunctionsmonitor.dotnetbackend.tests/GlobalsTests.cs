@@ -48,7 +48,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            var res = await Globals.HandleAuthAndErrors(request, OperationKind.Read, null, null, logMoq.Object, async () => {
+            var res = await Globals.HandleAuthAndErrors(request, OperationKind.Read, null, null, logMoq.Object, async mode => {
                 return new OkResult();
             });
 
@@ -87,7 +87,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            var res = (BadRequestObjectResult) (await Globals.HandleAuthAndErrors(request, OperationKind.Read, null, null, logMoq.Object, async () => {
+            var res = (BadRequestObjectResult) (await Globals.HandleAuthAndErrors(request, OperationKind.Read, null, null, logMoq.Object, async mode => {
                 throw new MyTestException(myErrorMessage);
             }));
 

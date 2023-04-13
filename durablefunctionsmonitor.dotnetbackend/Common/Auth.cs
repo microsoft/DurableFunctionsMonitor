@@ -86,8 +86,13 @@ namespace DurableFunctionsMonitor.DotNetBackend
             return false;
         }
 
-        // Validates that the incoming request is properly authenticated
-        public static async Task ValidateIdentityAsync(ClaimsPrincipal principal, IHeaderDictionary headers, IRequestCookieCollection cookies, string taskHubName, OperationKind operationKind)
+        /// <summary>
+        /// Validates that the incoming request is properly authenticated. Throws if not.
+        /// </summary>
+        /// <returns><see cref="DfmMode"/> value for current request (so that it can be returned to the client) </returns>
+        /// <exception cref="AccessViolationException"></exception>
+        /// <exception cref="UnauthorizedAccessException"></exception>
+        public static async Task<DfmMode> ValidateIdentityAsync(ClaimsPrincipal principal, IHeaderDictionary headers, IRequestCookieCollection cookies, string taskHubName, OperationKind operationKind)
         {
             // Checking if the endpoint is in ReadOnly mode
             if (operationKind != OperationKind.Read && DfmEndpoint.Settings.Mode == DfmMode.ReadOnly)
@@ -104,7 +109,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             // Starting with nonce (used when running as a VsCode extension)
             if (IsNonceSetAndValid(headers))
             {
-                return;
+                return DfmEndpoint.Settings.Mode;
             }
 
             // Then validating anti-forgery token
@@ -154,7 +159,11 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 {
                     throw new AccessViolationException($"User {userNameClaim.Value} is in read-only mode");
                 }
+
+                return userIsInReadonlyRole ? DfmMode.ReadOnly : DfmEndpoint.Settings.Mode;
             }
+
+            return DfmEndpoint.Settings.Mode;
         }
 
         public static async Task<IEnumerable<string>> GetTaskHubNamesFromStorage(string connStringName)

@@ -105,13 +105,13 @@ namespace DurableFunctionsMonitor.DotNetBackend
         }
 
         // Applies authN/authZ rules and handles incoming HTTP request. Also does error handling.
-        public static async Task<IActionResult> HandleAuthAndErrors(this HttpRequest req, OperationKind kind, string connName, string hubName, ILogger log, Func<Task<IActionResult>> todo)
+        public static async Task<IActionResult> HandleAuthAndErrors(this HttpRequest req, OperationKind kind, string connName, string hubName, ILogger log, Func<DfmMode, Task<IActionResult>> todo)
         {
             return await HandleErrors(req, log, async () =>
             {
-                await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, CombineConnNameAndHubName(connName, hubName), kind);
+                var mode = await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, CombineConnNameAndHubName(connName, hubName), kind);
 
-                return await todo();
+                return await todo(mode);
             });
         }
 

@@ -18,6 +18,8 @@ import { StartNewInstanceDialogState } from './dialogs/StartNewInstanceDialogSta
 import { TypedLocalStorage } from './TypedLocalStorage';
 import { VsCodeBackendClient } from '../services/VsCodeBackendClient';
 import { VsCodeTypedLocalStorage } from './VsCodeTypedLocalStorage';
+import { dfmContextInstance } from '../DfmContext';
+import { ErrorMessageState } from './ErrorMessageState';
 
 // This method is provided by VsCode, when running inside a WebView
 declare const acquireVsCodeApi: () => any;
@@ -33,7 +35,7 @@ enum DfmViewModeEnum {
 declare const DfmViewMode: DfmViewModeEnum;
 
 // Main Application State
-export class MainState  {
+export class MainState extends ErrorMessageState {
     
     readonly loginState?: LoginState;    
     readonly mainMenuState?: MainMenuState;
@@ -68,6 +70,7 @@ export class MainState  {
     }
     
     constructor() {
+        super();
 
         // checking whether we're inside VsCode
         var vsCodeApi: any = undefined;
@@ -131,13 +134,29 @@ export class MainState  {
                 
             } else {
 
-                this.mainMenuState = new MainMenuState(backendClient, this.purgeHistoryDialogState, this.cleanEntityStorageDialogState, this.connectionParamsDialogState, this.startNewInstanceDialogState);
+                this.mainMenuState = new MainMenuState(this.purgeHistoryDialogState, this.cleanEntityStorageDialogState, this.connectionParamsDialogState, this.startNewInstanceDialogState);
                 
                 this.orchestrationsState = new OrchestrationsState(IsFunctionGraphAvailable,
                     backendClient,
                     new TypedLocalStorage<OrchestrationsState>('OrchestrationsState'),
-                    funcName => this.startNewInstanceDialogState.showWithFunctionName(funcName));
+                    funcName => this.startNewInstanceDialogState.showWithFunctionName(funcName));                
             }
+
+            this.loginState.login().then(() => {
+
+                backendClient.call('GET', '/about').then(response => {
+
+                    dfmContextInstance.readOnlyMode = !(response.permissions?.includes('DurableFunctionsMonitor.ReadWrite'));
+
+                    const isReadOnly = dfmContextInstance.readOnlyMode ? ', ReadOnly' : '';
+    
+                    document.title = `Durable Functions Monitor (${response.accountName}/${response.hubName}${isReadOnly}) v${response.version}`;
+
+                }, err => {
+
+                    this.showError('Failed to get user permissions', err);
+                });
+            });
         }
     }
 

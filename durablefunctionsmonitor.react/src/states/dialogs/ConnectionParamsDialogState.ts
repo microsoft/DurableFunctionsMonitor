@@ -18,9 +18,6 @@ export class ConnectionParamsDialogState extends ErrorMessageState {
     get inProgress(): boolean { return this._inProgress; }
 
     @computed
-    get isReadonly(): boolean { return this._isReadOnly; }
-
-    @computed
     get isDirty(): boolean {
         return (this.connectionString !== this._oldConnectionString) || (this.hubName !== this._oldHubName);
     }
@@ -38,7 +35,6 @@ export class ConnectionParamsDialogState extends ErrorMessageState {
     
                 this.connectionString = this._oldConnectionString = response.connectionString;
                 this.hubName = this._oldHubName = response.hubName;
-                this._isReadOnly = response.isReadOnly;
     
             }, err => this.showError('Load failed', err))
             .finally(() => {
@@ -50,34 +46,12 @@ export class ConnectionParamsDialogState extends ErrorMessageState {
     constructor(private _backendClient: IBackendClient) {
         super();
     }
-    
-    saveConnectionParams() {
-
-        this._inProgress = true;
-
-        this._backendClient.call('PUT', '/manage-connection', {
-            connectionString: this.connectionString !== this._oldConnectionString ? this.connectionString : '',
-            hubName: this.hubName
-        }).then(() => {
-        
-            this._dialogOpen = false;
-
-            alert(`Your changes were saved to local.settings.json file, but they cannot be picked up automatically. Please, restart the Function Host for them to take effect.`);
-
-        }, err => this.showError('Save failed', err))
-        .finally(() => {
-            this._inProgress = false;
-        });
-    }
 
     @observable
     private _dialogOpen: boolean = false;
 
     @observable
     private _inProgress: boolean = false;
-
-    @observable
-    private _isReadOnly: boolean = false;
 
     private _oldConnectionString: string;
     private _oldHubName: string;

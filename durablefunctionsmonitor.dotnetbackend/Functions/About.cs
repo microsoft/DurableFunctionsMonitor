@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
@@ -25,7 +26,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             ILogger log
         )
         {
-            return req.HandleAuthAndErrors(OperationKind.Read, connName, hubName, log, async () => {
+            return req.HandleAuthAndErrors(OperationKind.Read, connName, hubName, log, async mode => {
 
                 string accountName = string.Empty;
 
@@ -36,11 +37,19 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     accountName = match.Groups[1].Value;
                 }
 
+                var permissions = new List<string>();
+
+                if (mode == DfmMode.Normal)
+                {
+                    permissions.Add("DurableFunctionsMonitor.ReadWrite");
+                }
+
                 return new 
                 {
                     accountName,
                     hubName = hubName,
-                    version = Assembly.GetExecutingAssembly().GetName().Version.ToString()
+                    version = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                    permissions
                 }
                 .ToJsonContentResult();
             });

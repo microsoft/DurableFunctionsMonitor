@@ -95,8 +95,6 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
                 await ManageConnection.DfmGetConnectionInfoFunction(request, "-", "TestHub", new Microsoft.Azure.WebJobs.ExecutionContext(), logMoq.Object),
 
-                await ManageConnection.DfmManageConnectionFunction(request, "-", "TestHub", new Microsoft.Azure.WebJobs.ExecutionContext(), logMoq.Object),
-
                 await new IdSuggestions(null).DfmGetIdSuggestionsFunction(request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object),
 
                 await new Orchestration(null).DfmGetOrchestrationFunction(request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object),

@@ -3,7 +3,6 @@
 
 import { observable } from 'mobx'
 
-import { IBackendClient } from '../services/IBackendClient';
 import { PurgeHistoryDialogState } from './dialogs/PurgeHistoryDialogState';
 import { CleanEntityStorageDialogState } from './dialogs/CleanEntityStorageDialogState';
 import { ConnectionParamsDialogState } from './dialogs/ConnectionParamsDialogState';
@@ -15,8 +14,7 @@ export class MainMenuState {
     @observable
     menuAnchorElement?: Element;
 
-    constructor(private _backendClient: IBackendClient,
-        private _purgeHistoryDialogState: PurgeHistoryDialogState,
+    constructor(private _purgeHistoryDialogState: PurgeHistoryDialogState,
         private _cleanEntityStorageDialogState: CleanEntityStorageDialogState,
         private _connectionParamsDialogState: ConnectionParamsDialogState,
         private _startNewInstanceDialogState: StartNewInstanceDialogState) {
@@ -44,12 +42,5 @@ export class MainMenuState {
         this.menuAnchorElement = undefined;
 
         this._startNewInstanceDialogState.dialogOpen = true;
-    }
-
-    setWindowTitle() {
-        
-        this._backendClient.call('GET', '/about').then(response => {
-            document.title = `Durable Functions Monitor (${response.accountName}/${response.hubName}) v${response.version}`;
-        });
     }
 }

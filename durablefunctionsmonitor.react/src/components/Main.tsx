@@ -23,6 +23,7 @@ import { ConnectionParamsDialog } from './dialogs/ConnectionParamsDialog';
 import { StartNewInstanceDialog } from './dialogs/StartNewInstanceDialog';
 
 import { DfmContextType, dfmContextInstance } from '../DfmContext';
+import { ErrorMessage } from './ErrorMessage';
 
 // DFM-specific route prefix, that is passed to us from the backend via a global static variable
 declare const DfmRoutePrefix: string;
@@ -124,7 +125,9 @@ export class Main extends React.Component<{ state: MainState }> {
 
                 {!!state.connectionParamsDialogState && (
                     <ConnectionParamsDialog state={state.connectionParamsDialogState} />
-                )}           
+                )}
+
+                <ErrorMessage state={this.props.state} />
 
             </DfmContextType.Provider></MuiPickersUtilsProvider>
         );

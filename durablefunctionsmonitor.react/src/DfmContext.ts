@@ -16,6 +16,9 @@ export class DfmContext {
 
     get theme(): string { return DfmClientConfig.theme; }
 
+    @observable
+    readOnlyMode: boolean;
+
     @computed
     get timeZoneName(): string {
         return this._timeZoneName;
