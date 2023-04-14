@@ -255,7 +255,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                     if (!!storageConnectionSettings) {
                         
                         // Creating a watcher to refresh the tree once host.json file changes
-                        this.monitorHostJson(projectPath);
+                        this.monitorHostJsonOrLocalSettingsJson(projectPath);
 
                         const isVisible = this._monitorViews.isMonitorViewVisible(storageConnectionSettings);
 
@@ -767,13 +767,13 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     private _hostJsonWatchers: { [path: string] : vscode.FileSystemWatcher } = {};
 
     // Refreshes TreeView when host.json file changes
-    private monitorHostJson(projectPath: string): void {
+    private monitorHostJsonOrLocalSettingsJson(projectPath: string): void {
 
         if (!!this._hostJsonWatchers[projectPath]) {
             return;
         }
 
-        const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(projectPath, 'host.json'));
+        const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(projectPath, '{host,local.settings}.json'));
 
         watcher.onDidChange(() => this._onDidChangeTreeData.fire(undefined));
         watcher.onDidCreate(() => this._onDidChangeTreeData.fire(undefined));
