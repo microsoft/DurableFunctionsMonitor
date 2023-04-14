@@ -1,5 +1,32 @@
 # Change Log
 
+## Version 6.2.0
+
+- Full support for [Netherite](https://microsoft.github.io/durabletask-netherite/#/). Netherite-based Task Hubs are automatically discovered and shown in the TreeView:
+
+    <img width="300px" src="https://user-images.githubusercontent.com/5447190/232128847-724c6b97-053c-45a0-a807-6639125c2688.png"/>
+
+    When connecting to an auto-discovered Netherite-based Task Hub you will be asked for an Event Hubs [authorization rule](https://learn.microsoft.com/en-us/azure/event-hubs/authorize-access-shared-access-signature) to use.
+    
+    You can also connect to a Netherite-based Task Hub by providing a Storage connection string (use `Attach to Task Hub...` command for that). If Task Hubs in that Storage are Netherite-based, you will also be asked for an Event Hubs connection string. Both connection strings will be stored in VsCode Secret Storage and appear under 'Stored Connection Strings' node:
+    
+    <img width="300px" src="https://user-images.githubusercontent.com/5447190/232131353-dcf729a3-ed96-49de-84de-00959f99e581.png"/>
+    
+    IMPORTANT: for DfMon to be able to show anything, your Netherite-based service *must be running* (otherwise all requests to DfMon's backend will take forever).
+
+- Included recent version of [az-func-as-a-graph](https://github.com/scale-tone/az-func-as-a-graph/releases/tag/v1.2), which now supports [PowerShell](https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-powershell?tabs=portal) and [Python V2](https://techcommunity.microsoft.com/t5/azure-compute-blog/azure-functions-v2-python-programming-model/ba-p/3665168) Functions. E.g. here is how [sample PowerShell app](https://github.com/Azure/azure-functions-powershell-worker/tree/dev/examples/durable/DurableApp) looks like:
+
+    <img width="700px" src="https://user-images.githubusercontent.com/5447190/232133455-b27cbbe9-1982-4e8b-8f07-cc3bf9fccd35.png"/>
+    
+    Btw. az-func-as-a-graph tool is now [also available standalone as a VsCode web extension](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.az-func-as-a-graph).
+
+- Fixed incompatibility with Azure Account extension's MSAL-based authentication ([#81](https://github.com/microsoft/DurableFunctionsMonitor/issues/81)).
+- Added support for VsCode workspaces. Now Task Hubs from all projects in a workspace will be auto-discovered and shown:
+
+    <img width="300px" src="https://user-images.githubusercontent.com/5447190/232134564-18bbeb1e-3437-4d7d-87e0-49aa0ebd5a04.png"/>
+
+
+
 ## Version 6.1.1
 
 - ([#89](https://github.com/microsoft/DurableFunctionsMonitor/issues/89)) Fixed a regression, whereas starting new Orchestration instances on a Task Hub named `TestTaskName` resulted in `401 Unauthorized`.
