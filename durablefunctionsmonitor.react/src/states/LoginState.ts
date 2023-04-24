@@ -157,7 +157,7 @@ export class LoginState extends ErrorMessageState {
 
     private _aadApp: Msal.UserAgentApplication;
 
-    private loginWithEasyAuthConfig(config: {userName: string, clientId: string, authority: string}) {
+    private loginWithEasyAuthConfig(config: {userName: string, clientId: string, authority: string}): Promise<void> {
 
         if (!config.clientId) {
             // Let's think we're on localhost or using server-directed login flow
@@ -200,6 +200,9 @@ export class LoginState extends ErrorMessageState {
         if (!account) {
             // Redirecting user to AAD. Redirect flow is more reliable (doesn't need popups enabled)
             this._aadApp.loginRedirect();
+
+            // Need to cancel any further network calls, otherwise msal then fails to redirect to an instance page
+            return Promise.reject();
 
         } else {
             // We've logged in successfully. Setting user name.
