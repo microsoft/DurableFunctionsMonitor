@@ -144,6 +144,11 @@ export class MainState extends ErrorMessageState {
 
             this.loginState.login().then(() => {
 
+                if (!this.loginState.taskHubName) {
+                    // Do not attempt to load permissions, when navigating to the root
+                    return;
+                }
+
                 backendClient.call('GET', '/about').then(response => {
 
                     dfmContextInstance.readOnlyMode = !(response.permissions?.includes('DurableFunctionsMonitor.ReadWrite'));
