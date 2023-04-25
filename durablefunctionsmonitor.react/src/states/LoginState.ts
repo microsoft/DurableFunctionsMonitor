@@ -11,7 +11,8 @@ import { BackendUri } from '../services/BackendClient';
 // DFM-specific route prefix, that is passed to us from the backend via a global static variable
 declare const DfmRoutePrefix: string;
 
-export const OrchestrationsPathPrefix = `/orchestrations/`;
+// This is used as an anchor when parsing URLs, so it should have low chances to collide with Task Hub names and other prefixes
+export const OrchestrationsPathPrefix = `/durable-instances/`;
 
 // Login State
 export class LoginState extends ErrorMessageState {
