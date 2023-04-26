@@ -56,6 +56,10 @@ export class BackendClient implements IBackendClient {
     }
 
     showDetails(instanceId: string) {
+
+        // Just to be extra sure
+        instanceId = instanceId?.replace(/javascript:/gi, '');
+
         window.open(`${this.routePrefixAndTaskHubName}${OrchestrationsPathPrefix}${instanceId}`);
     }
 }
