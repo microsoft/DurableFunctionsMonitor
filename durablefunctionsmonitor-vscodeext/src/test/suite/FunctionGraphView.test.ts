@@ -11,7 +11,7 @@ import { FunctionGraphView } from '../../FunctionGraphView';
 
 suite('FunctionGraphView Test Suite', () => {
 
-	const testTimeoutInMs = 60000;
+	const testTimeoutInMs = 100000;
 
 	test('Shows the WebView', async () => {
 

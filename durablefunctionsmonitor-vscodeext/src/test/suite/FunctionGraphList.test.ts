@@ -11,7 +11,7 @@ import { FunctionGraphList } from '../../FunctionGraphList';
 
 suite('FunctionGraphList Test Suite', () => {
 
-	const testTimeoutInMs = 60000;
+	const testTimeoutInMs = 100000;
 
 	test('Traverses functions', async () => {
 

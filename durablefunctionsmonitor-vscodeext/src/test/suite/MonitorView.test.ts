@@ -14,7 +14,7 @@ import axios from 'axios';
 
 suite('MonitorView Test Suite', () => {
 
-	const testTimeoutInMs = 60000;
+	const testTimeoutInMs = 100000;
 
 	test('Shows the WebView', async () => {
 

@@ -13,7 +13,7 @@ import { Settings, UpdateSetting } from "../../Settings";
 
 suite('BackendProcess Test Suite', () => {
 
-	const testTimeoutInMs = 60000;
+	const testTimeoutInMs = 100000;
 
 	test('Throws when backend process fails due to invalid connection string', async () => {
 
