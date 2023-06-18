@@ -6,7 +6,8 @@ type TestUser = { email: string, pwd: string };
 
 const users = {
   powerUser: { email: process.env.DfMonPowerTester1Email!, pwd: process.env.DfMonPowerTester1Pwd! },
-  rejectedUser: { email: process.env.DfMonRejectedTester1Email!, pwd: process.env.DfMonRejectedTester1Pwd! }
+  rejectedUser: { email: process.env.DfMonRejectedTester1Email!, pwd: process.env.DfMonRejectedTester1Pwd! },
+  readOnlyUser: { email: process.env.DfMonReadonlyTester1Email!, pwd: process.env.DfMonReadonlyTester1Pwd! },
 };
 
 const baseUris = [process.env.DfMonTestE2EServerDirectedUrl!, process.env.DfMonTestE2EClientDirectedUrl!];
@@ -51,6 +52,65 @@ for (const baseUri of baseUris) {
     // Checking that page's URL
     const instancePageUri = instancePage.url();
     expect(instancePageUri).toMatch(new RegExp(`/durable-instances/${instanceId}`));
+
+    // Checking the details are loaded
+    const executionHistoryLabel = await instancePage.getByText(/Execution History/);
+    await expect(executionHistoryLabel).toBeVisible();
+
+    // Checking that buttons are enabled
+    const setCustomStatusButton = await instancePage.getByText(/set custom status/i);
+    await expect(setCustomStatusButton).toBeEnabled();
+  });
+}
+
+for (const baseUri of baseUris) {
+  
+  const user = users.readOnlyUser;
+
+  test(`${baseUri}:${user.email}:login successful, but UI is read-only`, async ({ page }) => {
+  
+    await page.goto(baseUri);
+  
+    await login(page, user);
+    
+    // selecting a task hub
+    await page.getByText('DurableFunctionsHub').click();
+  
+    // changing the default time frame
+    const fromTextBox = await page.getByRole('textbox').nth(1);
+    await fromTextBox.fill('2020-01-01 12:00:00');
+    await fromTextBox.press('Enter');
+  
+    const itemsShownLabel = await page.getByText(/items shown/);
+  
+    // waiting till the load finishes
+    await expect(fromTextBox).toBeEnabled();
+  
+    const itemsShownLabelText = await itemsShownLabel.textContent();
+  
+    // Something should be loaded at least
+    expect(itemsShownLabelText).not.toBe("0 items shown");
+  
+    // Opening instance details page
+    const instancePagePromise = page.waitForEvent('popup');
+  
+    const instanceLink = await page.locator('a').nth(2);
+    const instanceId = await instanceLink.textContent();
+  
+    await instanceLink.click();
+    const instancePage = await instancePagePromise;
+  
+    // Checking that page's URL
+    const instancePageUri = instancePage.url();
+    expect(instancePageUri).toMatch(new RegExp(`/durable-instances/${instanceId}`));
+
+    // Checking the details are loaded
+    const executionHistoryLabel = await instancePage.getByText(/Execution History/);
+    await expect(executionHistoryLabel).toBeVisible();
+
+    // Checking that buttons are disabled
+    const setCustomStatusButton = await instancePage.getByText(/set custom status/i);
+    await expect(setCustomStatusButton).toBeDisabled();
   });
 }
 
