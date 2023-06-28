@@ -10,9 +10,34 @@ const users = {
   readOnlyUser: { email: process.env.DfMonReadonlyTester1Email!, pwd: process.env.DfMonReadonlyTester1Pwd! },
 };
 
-const baseUris = [process.env.DfMonTestE2EServerDirectedUrl!, process.env.DfMonTestE2EClientDirectedUrl!];
+const instanceWithAuthNotConfigured = process.env.DfMonTestE2ENoEasyAuthUrl!;
+const readOnlyInstance = process.env.DfMonTestE2EReadOnlyUrl!;
+const instances = [
+  readOnlyInstance,
+  process.env.DfMonTestE2EServerDirectedUrl!,
+  process.env.DfMonTestE2EClientDirectedUrl!,
+  process.env.DfMonTestE2EMsSqlUrl!,
+  process.env.DfMonTestE2ENetheriteUrl!,
+];
 
-for (const baseUri of baseUris) {
+const instancesWithOnlyOneAvailableTaskHub = [
+  process.env.DfMonTestE2EMsSqlUrl!,
+  process.env.DfMonTestE2ENetheriteUrl!,
+];
+
+test(`${instanceWithAuthNotConfigured}:EasyAuth not configured:login fails`, async ({ page }) => {
+  
+  await page.goto(instanceWithAuthNotConfigured);
+
+  // An error message should be displayed
+  const errorMessageLabel = await page.getByText(/Login failed/);
+  await expect(errorMessageLabel).toBeVisible();
+
+  const errorMessageLabelText = await errorMessageLabel.textContent();
+  expect(errorMessageLabelText).toBe(`Login failed. Failed to load auth config. Request failed with status code 401`);
+});
+
+for (const baseUri of instances) {
   
   const user = users.powerUser;
 
@@ -21,9 +46,13 @@ for (const baseUri of baseUris) {
     await page.goto(baseUri);
   
     await login(page, user);
-    
-    // selecting a task hub
-    await page.getByText('DurableFunctionsHub').click();
+
+    // When Task Hub is predefined, the UI should automatically redirect itself to it
+    if (!instancesWithOnlyOneAvailableTaskHub.includes(baseUri)) {
+      
+      // Otherwise selecting a task hub
+      await page.getByText('DurableFunctionsHub').click();
+    }
   
     // changing the default time frame
     const fromTextBox = await page.getByRole('textbox').nth(1);
@@ -57,24 +86,36 @@ for (const baseUri of baseUris) {
     const executionHistoryLabel = await instancePage.getByText(/Execution History/);
     await expect(executionHistoryLabel).toBeVisible();
 
-    // Checking that buttons are enabled
+    // Checking the buttons
     const setCustomStatusButton = await instancePage.getByText(/set custom status/i);
-    await expect(setCustomStatusButton).toBeEnabled();
+
+    if (baseUri === readOnlyInstance) {
+      
+      await expect(setCustomStatusButton).toBeDisabled();
+
+    } else {
+
+      await expect(setCustomStatusButton).toBeEnabled();
+    }
   });
 }
 
-for (const baseUri of baseUris) {
+for (const baseUri of instances) {
   
   const user = users.readOnlyUser;
 
-  test(`${baseUri}:${user.email}:login successful, but UI is read-only`, async ({ page }) => {
+  test(`${baseUri}:${user.email}:login successful, but UI is read-only`, async ({ page, context }) => {
   
     await page.goto(baseUri);
   
     await login(page, user);
     
-    // selecting a task hub
-    await page.getByText('DurableFunctionsHub').click();
+    // When Task Hub is predefined, the UI should automatically redirect itself to it
+    if (!instancesWithOnlyOneAvailableTaskHub.includes(baseUri)) {
+      
+      // Otherwise selecting a task hub
+      await page.getByText('DurableFunctionsHub').click();
+    }
   
     // changing the default time frame
     const fromTextBox = await page.getByRole('textbox').nth(1);
@@ -111,10 +152,15 @@ for (const baseUri of baseUris) {
     // Checking that buttons are disabled
     const setCustomStatusButton = await instancePage.getByText(/set custom status/i);
     await expect(setCustomStatusButton).toBeDisabled();
+
+    // Checking that API method returns 401 or 403
+    const response = await page.request.post(`${baseUri}/a/p/i/--DurableFunctionsHub/orchestrations('${instanceId}')/suspend`);
+
+    expect(response.status() === 401 || response.status() === 403).toBeTruthy();
   });
 }
 
-for (const baseUri of baseUris) {
+for (const baseUri of instances) {
 
   const user = users.rejectedUser;
   
@@ -133,7 +179,7 @@ for (const baseUri of baseUris) {
   });
 }
 
-for (const baseUri of baseUris) {
+for (const baseUri of instances) {
 
   const user = users.powerUser;
   
@@ -152,7 +198,7 @@ for (const baseUri of baseUris) {
   });
 }
 
-for (const baseUri of baseUris) {
+for (const baseUri of instances) {
 
   const user = users.rejectedUser;
   
