@@ -23,6 +23,7 @@
         },
         "taskHubName": {
             "type": "string",
+            "defaultValue": "dbo",
             "metadata": {
                 "description": "Task Hub name to be monitored"
             }
