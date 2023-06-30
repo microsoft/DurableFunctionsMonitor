@@ -1,8 +1,7 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { login } from './helpers';
 
 test.setTimeout(120000);
-
-type TestUser = { email: string, pwd: string };
 
 const users = {
   powerUser: { email: process.env.DfMonPowerTester1Email!, pwd: process.env.DfMonPowerTester1Pwd! },
@@ -18,7 +17,6 @@ const instances = [
   process.env.DfMonTestE2EMsSqlUrl!,
   process.env.DfMonTestE2ENetheriteUrl!,
   process.env.DfMonTestE2EReadOnlyUrl!,
-  
   process.env.DfMonTestE2EInjectedModeUrl!,
   process.env.DfMonTestE2EInjectedModeReadOnlyUrl!,
 ];
@@ -33,6 +31,7 @@ const instancesWithOnlyOneAvailableTaskHub = [
   process.env.DfMonTestE2ENetheriteUrl!,
 ];
 
+// Instance with EasyAuth not configured should deny any access
 test(`${instanceWithAuthNotConfigured}:EasyAuth not configured:login fails`, async ({ page }) => {
   
   await page.goto(instanceWithAuthNotConfigured);
@@ -45,6 +44,7 @@ test(`${instanceWithAuthNotConfigured}:EasyAuth not configured:login fails`, asy
   expect(errorMessageLabelText).toBe(`Login failed. Failed to load auth config. Request failed with status code 401`);
 });
 
+// Basic login flow and opening instance details in a separate tab
 for (const baseUri of instances) {
   
   const user = users.powerUser;
@@ -108,6 +108,7 @@ for (const baseUri of instances) {
   });
 }
 
+// Instance management buttons should be disabled for a read-only user
 for (const baseUri of instances) {
   
   const user = users.readOnlyUser;
@@ -168,6 +169,7 @@ for (const baseUri of instances) {
   });
 }
 
+// Arbitrary user should not be allowed in
 for (const baseUri of instances) {
 
   const user = users.rejectedUser;
@@ -187,70 +189,23 @@ for (const baseUri of instances) {
   });
 }
 
+// Non-existent or invalid Task Hub should not be allowed
 for (const baseUri of instances) {
 
-  const user = users.powerUser;
-  
-  test(`${baseUri}:${user.email}:non-existent task hub results in an error`, async ({ page }) => {
-  
-    await page.goto(baseUri + '/taskhubthatshouldnotbe');
-  
-    await login(page, user);
+  for (const user of [users.powerUser, users.rejectedUser]) {
 
-    // An error message should be displayed
-    const errorMessageLabel = await page.getByText(/Failed to get user permissions/);
-    await expect(errorMessageLabel).toBeVisible();
+    test(`${baseUri}:${user.email}:non-existent task hub results in an error`, async ({ page }) => {
+    
+      await page.goto(baseUri + '/taskhubthatshouldnotbe');
+    
+      await login(page, user);
 
-    const errorMessageLabelText = await errorMessageLabel.textContent();
-    expect(errorMessageLabelText).toBe(`Failed to get user permissions. Request failed with status code 401`);
-  });
-}
+      // An error message should be displayed
+      const errorMessageLabel = await page.getByText(/Failed to get user permissions/);
+      await expect(errorMessageLabel).toBeVisible();
 
-for (const baseUri of instances) {
-
-  const user = users.rejectedUser;
-  
-  test(`${baseUri}:${user.email}:non-existent task hub results in an error`, async ({ page }) => {
-  
-    await page.goto(baseUri + '/taskhubthatshouldnotbe');
-  
-    await login(page, user);
-
-    // An error message should be displayed
-    const errorMessageLabel = await page.getByText(/Failed to get user permissions/);
-    await expect(errorMessageLabel).toBeVisible();
-
-    const errorMessageLabelText = await errorMessageLabel.textContent();
-    expect(errorMessageLabelText).toBe(`Failed to get user permissions. Request failed with status code 401`);
-  });
-}
-
-async function login(page: Page, user: TestUser) {
-
-  await page.getByRole('textbox').fill(user.email);
-  await page.getByRole('button', { name: 'Next' }).click();
-
-  const passwordInput = page.locator(`//input[@type='password']`);
-  await passwordInput.fill(user.pwd);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-
-  try {
-
-    const stayLoggedInButton = page.getByRole('button', { name: 'No' });
-    await stayLoggedInButton.waitFor({ timeout: 5000 });
-    await stayLoggedInButton.click();
-
-  } catch {
-    console.log(`There was no 'Stay logged in' option on the login page`);
-  }
-
-  try {
-
-    const stayLoggedInButton = page.getByRole('button', { name: 'Accept' });
-    await stayLoggedInButton.waitFor({ timeout: 5000 });
-    await stayLoggedInButton.click();
-
-  } catch {
-    console.log(`There was no consent dialog`);
+      const errorMessageLabelText = await errorMessageLabel.textContent();
+      expect(errorMessageLabelText).toBe(`Failed to get user permissions. Request failed with status code 401`);
+    });
   }
 }
