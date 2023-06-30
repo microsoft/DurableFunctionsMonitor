@@ -11,13 +11,21 @@ const users = {
 };
 
 const instanceWithAuthNotConfigured = process.env.DfMonTestE2ENoEasyAuthUrl!;
-const readOnlyInstance = process.env.DfMonTestE2EReadOnlyUrl!;
+
 const instances = [
-  readOnlyInstance,
   process.env.DfMonTestE2EServerDirectedUrl!,
   process.env.DfMonTestE2EClientDirectedUrl!,
   process.env.DfMonTestE2EMsSqlUrl!,
   process.env.DfMonTestE2ENetheriteUrl!,
+  process.env.DfMonTestE2EReadOnlyUrl!,
+  
+  process.env.DfMonTestE2EInjectedModeUrl!,
+  process.env.DfMonTestE2EInjectedModeReadOnlyUrl!,
+];
+
+const readOnlyInstances = [
+  process.env.DfMonTestE2EReadOnlyUrl!,
+  process.env.DfMonTestE2EInjectedModeReadOnlyUrl!,
 ];
 
 const instancesWithOnlyOneAvailableTaskHub = [
@@ -89,7 +97,7 @@ for (const baseUri of instances) {
     // Checking the buttons
     const setCustomStatusButton = await instancePage.getByText(/set custom status/i);
 
-    if (baseUri === readOnlyInstance) {
+    if (readOnlyInstances.includes(baseUri)) {
       
       await expect(setCustomStatusButton).toBeDisabled();
 
