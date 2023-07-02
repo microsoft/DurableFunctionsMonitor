@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Page } from '@playwright/test';
 
 export type TestUser = { email: string, pwd: string };

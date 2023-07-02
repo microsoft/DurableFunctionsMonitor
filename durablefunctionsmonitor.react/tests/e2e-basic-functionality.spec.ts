@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { test, expect } from '@playwright/test';
 import { login } from './helpers';
 
