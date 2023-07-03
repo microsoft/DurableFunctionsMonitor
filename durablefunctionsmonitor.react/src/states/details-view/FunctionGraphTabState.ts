@@ -186,7 +186,7 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
         return new Promise<void>((resolve, reject) => {
 
             try {
-                const diagramCode = buildFunctionDiagramCode(this._traversalResult.functions, this._traversalResult.proxies,
+                let diagramCode = buildFunctionDiagramCode(this._traversalResult.functions, this._traversalResult.proxies,
                     {
                         doNotRenderFunctions: !this._renderFunctions,
                         doNotRenderProxies: !this._renderProxies
@@ -197,13 +197,18 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
                     return;
                 }
     
-                this._diagramCode = `graph LR\n${diagramCode}`;
-    
-                mermaid.render('mermaidSvgId', this._diagramCode, (svg) => {
-    
-                    this._diagramSvg = this.applyIcons(svg);
+                diagramCode = `graph LR\n${diagramCode}`;
+                this._diagramCode = diagramCode;
+        
+                diagramCode = this.addSpaceForIcons(diagramCode);
 
+                mermaid.render('mermaidSvgId', diagramCode).then(result => {
+    
+                    this._diagramSvg = this.applyIcons(result.svg);
                     resolve();
+
+                }, err => {
+                    reject(err);
                 });
     
             } catch (err) {

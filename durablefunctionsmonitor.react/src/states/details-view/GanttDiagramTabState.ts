@@ -57,14 +57,17 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
 
             try {
 
-                mermaid.render('mermaidSvgId', this._diagramCode, (svg) => {
+                mermaid.render('mermaidSvgId', this._diagramCode).then(result => {
+
+                    let svg = result.svg;
 
                     svg = this.injectFunctionNameAttributes(svg, linesWithMetadata);
-                    svg = this.adjustIntervalsSmallerThanOneSecond(svg, linesWithMetadata);
 
                     this._diagramSvg = svg;
-
                     resolve();
+
+                }, err => {
+                    reject(err);
                 });
                 
             } catch (err) {
@@ -90,40 +93,6 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
             }
 
             return match + ` data-function-name="${lineMetadata.functionName}"`;
-        });
-    }
-
-    // Workaround for mermaid being unable to render intervals shorter than 1 second
-    private adjustIntervalsSmallerThanOneSecond(svg: string, linesWithMetadata: LineTextAndMetadata[]): string {
-
-        return svg.replace(new RegExp(`<rect[^>]+ width="([0-9]+)"[^>]+ id="task([0-9]+)"`, 'gi'), (match, activityWidth, taskIndex) => {
-
-            const oneBasedLineIndex = parseInt(taskIndex);
-
-            if (oneBasedLineIndex <= 0 || oneBasedLineIndex > linesWithMetadata.length) {
-                return match;
-            }
-
-            const activityMetadata = linesWithMetadata[oneBasedLineIndex - 1];
-            if (!activityMetadata.parentInstanceId || !activityMetadata.widthPercentage || (activityMetadata.duration > 10000)) {
-                return match;
-            }
-
-            // now we need to figure out the width (in pixels) of parent orchestration line
-            const orchIndex = linesWithMetadata.findIndex(l => l.instanceId === activityMetadata.parentInstanceId);
-            if (orchIndex < 0) {
-                return match;
-            }
-
-            const orchMatch = new RegExp(`<rect[^>]+ width="([0-9]+)"[^>]+ id="task${orchIndex + 1}"`, 'i').exec(svg);
-            if (!orchMatch) {
-                return match;
-            }
-
-            const orchWidth = parseInt(orchMatch[1]);
-            const newActivityWidth = activityMetadata.widthPercentage > 1 ? orchWidth : Math.ceil(orchWidth * activityMetadata.widthPercentage);
-
-            return match.replace(`width="${activityWidth}"`, `width="${newActivityWidth.toFixed(0)}"`)
         });
     }
 
@@ -156,7 +125,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                 lineName = this.formatLineName(orchestrationName, 0);
             }
 
-            nextLine += `${lineName}: ${isParentOrchestration ? '' : 'active,'} ${this.formatDateTime(startedEvent.Timestamp)}, ${this.formatDurationInSeconds(completedEvent.DurationInMs)} \n`;
+            nextLine += `${lineName}: ${isParentOrchestration ? '' : 'active,'} ${this.formatDateTime(startedEvent.Timestamp)}, ${completedEvent.DurationInMs}ms \n`;
             results.push({ nextLine, functionName: orchestrationName, instanceId: orchestrationId });
             
             orchDuration = completedEvent.DurationInMs;
@@ -238,7 +207,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                     break;
                 case 'TaskCompleted':
 
-                    nextLine = `${this.formatLineName(event.Name, numOfAggregatedEvents)} ${this.formatDuration(event.DurationInMs)}: done, ${this.formatDateTime(eventTimestamp)}, ${this.formatDurationInSeconds(event.DurationInMs)} \n`;
+                    nextLine = `${this.formatLineName(event.Name, numOfAggregatedEvents)} ${this.formatDuration(event.DurationInMs)}: done, ${this.formatDateTime(eventTimestamp)}, ${event.DurationInMs}ms \n`;
                     results.push({
                         nextLine,
                         functionName: event.Name,
@@ -250,7 +219,7 @@ export class GanttDiagramTabState extends MermaidDiagramTabState {
                     break;
                 case 'TaskFailed':
 
-                    nextLine = `${this.formatLineName(event.Name, numOfAggregatedEvents)} ${this.formatDuration(event.DurationInMs)}: crit, ${this.formatDateTime(eventTimestamp)}, ${this.formatDurationInSeconds(event.DurationInMs)} \n`;
+                    nextLine = `${this.formatLineName(event.Name, numOfAggregatedEvents)} ${this.formatDuration(event.DurationInMs)}: crit, ${this.formatDateTime(eventTimestamp)}, ${event.DurationInMs}ms \n`;
                     results.push({
                         nextLine,
                         functionName: event.Name,

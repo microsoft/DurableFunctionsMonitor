@@ -33,7 +33,7 @@ export abstract class MermaidDiagramStateBase {
             flowchart: {
                 curve: 'Basis',
                 useMaxWidth: true,
-                htmlLabels: false
+                htmlLabels: true
             }
         });
 

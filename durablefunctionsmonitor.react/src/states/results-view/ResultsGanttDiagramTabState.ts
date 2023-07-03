@@ -59,9 +59,13 @@ export class ResultsGanttDiagramTabState extends MermaidDiagramStateBase impleme
 
                 try {
 
-                    mermaid.render('mermaidSvgId', this._diagramCode, (svg) => {
-                        this._diagramSvg = svg;
+                    mermaid.render('mermaidSvgId', this._diagramCode).then(result => {
+
+                        this._diagramSvg = result.svg;
                         resolve();
+
+                    }, err => {
+                        reject(err);
                     });
 
                 } catch (err) {

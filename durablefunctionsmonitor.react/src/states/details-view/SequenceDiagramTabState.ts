@@ -31,10 +31,13 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
                     // Very much unknown, why this line is needed. Without it sometimes the diagrams fail to re-render
                     this._diagramSvg = '';
 
-                    mermaid.render('mermaidSvgId', this._diagramCode, (svg) => {
-                        this._diagramSvg = svg;
+                    mermaid.render('mermaidSvgId', this._diagramCode).then(result => {
 
+                        this._diagramSvg = result.svg;
                         resolve();
+
+                    }, err => {
+                        reject(err);
                     });
                     
                 } catch (err) {

@@ -10,8 +10,8 @@
     "@material-ui/lab": "^4.0.0-alpha.56",
     "@material-ui/pickers": "^3.2.10",
     "axios": "^1.3.5",
-    "az-func-as-a-graph.core": "^1.1.0",
-    "mermaid": "9.1.3",
+    "az-func-as-a-graph.core": "^1.3.0",
+    "mermaid": "10.2.4",
     "mobx": "^5.15.7",
     "mobx-react": "^6.3.1",
     "moment": "^2.29.4",
@@ -23,7 +23,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "node disable-webpack-chunking.js && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "build-and-copy": "npm run build && node copy-build-artifacts.js"

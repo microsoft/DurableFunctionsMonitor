@@ -95,10 +95,19 @@ export class FunctionGraphStateBase extends MermaidDiagramStateBase {
         // Placing icons code into a <defs> block at the top
         svg = svg.replace(`><style>`, `>\n<defs>\n${iconsSvgElement.innerHTML}</defs>\n<style>`);
 
-        // Adding <use> blocks referencing relevant icons
-        svg = svg.replace(/<g style="opacity: [0-9.]+;" transform="translate\([0-9,.-]+\)" id="[^"]+" class="node (\w+).*?<g transform="translate\([0-9,.-]+\)" class="label"><g transform="translate\([0-9,.-]+\)">/g,
+        svg = svg.replace(/<g transform="translate\([0-9,.-\s]+\)" id="[^"]+" class="node default (\w+).*?<g transform="translate\([0-9,.-\s]+\)" style="" class="label">/g,
             `$&<use href="#az-icon-$1" width="20px" height="20px"/>`);
 
         return svg;
+    }
+
+    protected addSpaceForIcons(diagramCode: string): string {
+
+        const spaces = `#8194;#8194;#8194;`;
+        diagramCode = diagramCode.replace(/#32;/g, spaces);
+        diagramCode = diagramCode.replace(/#127760;/g, `${spaces}🌐`);
+        diagramCode = diagramCode.replace(/#128274;/g, `${spaces}🔒`);
+
+        return diagramCode;
     }
 }

@@ -45,7 +45,7 @@ export class FunctionGraphState extends FunctionGraphStateBase {
 
         this._inProgress = true;
         try {
-            const diagramCode = buildFunctionDiagramCode(this._traversalResult.functions, this._traversalResult.proxies,
+            let diagramCode = buildFunctionDiagramCode(this._traversalResult.functions, this._traversalResult.proxies,
                 {
                     doNotRenderFunctions: !this._renderFunctions,
                     doNotRenderProxies: !this._renderProxies
@@ -56,17 +56,24 @@ export class FunctionGraphState extends FunctionGraphStateBase {
                 return;
             }
 
-            this._diagramCode = `graph LR\n${diagramCode}`;
+            diagramCode = `graph LR\n${diagramCode}`;
+            this._diagramCode = diagramCode;
 
-            mermaid.render('mermaidSvgId', this._diagramCode, (svg) => {
+            diagramCode = this.addSpaceForIcons(diagramCode);
 
-                this._diagramSvg = this.applyIcons(svg);
+            mermaid.render('mermaidSvgId', diagramCode).then(result => {
 
+                this._diagramSvg = this.applyIcons(result.svg);
+                this._inProgress = false;
+
+            }, err => {
+
+                this.errorMessage = `Failed to render diagram: ${err.message}`;
                 this._inProgress = false;
             });
 
         } catch (err) {
-            this.errorMessage = `Failed to render: ${err.message}`;
+            this.errorMessage = `Failed to build diagram: ${err.message}`;
             this._inProgress = false;
         }
     }

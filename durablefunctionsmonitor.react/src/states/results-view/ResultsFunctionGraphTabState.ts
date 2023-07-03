@@ -187,7 +187,7 @@ export class ResultsFunctionGraphTabState extends FunctionGraphStateBase impleme
         return new Promise<void>((resolve, reject) => {
 
             try {
-                const diagramCode = buildFunctionDiagramCode(this._traversalResult.functions, this._traversalResult.proxies,
+                let diagramCode = buildFunctionDiagramCode(this._traversalResult.functions, this._traversalResult.proxies,
                     {
                         doNotRenderFunctions: !this._renderFunctions,
                         doNotRenderProxies: !this._renderProxies
@@ -198,13 +198,18 @@ export class ResultsFunctionGraphTabState extends FunctionGraphStateBase impleme
                     return;
                 }
     
-                this._diagramCode = `graph LR\n${diagramCode}`;
+                diagramCode = `graph LR\n${diagramCode}`;
+                this._diagramCode = diagramCode;
+        
+                diagramCode = this.addSpaceForIcons(diagramCode);
     
-                mermaid.render('mermaidSvgId', this._diagramCode, (svg) => {
+                mermaid.render('mermaidSvgId', diagramCode).then(result => {
     
-                    this._diagramSvg = this.applyIcons(svg);
-
+                    this._diagramSvg = this.applyIcons(result.svg);
                     resolve();
+
+                }, err => {
+                    reject(err);
                 });
     
             } catch (err) {
