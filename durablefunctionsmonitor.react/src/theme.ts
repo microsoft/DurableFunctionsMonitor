@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 
 import { createTheme } from '@mui/material';
+import pink from '@mui/material/colors/pink';
+import deepPurple from '@mui/material/colors/deepPurple';
 
 import { RuntimeStatus } from './states/DurableOrchestrationStatus';
 import { dfmContextInstance } from './DfmContext';
@@ -9,7 +11,11 @@ import { dfmContextInstance } from './DfmContext';
 const colorTheme = !process.env.REACT_APP_COLOR_THEME ? dfmContextInstance.theme : process.env.REACT_APP_COLOR_THEME;
 
 export const Theme = createTheme({
-    palette: { mode: colorTheme === 'dark' ? 'dark' : 'light' }
+    palette: {
+        mode: colorTheme === 'dark' ? 'dark' : 'light',
+        primary: deepPurple,
+        secondary: pink
+    }
 });
 
 export const CustomTabStyle = Theme.palette.mode === 'dark' ? {
