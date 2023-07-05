@@ -8,9 +8,9 @@ import {
     Box, Button, Container, CircularProgress, Dialog, DialogContent, DialogContentText,
     List, ListItem, Link,
     Menu, MenuItem, Tooltip, Typography, DialogTitle
-} from '@material-ui/core';
+} from '@mui/material';
 
-import { AccountCircle, Error } from '@material-ui/icons';
+import { AccountCircle, Error } from '@mui/icons-material';
 
 import './LoginIcon.css';
 
@@ -71,7 +71,7 @@ export class LoginIcon extends React.Component<{ state: LoginState }> {
                             <List className="task-hub-list">
                                 {state.allowedTaskHubNames.map(hubName => (
                                     <ListItem button key={hubName} onClick={() => window.location.assign(state.locationPathName + hubName)}>
-                                        <Link color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'}>{hubName}</Link>
+                                        <Link color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'}>{hubName}</Link>
                                     </ListItem>)
                                 )}
                             </List>

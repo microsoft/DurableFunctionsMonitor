@@ -1,22 +1,22 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { createMuiTheme } from '@material-ui/core';
+import { createTheme } from '@mui/material';
 
 import { RuntimeStatus } from './states/DurableOrchestrationStatus';
 import { dfmContextInstance } from './DfmContext';
 
 const colorTheme = !process.env.REACT_APP_COLOR_THEME ? dfmContextInstance.theme : process.env.REACT_APP_COLOR_THEME;
 
-export const Theme = createMuiTheme({
-    palette: { type: colorTheme === 'dark' ? 'dark' : 'light' }
+export const Theme = createTheme({
+    palette: { mode: colorTheme === 'dark' ? 'dark' : 'light' }
 });
 
-export const CustomTabStyle = Theme.palette.type === 'dark' ? {
+export const CustomTabStyle = Theme.palette.mode === 'dark' ? {
     backgroundColor: '#aaa'
 } : {};
 
-export const PrimaryButtonColor = Theme.palette.type === 'dark' ? 'default' : 'primary';
+export const PrimaryButtonColor = Theme.palette.mode === 'dark' ? 'inherit' : 'primary';
 
 export function RuntimeStatusToStyle(status: RuntimeStatus): {} {
 
@@ -53,7 +53,7 @@ export function RuntimeStatusToBadgeStyle(status: RuntimeStatus | 'Duration'): {
 
     var backgroundColor: string = null;
 
-    if (Theme.palette.type === 'dark') {
+    if (Theme.palette.mode === 'dark') {
         
         switch (status) {
             case 'Failed':

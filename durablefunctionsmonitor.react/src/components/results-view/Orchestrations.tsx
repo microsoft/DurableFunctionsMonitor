@@ -8,14 +8,14 @@ import { observer } from 'mobx-react';
 import {
     AppBar, Box, Button, Checkbox, FormGroup, FormControl, Grid,
     InputLabel, LinearProgress, ListItemText, Menu, MenuItem, Select, Tab, Tabs, TextField, Toolbar, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 
-import { KeyboardDateTimePicker } from '@material-ui/pickers';
+import { DateTimePicker } from '@mui/x-date-pickers';
 
-import RefreshIcon from '@material-ui/icons/Refresh';
-import CancelOutlinedIcon from '@material-ui/icons/CancelOutlined';
-import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import CheckIcon from '@material-ui/icons/Check';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CheckIcon from '@mui/icons-material/Check';
 
 import './Orchestrations.css';
 
@@ -116,35 +116,42 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
                     <Grid container className="toolbar-grid1">
                         <Grid item xs={12}>
 
-                            <Button size="small" variant="outlined" className="time-period-menu-drop-btn"
+                            <Button size="small" variant="outlined" color="inherit" className="time-period-menu-drop-btn"
                                 onClick={evt => state.menuAnchorElement = evt.currentTarget}
                             >
                                 <ArrowDropDownIcon/>
                             </Button>
                             
                             {!!state.timeRange ? (
+
                                 <TextField
                                     className="from-input"
+                                    variant="standard"
                                     label="Time Range (createdTime)"
                                     InputProps={{ readOnly: true }}
                                     InputLabelProps={{ shrink: true }}
                                     type="text"
                                     value={this.timeRangeToString(state.timeRange)}
                                 />
+
                             ) : (
-                                <KeyboardDateTimePicker
+                                    
+                                <DateTimePicker
                                     className="from-input"
+                                    slotProps={{
+                                        textField: {
+                                            variant: 'standard',
+                                            onBlur: () => state.applyTimeFrom(),
+                                            onKeyPress: evt => this.handleKeyPress(evt as any)
+                                        }
+                                    }}
                                     ampm={false}
-                                    autoOk={true}
                                     label={`From (${this.context.timeZoneName})`}
-                                    invalidDateMessage=""
                                     format={"YYYY-MM-DD HH:mm:ss"}
                                     disabled={state.inProgress}
                                     value={this.context.getMoment(state.timeFrom)}
                                     onChange={(t) => state.timeFrom = this.context.setMoment(t)}
-                                    onBlur={() => state.applyTimeFrom()}
                                     onAccept={() => state.applyTimeFrom()}
-                                    onKeyPress={this.handleKeyPress}
                                 />
                             )}
 
@@ -164,23 +171,27 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
                                 </FormControl>
 
                                 {state.timeTillEnabled ? (
-                                    <KeyboardDateTimePicker
+                                    <DateTimePicker
                                         className="till-input"
+                                        slotProps={{
+                                            textField: {
+                                                variant: 'standard',
+                                                onBlur: () => state.applyTimeFrom(),
+                                                onKeyPress: evt => this.handleKeyPress(evt as any)
+                                            }
+                                        }}
                                         ampm={false}
-                                        autoOk={true}
                                         label={`Till (${this.context.timeZoneName})`}
-                                        invalidDateMessage=""
                                         format={"YYYY-MM-DD HH:mm:ss"}
                                         disabled={state.inProgress}
                                         value={this.context.getMoment(state.timeTill)}
                                         onChange={(t) => state.timeTill = this.context.setMoment(t)}
-                                        onBlur={() => state.applyTimeTill()}
                                         onAccept={() => state.applyTimeTill()}
-                                        onKeyPress={this.handleKeyPress}
                                     />
                                 ) : (
                                     <TextField
                                         className="till-input"
+                                        variant="standard"
                                         label={`Till (${this.context.timeZoneName})`}
                                         placeholder="[Now]"
                                         InputLabelProps={{ shrink: true }}
@@ -198,13 +209,14 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
                         <Grid item xs={12} className="toolbar-grid2-item-1">
 
                             <FormControl>
-                                <InputLabel htmlFor="filtered-column-select">Filtered Column</InputLabel>
+                                <InputLabel variant="standard">Filtered Column</InputLabel>
                                 <Select
                                     className="toolbar-select filtered-column-input"
+                                    variant="standard"
                                     disabled={state.inProgress}
                                     value={state.filteredColumn}
                                     onChange={(evt) => state.filteredColumn = evt.target.value as string}
-                                    inputProps={{ id: "filtered-column-select" }}>
+                                >
 
                                     <MenuItem value="0">[Not Selected]</MenuItem>
                                     {DurableOrchestrationStatusFields.map(col => {
@@ -216,13 +228,13 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
 
                             <FormControl className="toolbar-grid2-item1-select">
 
-                                <InputLabel htmlFor="filter-operator-select">Filter Operator</InputLabel>
+                                <InputLabel variant="standard">Filter Operator</InputLabel>
                                 <Select
                                     className="toolbar-select"
+                                    variant="standard"
                                     disabled={state.inProgress}
                                     value={state.filterOperator}
                                     onChange={(evt) => state.filterOperator = evt.target.value as number}
-                                    inputProps={{ id: "filter-operator-select" }}
                                 >
                                     <MenuItem value={FilterOperatorEnum.Equals}>Equals</MenuItem>
                                     <MenuItem value={FilterOperatorEnum.StartsWith}>Starts With</MenuItem>
@@ -238,6 +250,7 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
 
                             <TextField
                                 fullWidth
+                                variant="standard"
                                 className="filter-value-input"
                                 label="Filter Value"
                                 InputLabelProps={{ shrink: true }}
@@ -246,18 +259,21 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
                                 value={state.filterValue}
                                 onChange={(evt) => state.filterValue = evt.target.value as string}
                                 onBlur={() => state.applyFilterValue()}
-                                onKeyPress={this.handleKeyPress}
+                                onKeyPress={evt => this.handleKeyPress(evt as any)}
                             />
 
                         </Grid>
 
                         <Grid item xs={12} className="toolbar-grid2-item2">
 
-                            <FormGroup className="toolbar-runtime-status-checkbox-group">
+                            <FormGroup>
 
-                                <InputLabel shrink={true}>Type/Status {!state.showStatuses ? '' : ` (${state.showStatuses.length} selected)`}</InputLabel>
+                                <InputLabel variant="standard" shrink={true} className="type-status-label">
+                                    Type/Status {!state.showStatuses ? '' : ` (${state.showStatuses.length} selected)`}
+                                </InputLabel>
 
                                 <Select
+                                    variant="standard"
                                     multiple
                                     autoWidth
                                     className="toolbar-select"
@@ -325,7 +341,7 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
                                     <MenuItem onClick={(evt) => {
                                         state.isStatusSelectOpen = false;
                                     }}>
-                                        <Button variant="outlined" fullWidth>
+                                        <Button color="inherit" variant="outlined" fullWidth>
                                             <CheckIcon/>
                                             <Box width={5} />
                                             OK
@@ -341,10 +357,10 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
                     <Grid container className="toolbar-grid3">
                         <Grid item xs={12}>
                             <FormControl className="form-control-float-right">
-                                <InputLabel htmlFor="auto-refresh-select">Auto-refresh</InputLabel>
+                                <InputLabel variant="standard">Auto-refresh</InputLabel>
                                 <Select
+                                    variant="standard"
                                     className="autorefresh-select"
-                                    inputProps={{ id: "auto-refresh-select" }}
                                     value={state.autoRefresh}
                                     onChange={(evt) => state.autoRefresh = evt.target.value as number}
                                 >
@@ -359,7 +375,7 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
                             <Button
                                 className="refresh-button form-control-float-right"
                                 variant="outlined"
-                                color="default"
+                                color="inherit"
                                 size="large"
                                 onClick={() => state.inProgress ? state.cancel() : state.reloadOrchestrations()}
                             >
@@ -372,14 +388,14 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
             </AppBar>
 
             <AppBar color="inherit" position="static">
-                <Tabs className="tab-buttons" value={state.tabIndex} onChange={(ev: React.ChangeEvent<{}>, val) => state.tabIndex = val}>
+                <Tabs value={state.tabIndex} onChange={(ev: React.ChangeEvent<{}>, val) => state.tabIndex = val}>
 
-                    <Tab className="tab-buttons" disabled={state.inProgress} label={<Typography color="textPrimary" variant="subtitle2">List</Typography>} />
-                    <Tab className="tab-buttons" disabled={state.inProgress} label={<Typography color="textPrimary" variant="subtitle2">Time Histogram</Typography>} />
-                    <Tab className="tab-buttons" disabled={state.inProgress} label={<Typography color="textPrimary" variant="subtitle2">Gantt Chart</Typography>} />
+                    <Tab disabled={state.inProgress} label={<Typography color="textPrimary" variant="subtitle2">List</Typography>} />
+                    <Tab disabled={state.inProgress} label={<Typography color="textPrimary" variant="subtitle2">Time Histogram</Typography>} />
+                    <Tab disabled={state.inProgress} label={<Typography color="textPrimary" variant="subtitle2">Gantt Chart</Typography>} />
 
                     {!!state.isFunctionGraphAvailable && (
-                        <Tab className="tab-buttons" disabled={state.inProgress} label={<Typography color="textPrimary" variant="subtitle2">Functions Graph</Typography>} />
+                        <Tab disabled={state.inProgress} label={<Typography color="textPrimary" variant="subtitle2">Functions Graph</Typography>} />
                     )}
                     
                 </Tabs>
@@ -435,7 +451,6 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
         }
     }
 
-    @action.bound
     private handleKeyPress(event: React.KeyboardEvent<HTMLInputElement>) {
         if (event.key === 'Enter') {
             // Otherwise the event will bubble up and the form will be submitted

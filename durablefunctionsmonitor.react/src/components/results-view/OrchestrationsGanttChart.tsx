@@ -6,9 +6,9 @@ import { observer } from 'mobx-react';
 
 import {
     Box, Button, Toolbar, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 
-import FileCopyIcon from '@material-ui/icons/FileCopy';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
 
 import { ResultsGanttDiagramTabState } from '../../states/results-view/ResultsGanttDiagramTabState';
 import { SaveAsSvgButton, getStyledSvg } from '../SaveAsSvgButton';
@@ -55,7 +55,7 @@ export class OrchestrationsGanttChart extends React.Component<{ state: ResultsGa
 
                 <Button
                     variant="outlined"
-                    color="default"
+                    color="inherit"
                     disabled={this.props.inProgress}
                     onClick={() => window.navigator.clipboard.writeText(state.diagramCode)}
                 >

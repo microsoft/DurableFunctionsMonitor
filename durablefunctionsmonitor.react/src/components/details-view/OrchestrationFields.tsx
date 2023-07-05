@@ -8,9 +8,9 @@ import moment from 'moment';
 import {
     AppBar, Box, Checkbox, FormControl, Grid, InputLabel, Link, MenuItem, Select, OutlinedInput, Table, TableBody,
     TableCell, TableHead, TableRow, TextField, Toolbar, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 
-import { KeyboardDateTimePicker } from '@material-ui/pickers';
+import { DateTimePicker } from '@mui/x-date-pickers';
 
 import { FilterOperatorEnum } from '../../states/FilterOperatorEnum';
 import { OrchestrationDetailsState } from '../../states/details-view/OrchestrationDetailsState';
@@ -156,7 +156,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                         variant="outlined"
                         fullWidth
                         multiline
-                        rowsMax={8}
+                        maxRows={8}
                     />
                 </Grid>
                 <Grid item xs={12} zeroMinWidth className="grid-item">
@@ -169,7 +169,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                         variant="outlined"
                         fullWidth
                         multiline
-                        rowsMax={8}
+                        maxRows={8}
                     />
                 </Grid>
                 <Grid item xs={12} zeroMinWidth className="grid-item">
@@ -182,7 +182,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                         variant="outlined"
                         fullWidth
                         multiline
-                        rowsMax={8}
+                        maxRows={8}
                     />
                 </Grid>
             </Grid>
@@ -209,30 +209,31 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                     </FormControl>
 
                     {state.timeFromEnabled ? (
-                        <KeyboardDateTimePicker
+                        <DateTimePicker
                             className="history-from-input"
                             ampm={false}
-                            autoOk={true}
-                            label={(<div className="history-from-label">
-                                Timestamp From ({this.context.timeZoneName})
-                            </div>)}
-                            invalidDateMessage=""
+                            slotProps={{
+                                textField: {
+                                    variant: 'standard',
+                                    onBlur: () => state.applyTimeFrom(),
+                                    onKeyPress: evt => this.handleKeyPress(evt as any),
+                                    InputLabelProps: { className: "history-from-label" }
+                                }
+                            }}
+                            label={`Timestamp From (${this.context.timeZoneName})`}
                             format={"YYYY-MM-DD HH:mm:ss"}
                             disabled={state.inProgress || !state.timeFromEnabled}
                             value={this.context.getMoment(state.timeFrom)}
                             onChange={(t) => state.timeFrom = this.context.setMoment(t)}
-                            onBlur={() => state.applyTimeFrom()}
                             onAccept={() => state.applyTimeFrom()}
-                            onKeyPress={(evt) => this.handleKeyPress(evt as any)}
                         />
                     ) : (
                         <TextField
                             className="history-from-input"
-                            label={(<div className="history-from-label">
-                                Timestamp From ({this.context.timeZoneName})
-                            </div>)}
+                            variant="standard"
+                            label={`Timestamp From (${this.context.timeZoneName})`}
                             placeholder="[Not set]"
-                            InputLabelProps={{ shrink: true }}
+                            InputLabelProps={{ shrink: true, className: "history-from-label" }}
                             type="text"
                             disabled={true}
                         />
@@ -241,14 +242,15 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                     <Box width={20} />
 
                     <FormControl>
-                        <InputLabel htmlFor="history-filtered-column-select">Filtered Column</InputLabel>
+                        <InputLabel variant="standard">Filtered Column</InputLabel>
                         <Select
                             className="toolbar-select history-filtered-column-input"
+                            variant="standard"
                             disabled={state.inProgress}
                             value={state.filteredColumn}
                             onChange={(evt) => state.filteredColumn = evt.target.value as string}
-                            inputProps={{ id: "history-filtered-column-select" }}>
-
+                            inputProps={{ id: "history-filtered-column-select" }}
+                        >
                             <MenuItem value="0">[Not Selected]</MenuItem>
 
                             {HistoryEventFields.map(col => {
@@ -261,14 +263,13 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                     <Box width={10} />
                     
                     <FormControl>
-
-                        <InputLabel htmlFor="history-filter-operator-select">Filter Operator</InputLabel>
+                        <InputLabel variant="standard">Filter Operator</InputLabel>
                         <Select
                             className="toolbar-select"
+                            variant="standard"
                             disabled={state.inProgress}
                             value={state.filterOperator}
                             onChange={(evt) => state.filterOperator = evt.target.value as number}
-                            inputProps={{ id: "history-filter-operator-select" }}
                         >
                             <MenuItem value={FilterOperatorEnum.Equals}>Equals</MenuItem>
                             <MenuItem value={FilterOperatorEnum.StartsWith}>Starts With</MenuItem>
@@ -285,6 +286,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                     <Box width={10} />
 
                     <TextField
+                        variant="standard"
                         size="small"
                         className="history-filter-value-input"
                         label="Filter Value"
@@ -323,7 +325,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
             
             // Showing link to sources
             return (<Link className="link-with-pointer-cursor"
-                color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'}
+                color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'}
                 onClick={() => { state.gotoFunctionCode(functionName) }}
             >
                 {functionName}
@@ -359,7 +361,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                                 <TableCell style={cellStyle}>
 
                                     <Link className="link-with-pointer-cursor"
-                                        color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'}
+                                        color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'}
                                         onClick={() => {
                                             
                                             this.props.state.timeFrom = moment(event.Timestamp);

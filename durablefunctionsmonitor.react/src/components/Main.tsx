@@ -4,10 +4,9 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { AppBar, Breadcrumbs, Box, Link, TextField, Toolbar, Typography } from '@material-ui/core';
-import { MuiPickersUtilsProvider } from '@material-ui/pickers';
-import Autocomplete from '@material-ui/lab/Autocomplete';
-import MomentUtils from '@date-io/moment';
+import { AppBar, Autocomplete, Breadcrumbs, Box, Link, TextField, Toolbar, Typography } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 
 import './Main.css';
 
@@ -36,7 +35,7 @@ export class Main extends React.Component<{ state: MainState }> {
         const state = this.props.state;
 
         return (
-            <MuiPickersUtilsProvider utils={MomentUtils}><DfmContextType.Provider value={dfmContextInstance}>
+            <LocalizationProvider dateAdapter={AdapterMoment}><DfmContextType.Provider value={dfmContextInstance}>
 
                 {!state.loginState && (
                     <Box height={20}/>
@@ -50,7 +49,7 @@ export class Main extends React.Component<{ state: MainState }> {
                                 <MainMenu state={state.mainMenuState} doRefresh={() => state.orchestrationsState.reloadOrchestrations()} />
                             )}
 
-                            <img src={`${!DfmRoutePrefix ? '' : '/'}${DfmRoutePrefix}/logo.svg`} width="30px"></img>
+                            <img src={`${!DfmRoutePrefix ? '' : '/'}${DfmRoutePrefix}/logo.svg`} width="30px" alt="logo"></img>
                             <Box width={5} />
 
                             <Typography variant="h6" color="inherit" className="title-typography">
@@ -59,46 +58,52 @@ export class Main extends React.Component<{ state: MainState }> {
                                 </Link>
                             </Typography>
 
-                            <Breadcrumbs color="inherit">
-                                <Link color="inherit" href={state.loginState.locationPathName}>
-                                    / {state.loginState.taskHubName}
-                                </Link>
+                            {!!state.loginState.taskHubName && (<>
+                                
+                                / &nbsp;
 
-                                {!state.orchestrationDetailsState ?
-                                    (
-                                        <Autocomplete
-                                            className="instance-id-input"
-                                            freeSolo
-                                            options={state.isExactMatch ? [] : state.suggestions}
-                                            value={state.typedInstanceId}
-                                            onChange={(evt, newValue) => {
-                                                state.typedInstanceId = newValue ?? '';
-                                                if (!!newValue) {
-                                                    state.goto();
-                                                }
-                                            }}
-                                            renderInput={(params) => (
-                                                <TextField
-                                                    {...params}
-                                                    className={state.isExactMatch ? 'instance-id-valid' : null}
-                                                    size="small"
-                                                    label="instanceId to go to..."
-                                                    variant="outlined"
-                                                    onChange={(evt) => state.typedInstanceId = evt.target.value as string}
-                                                    onKeyPress={(evt) => this.handleKeyPress(evt)}
-                                                />
-                                            )}
-                                        />
-                                    )
-                                    :
-                                    (<Typography color="inherit">
-                                        <Link color="inherit" href={window.location.pathname}>
-                                            {state.orchestrationDetailsState.orchestrationId}
-                                        </Link>
-                                    </Typography>)
-                                }
+                                <Breadcrumbs color="inherit">
 
-                            </Breadcrumbs>
+                                    <Link color="inherit" href={state.loginState.locationPathName}>
+                                        {state.loginState.taskHubName}
+                                    </Link>
+
+                                    {!state.orchestrationDetailsState ?
+                                        (
+                                            <Autocomplete
+                                                className="instance-id-input"
+                                                freeSolo
+                                                options={state.isExactMatch ? [] : state.suggestions}
+                                                value={state.typedInstanceId}
+                                                onChange={(evt, newValue) => {
+                                                    state.typedInstanceId = newValue ?? '';
+                                                    if (!!newValue) {
+                                                        state.goto();
+                                                    }
+                                                }}
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        className={state.isExactMatch ? 'instance-id-valid' : null}
+                                                        size="small"
+                                                        label="instanceId to go to..."
+                                                        variant="outlined"
+                                                        onChange={(evt) => state.typedInstanceId = evt.target.value as string}
+                                                        onKeyPress={(evt) => this.handleKeyPress(evt)}
+                                                    />
+                                                )}
+                                            />
+                                        )
+                                        :
+                                        (<Typography color="inherit">
+                                            <Link color="inherit" href={window.location.pathname}>
+                                                {state.orchestrationDetailsState.orchestrationId}
+                                            </Link>
+                                        </Typography>)
+                                    }
+
+                                </Breadcrumbs>
+                            </>)}
 
                             <Typography style={{ flex: 1 }} />
 
@@ -129,7 +134,7 @@ export class Main extends React.Component<{ state: MainState }> {
 
                 <ErrorMessage state={this.props.state} />
 
-            </DfmContextType.Provider></MuiPickersUtilsProvider>
+            </DfmContextType.Provider></LocalizationProvider>
         );
     }
 

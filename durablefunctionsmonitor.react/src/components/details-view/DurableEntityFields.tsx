@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Grid, TextField } from '@material-ui/core';
+import { Grid, TextField } from '@mui/material';
 
 import { DurableOrchestrationStatus } from '../../states/DurableOrchestrationStatus';
 import { RuntimeStatusToStyle } from '../../theme';
@@ -94,7 +94,7 @@ export class DurableEntityFields extends React.Component<{ details: DurableOrche
                         variant="outlined"
                         fullWidth
                         multiline
-                        rowsMax={10}
+                        maxRows={10}
                     />
                 </Grid>
                 <Grid item xs={12} zeroMinWidth className="grid-item">
@@ -107,7 +107,7 @@ export class DurableEntityFields extends React.Component<{ details: DurableOrche
                         variant="outlined"
                         fullWidth
                         multiline
-                        rowsMax={10}
+                        maxRows={10}
                     />
                 </Grid>
             </Grid>

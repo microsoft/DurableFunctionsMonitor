@@ -88,7 +88,7 @@
 }
 
 .toolbar-grid2-item2 {
-    padding-top: 20px;
+    padding-top: 19px;
 }
 
 .toolbar-grid3 {
@@ -119,8 +119,8 @@
 }
 
 .column-filter-input > div > input {
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
 }
 
 .column-filter-button {
@@ -150,12 +150,7 @@
 }
 
 .unhide-button {
-    vertical-align: text-bottom !important;
-    font-size: 12px;
-}
-
-.tab-buttons {
-    min-height: 37px !important;
+    padding-bottom: 2px !important;
 }
 
 .histogram-legend {
@@ -184,4 +179,8 @@
 .selected-statuses-box {
     display: flex;
     flex-wrap: wrap;
+}
+
+.type-status-label{
+    margin-bottom: -6px;
 }

@@ -3,9 +3,9 @@
 
 import * as React from 'react';
 
-import { Box, Button, Typography } from '@material-ui/core';
+import { Box, Button, Typography } from '@mui/material';
 
-import SaveIcon from '@material-ui/icons/Save';
+import SaveIcon from '@mui/icons-material/Save';
 
 import { IBackendClient } from '../services/IBackendClient';
 
@@ -19,7 +19,7 @@ export class SaveAsSvgButton extends React.Component<{ svg: string, fileName: st
             return (
                 <Button
                     variant="outlined"
-                    color="default"
+                    color="inherit"
                     disabled={this.props.inProgress}
                     onClick={() => this.props.backendClient.call('SaveAs', this.props.fileName + '.svg', this.props.svg)}
                 >
@@ -34,7 +34,7 @@ export class SaveAsSvgButton extends React.Component<{ svg: string, fileName: st
             return (
                 <Button
                     variant="outlined"
-                    color="default"
+                    color="inherit"
                     disabled={this.props.inProgress}
                     href={URL.createObjectURL(new Blob([this.props.svg], { type: 'image/svg+xml' }))}
                     download={this.props.fileName + '.svg'}

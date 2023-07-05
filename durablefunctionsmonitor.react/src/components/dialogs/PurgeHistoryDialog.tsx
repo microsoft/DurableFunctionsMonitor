@@ -7,9 +7,9 @@ import { observer } from 'mobx-react';
 import {
     Box, Checkbox, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl,
     FormControlLabel, FormGroup, FormLabel, LinearProgress, Radio, RadioGroup, Tooltip, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 
-import { KeyboardDateTimePicker } from '@material-ui/pickers';
+import { DateTimePicker } from '@mui/x-date-pickers';
 
 import './PurgeHistoryDialog.css';
 
@@ -74,25 +74,21 @@ export class PurgeHistoryDialog extends React.Component<{ state: PurgeHistoryDia
                             </RadioGroup>
                         </FormControl>
 
-                        <KeyboardDateTimePicker
+                        <DateTimePicker
                             className="purge-history-from-input"
                             ampm={false}
-                            autoOk={true}
                             label={state.entityType === 'DurableEntity' ? `Last Updated From (${this.context.timeZoneName})` : `From (${this.context.timeZoneName})`}
                             format={"YYYY-MM-DD HH:mm:ss"}
-                            variant="inline"
                             disabled={state.inProgress}
                             value={this.context.getMoment(state.timeFrom)}
                             onChange={(t) => state.timeFrom = this.context.setMoment(t)}
                         />
 
-                        <KeyboardDateTimePicker
+                        <DateTimePicker
                             className="purge-history-till-input"
                             ampm={false}
-                            autoOk={true}
                             label={state.entityType === 'DurableEntity' ? `Last Updated Till (${this.context.timeZoneName})` : `Till (${this.context.timeZoneName})`}
                             format={"YYYY-MM-DD HH:mm:ss"}
-                            variant="inline"
                             disabled={state.inProgress}
                             value={this.context.getMoment(state.timeTill)}
                             onChange={(t) => state.timeTill = this.context.setMoment(t)}

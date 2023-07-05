@@ -6,9 +6,9 @@ import { observer } from 'mobx-react';
 
 import {
     Box, Button, Checkbox, Chip, FormGroup, FormControlLabel, FormHelperText, Link, Menu, MenuItem, Toolbar, Tooltip, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 
-import FileCopyIcon from '@material-ui/icons/FileCopy';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
 
 import './OrchestrationsFunctionGraph.css';
 
@@ -61,7 +61,7 @@ export class OrchestrationsFunctionGraph extends FunctionGraphTabBase<{ state: R
             
             <FormHelperText className="link-to-az-func-as-a-graph" >
                 powered by <Link
-                    color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
+                    color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
                     variant="inherit"
                     href="https://github.com/scale-tone/az-func-as-a-graph"
                 >
@@ -112,7 +112,7 @@ export class OrchestrationsFunctionGraph extends FunctionGraphTabBase<{ state: R
 
                     <Button
                         variant="outlined"
-                        color="default"
+                        color="inherit"
                         disabled={this.props.inProgress}
                         onClick={() => window.navigator.clipboard.writeText(state.diagramCode)}
                     >

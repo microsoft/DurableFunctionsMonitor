@@ -6,7 +6,7 @@ import { observer } from 'mobx-react';
 
 import {
     Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, TextField
-} from '@material-ui/core';
+} from '@mui/material';
 
 import './StartNewInstanceDialog.css';
 

@@ -6,7 +6,7 @@ import { observer } from 'mobx-react';
 
 import {
     Button, Dialog, DialogActions, DialogContent, DialogTitle, InputBase
-} from '@material-ui/core';
+} from '@mui/material';
 
 import { renderFilteredField } from '../RenderHelpers';
 

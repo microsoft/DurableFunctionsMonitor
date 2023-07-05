@@ -5,9 +5,9 @@ import * as React from 'react';
 import { action } from 'mobx'
 import { observer } from 'mobx-react';
 
-import { IconButton, Snackbar, SnackbarContent } from '@material-ui/core';
-import CloseIcon from '@material-ui/icons/Close';
-import ErrorIcon from '@material-ui/icons/Error';
+import { IconButton, Snackbar, SnackbarContent } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import ErrorIcon from '@mui/icons-material/Error';
 
 import './ErrorMessage.css';
 

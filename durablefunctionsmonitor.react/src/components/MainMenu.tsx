@@ -6,11 +6,11 @@ import { observer } from 'mobx-react';
 
 import {
     FormControlLabel, IconButton, Menu, MenuItem, Radio, RadioGroup, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 
 import './MainMenu.css';
 
-import MenuIcon from '@material-ui/icons/Menu';
+import MenuIcon from '@mui/icons-material/Menu';
 
 import { MainMenuState } from '../states/MainMenuState';
 

@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Link } from '@material-ui/core';
+import { Link } from '@mui/material';
 
 import { IBackendClient } from '../services/IBackendClient';
 import { Theme } from '../theme';
@@ -17,7 +17,7 @@ export class OrchestrationLink extends React.Component<{ orchestrationId: string
 
     render(): JSX.Element {
 
-        const linkColor = Theme.palette.type === 'dark' ? 'inherit' : 'primary';
+        const linkColor = Theme.palette.mode === 'dark' ? 'inherit' : 'primary';
 
         return (
             <Link color={linkColor} className="link-with-pointer-cursor" onClick={() => this.props.backendClient.showDetails(this.props.orchestrationId)} >

@@ -4,13 +4,13 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { AppBar, Box, Button, Checkbox, FormControlLabel, FormHelperText, LinearProgress, Link, Toolbar, Typography } from '@material-ui/core';
+import { AppBar, Box, Button, Checkbox, FormControlLabel, FormHelperText, LinearProgress, Link, Toolbar, Typography } from '@mui/material';
 
 import './FunctionGraph.css';
 
-import RefreshIcon from '@material-ui/icons/Refresh';
-import FileCopyIcon from '@material-ui/icons/FileCopy';
-import SaveAltIcon from '@material-ui/icons/SaveAlt';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import { ErrorMessage } from './ErrorMessage';
 import { FunctionGraphBase } from './FunctionGraphBase';
 import { FunctionGraphState } from '../states/FunctionGraphState';
@@ -79,7 +79,7 @@ export class FunctionGraph extends FunctionGraphBase<{ state: FunctionGraphState
                     <Button
                         className="details-refresh-button"
                         variant="outlined"
-                        color="default"
+                        color="inherit"
                         size="large"
                         disabled={state.inProgress}
                         onClick={() => state.load()}
@@ -92,7 +92,7 @@ export class FunctionGraph extends FunctionGraphBase<{ state: FunctionGraphState
 
             <FormHelperText className="link-to-az-func-as-a-graph" >
                 powered by <Link
-                    color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
+                    color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
                     variant="inherit"
                     href="https://github.com/scale-tone/az-func-as-a-graph"
                 >
@@ -112,7 +112,7 @@ export class FunctionGraph extends FunctionGraphBase<{ state: FunctionGraphState
 
                     <Button
                         variant="outlined"
-                        color="default"
+                        color="inherit"
                         disabled={state.inProgress}
                         onClick={() => window.navigator.clipboard.writeText(state.diagramCode)}
                     >
@@ -134,7 +134,7 @@ export class FunctionGraph extends FunctionGraphBase<{ state: FunctionGraphState
 
                     <Button
                         variant="outlined"
-                        color="default"
+                        color="inherit"
                         disabled={state.inProgress}
                         onClick={() => state.saveAsJson()}
                     >

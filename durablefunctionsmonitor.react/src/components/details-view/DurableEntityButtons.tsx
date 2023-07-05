@@ -6,7 +6,7 @@ import { observer } from 'mobx-react';
 
 import {
     Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField
-} from '@material-ui/core';
+} from '@mui/material';
 
 import { OrchestrationDetailsState } from '../../states/details-view/OrchestrationDetailsState';
 

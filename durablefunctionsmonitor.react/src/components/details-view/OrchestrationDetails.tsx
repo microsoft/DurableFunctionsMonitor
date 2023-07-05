@@ -7,11 +7,11 @@ import { observer } from 'mobx-react';
 import {
     AppBar, Box, Button, FormControl, InputLabel, LinearProgress, MenuItem,
     Select, Tabs, Tab, Toolbar, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 
-import RefreshIcon from '@material-ui/icons/Refresh';
-import CancelOutlinedIcon from '@material-ui/icons/CancelOutlined';
-import FileCopyIcon from '@material-ui/icons/FileCopy';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
 
 import './OrchestrationDetails.css';
 
@@ -75,12 +75,13 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
                     <Typography style={{ flex: 1 }} />
 
                     <FormControl>
-                        <InputLabel htmlFor="auto-refresh-select">Auto-refresh</InputLabel>
+                        <InputLabel variant="standard">Auto-refresh</InputLabel>
                         <Select
                             className="toolbar-select"
+                            variant="standard"
                             value={state.autoRefresh}
                             onChange={(evt) => state.autoRefresh = evt.target.value as number}
-                            inputProps={{ id: 'auto-refresh-select' }}>
+                        >
                             <MenuItem value={0}>Never</MenuItem>
                             <MenuItem value={1}>Every 1 sec.</MenuItem>
                             <MenuItem value={5}>Every 5 sec.</MenuItem>
@@ -93,7 +94,7 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
                     <Button
                         className="details-refresh-button"
                         variant="outlined"
-                        color="default"
+                        color="inherit"
                         size="large"
                         disabled={state.inProgress && !state.loadInProgress}
                         onClick={() => state.loadInProgress ? state.cancel() : state.loadDetails()}
@@ -106,7 +107,7 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
 
             {!!state.tabStates.length && (<>
                 <AppBar color="inherit" position="static">
-                    <Tabs className="tab-buttons" value={state.tabIndex}
+                    <Tabs value={state.tabIndex}
                         onChange={(ev: React.ChangeEvent<{}>, val) => {
                             // Link to functions graph should not be selectable
                             if (val !== 'functions-graph-link') {
@@ -114,12 +115,12 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
                             }
                         }}>
                         
-                        <Tab className="tab-buttons" disabled={state.inProgress} 
+                        <Tab disabled={state.inProgress} 
                             label={<Typography color="textPrimary" variant="subtitle2">Details</Typography>}
                         />
                         
                         {state.tabStates.map(tabState => (
-                            <Tab className="tab-buttons" key={tabState.name} disabled={state.inProgress} 
+                            <Tab key={tabState.name} disabled={state.inProgress} 
                                 label={<Typography color="textPrimary" variant="subtitle2">{tabState.name}</Typography>}
                             />
                         ))}
@@ -163,7 +164,7 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
 
                         <Button
                             variant="outlined"
-                            color="default"
+                            color="inherit"
                             disabled={state.inProgress}
                             onClick={() => window.navigator.clipboard.writeText(state.selectedTab.description)}
                         >

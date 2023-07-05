@@ -22,7 +22,7 @@ export function renderFilteredField(text: string, filterValue: string): string |
 
         result.push(
             <>{text.substring(pos, match.index)}</>,
-            <span style={{backgroundColor : Theme.palette.type === 'dark' ? 'darkblue' : 'azure'}}>{match[0]}</span>
+            <span style={{backgroundColor : Theme.palette.mode === 'dark' ? 'darkblue' : 'azure'}}>{match[0]}</span>
         );
 
         pos = match.index + match[0].length;

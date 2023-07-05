@@ -7,9 +7,9 @@ import { observer } from 'mobx-react';
 import {
     FormHelperText, IconButton, InputAdornment, Link, Paper, Table, TableBody, TableCell, TableHead, TableRow,
     TableSortLabel, TextField, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 
-import CloseIcon from '@material-ui/icons/Close';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { IBackendClient } from '../../services/IBackendClient';
 import { DurableOrchestrationStatusFields } from '../../states/DurableOrchestrationStatus';
@@ -45,7 +45,7 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
                     , {state.hiddenColumns.length} columns hidden
 
                     (<Link
-                        color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
+                        color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
                         className="unhide-button"
                         component="button"
                         variant="inherit"
@@ -58,10 +58,10 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
 
                 {!!state.orderBy && (<>
 
-                    , sorted by <strong>{state.orderBy} {state.orderByDirection}</strong>
+                    , sorted by <strong>{state.orderBy} {state.orderByDirection} </strong>
                     
                     (<Link
-                        color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
+                        color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
                         className="unhide-button"
                         component="button"
                         variant="inherit"
@@ -77,12 +77,11 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
                     , filter <strong>{state.clientFilteredColumn}</strong> with:
                     
                     <TextField
-                        
-                        className='column-filter-input'
+                        className="column-filter-input"
                         autoFocus
                         hiddenLabel
-                        variant='outlined'
-                        size='small'
+                        variant="outlined"
+                        size="small"
                         value={state.clientFilterValue}
                         onChange={(evt) => state.clientFilterValue = evt.target.value as string}
                         onKeyDown={(evt) => {

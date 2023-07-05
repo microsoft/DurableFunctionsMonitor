@@ -7,7 +7,7 @@ import { observer } from 'mobx-react';
 import {
     Box, Checkbox, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl,
     FormControlLabel, FormGroup, LinearProgress, 
-} from '@material-ui/core';
+} from '@mui/material';
 
 import './CleanEntityStorageDialog.css';
 

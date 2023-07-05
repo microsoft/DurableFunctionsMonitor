@@ -5,7 +5,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 import moment from 'moment';
 
-import { FormHelperText, Link } from '@material-ui/core';
+import { FormHelperText, Link } from '@mui/material';
 
 import { XYPlot, XAxis, YAxis, DiscreteColorLegend, VerticalRectSeries, Highlight } from 'react-vis';
 
@@ -34,7 +34,7 @@ export class OrchestrationsHistogram extends React.Component<{ state: ResultsHis
 
                     {', '}
                     <Link
-                        color={Theme.palette.type === 'dark' ? 'inherit' : 'primary'} 
+                        color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
                         className="unhide-button"
                         component="button"
                         variant="inherit"
@@ -82,7 +82,7 @@ export class OrchestrationsHistogram extends React.Component<{ state: ResultsHis
             </XYPlot>
 
             <DiscreteColorLegend
-                className={'histogram-legend' + (Theme.palette.type === 'dark' ? ' histogram-legend-dark-mode' : '')}
+                className={'histogram-legend' + (Theme.palette.mode === 'dark' ? ' histogram-legend-dark-mode' : '')}
                 colors={typeNames.map(typeName => this.getColorCodeForInstanceType(typeName))}
                 items={typeNames.map(typeName => `${typeName} (${state.counts[typeName]})`)}
                 orientation="horizontal"

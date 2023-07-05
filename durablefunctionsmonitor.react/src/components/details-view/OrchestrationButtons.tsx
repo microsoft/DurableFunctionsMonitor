@@ -5,11 +5,9 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import {
-    Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+    Autocomplete, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
     FormControlLabel, TextField
-} from '@material-ui/core';
-
-import Autocomplete from '@material-ui/lab/Autocomplete';
+} from '@mui/material';
 
 import { OrchestrationDetailsState } from '../../states/details-view/OrchestrationDetailsState';
 

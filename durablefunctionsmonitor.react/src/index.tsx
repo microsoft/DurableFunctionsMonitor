@@ -4,7 +4,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { ThemeProvider } from "@material-ui/styles";
+import { ThemeProvider } from '@mui/material/styles';
 
 import './index.css';
 import '../node_modules/react-vis/dist/style.css';
