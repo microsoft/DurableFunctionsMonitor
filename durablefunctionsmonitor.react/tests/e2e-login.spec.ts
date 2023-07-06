@@ -66,15 +66,12 @@ for (const baseUri of instances) {
     }
   
     // changing the default time frame
-    const fromTextBox = await page.getByRole('textbox').nth(1);
-    await fromTextBox.fill('2020-01-01 12:00:00');
-    await fromTextBox.press('Enter');
+    await page.goto(`${page.url().split('?')[0]}?timeFrom=2020-01-01T00%3A00%3A00.000Z`);
+    
+    // waiting till the load finishes
+    await expect(page.getByText(/\[Show All\]/)).toBeEnabled();
   
     const itemsShownLabel = await page.getByText(/items shown/);
-  
-    // waiting till the load finishes
-    await expect(fromTextBox).toBeEnabled();
-  
     const itemsShownLabelText = await itemsShownLabel.textContent();
   
     // Something should be loaded at least
@@ -130,14 +127,12 @@ for (const baseUri of instances) {
     }
   
     // changing the default time frame
-    const fromTextBox = await page.getByRole('textbox').nth(1);
-    await fromTextBox.fill('2020-01-01 12:00:00');
-    await fromTextBox.press('Enter');
+    await page.goto(`${page.url().split('?')[0]}?timeFrom=2020-01-01T00%3A00%3A00.000Z`);
   
     const itemsShownLabel = await page.getByText(/items shown/);
   
     // waiting till the load finishes
-    await expect(fromTextBox).toBeEnabled();
+    await expect(page.getByText(/\[Show All\]/)).toBeEnabled();
   
     const itemsShownLabelText = await itemsShownLabel.textContent();
   
