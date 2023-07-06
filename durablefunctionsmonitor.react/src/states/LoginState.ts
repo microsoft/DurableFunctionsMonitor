@@ -84,11 +84,13 @@ export class LoginState extends ErrorMessageState {
 
         if (!this._aadApp) {
 
-            window.location.replace('/.auth/logout');
+            window.location.replace('/.auth/login/aad?post_login_redirect_url=%2F');
 
         } else {
             
-            this._aadApp.logout();
+            this._aadApp.loginRedirect({
+                prompt: 'select_account'
+            })
         }
     }
 

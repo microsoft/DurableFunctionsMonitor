@@ -7,7 +7,7 @@ import { observer } from 'mobx-react';
 import {
     Box, Button, Container, CircularProgress, Dialog, DialogContent, DialogContentText,
     List, ListItem, Link,
-    Menu, MenuItem, Tooltip, Typography, DialogTitle
+    Menu, MenuItem, Typography, DialogTitle, Tooltip, DialogActions
 } from '@mui/material';
 
 import { AccountCircle, Error } from '@mui/icons-material';
@@ -27,17 +27,17 @@ export class LoginIcon extends React.Component<{ state: LoginState }> {
 
         return (
             <div>
-                <Button color={state.isLoggedInAnonymously ? "secondary" : "inherit"}
-                    onClick={evt => state.menuAnchorElement = evt.currentTarget}
-                >
-                    <AccountCircle />
-                    <Box width={5} />
-                    <Tooltip title={state.isLoggedInAnonymously ? "Ensure this endpoint is not exposed to the public!" : ""} >
-                        <Typography color={state.isLoggedInAnonymously ? "secondary" : "inherit"} >
-                            {state.isLoggedInAnonymously ? "Anonymous" : state.userName}
+                <Tooltip title={!state.isLoggedInAnonymously ? state.userName : 'Ensure this endpoint is not exposed to the public!'} >
+                    <Button color={state.isLoggedInAnonymously ? "secondary" : "inherit"}
+                        onClick={evt => state.menuAnchorElement = evt.currentTarget}
+                    >
+                        <AccountCircle />
+                        <Box width={5} />
+                        <Typography color={state.isLoggedInAnonymously ? 'secondary' : 'inherit'} >
+                            {!state.isLoggedInAnonymously ? '' : 'Anonymous'}
                         </Typography>
-                    </Tooltip>
-                </Button>
+                    </Button>
+                </Tooltip>
 
                 {!state.isLoggedInAnonymously && (
                     <Menu
@@ -49,43 +49,49 @@ export class LoginIcon extends React.Component<{ state: LoginState }> {
                         <MenuItem onClick={() => state.logout()}>Login under a different name</MenuItem>
                     </Menu>
                 )}
-
+                
                 <Dialog open={!state.isLoggedIn}>
-                    <DialogContent>
 
-                        {!state.errorMessage ? (!state.allowedTaskHubNames ? (<>
-                            
-                            <Container className="login-progress">
-                                <CircularProgress />
-                            </Container>
-                            <DialogContentText>Login in progress...</DialogContentText>
-
-                        </>) : (<>
-                                
-                            {state.allowedTaskHubNames?.length ? (
-                                <DialogTitle>Select your Task Hub</DialogTitle>
-                            ) : (
-                                <DialogTitle>No Task Hubs found. <br/> Make sure your connection settings are correct.</DialogTitle>
-                            )}
-
-                            <List className="task-hub-list">
-                                {state.allowedTaskHubNames.map(hubName => (
-                                    <ListItem button key={hubName} onClick={() => window.location.assign(state.locationPathName + hubName)}>
-                                        <Link color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'}>{hubName}</Link>
-                                    </ListItem>)
-                                )}
-                            </List>
-                            
-                        </>)): (<>
+                    {!state.errorMessage ? (!state.allowedTaskHubNames ? (<DialogContent>
                         
+                        <Container className="login-progress">
+                            <CircularProgress />
+                        </Container>
+                        <DialogContentText>Login in progress...</DialogContentText>
+
+                    </DialogContent>) : (<DialogContent>
+                            
+                        {state.allowedTaskHubNames?.length ? (
+                            <DialogTitle>Select your Task Hub</DialogTitle>
+                        ) : (
+                            <DialogTitle>No Task Hubs found. <br/> Make sure your connection settings are correct.</DialogTitle>
+                        )}
+
+                        <List className="task-hub-list">
+                            {state.allowedTaskHubNames.map(hubName => (
+                                <ListItem button key={hubName} onClick={() => window.location.assign(state.locationPathName + hubName)}>
+                                    <Link color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'}>{hubName}</Link>
+                                </ListItem>)
+                            )}
+                        </List>
+                        
+                    </DialogContent>)): (<>
+                    
+                        <DialogContent>
                             <Container className="login-progress">
                                 <Error color="secondary" fontSize="large" />
                             </Container>
                             <DialogContentText color="secondary">Login failed. {state.errorMessage}</DialogContentText>
-                            
-                        </>)}
+                        </DialogContent>
+                        
+                        <DialogActions>
+                            <Button color="inherit" onClick={() => state.logout()}>
+                                Login under a different name
+                            </Button>
+                        </DialogActions>
 
-                    </DialogContent>
+                    </>)}
+
                 </Dialog>
             </div>
         );
