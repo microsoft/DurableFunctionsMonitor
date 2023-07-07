@@ -8,7 +8,11 @@ A monitoring/debugging UI tool for Azure Durable Functions
 [<img alt="Nuget" src="https://img.shields.io/nuget/v/DurableFunctionsMonitor.DotNetBackend?label=current%20version">](https://www.nuget.org/profiles/durablefunctionsmonitor)  <img src="https://dev.azure.com/kolepes/DurableFunctionsMonitor/_apis/build/status/microsoft.DurableFunctionsMonitor?branchName=main"/>
 
 
-<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/microsoft/durablefunctionsmonitor?label=GitHub%20stars"> [<img alt="Visual Studio Marketplace Installs" src="https://img.shields.io/visual-studio-marketplace/i/DurableFunctionsMonitor.DurableFunctionsMonitor?label=VsCode%20Extension%20Installs">](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.durablefunctionsmonitor) [<img src="https://img.shields.io/docker/pulls/scaletone/durablefunctionsmonitor"/>](https://hub.docker.com/r/scaletone/durablefunctionsmonitor) [<img alt="Nuget" src="https://img.shields.io/nuget/dt/DurableFunctionsMonitor.DotNetBackend?label=nuget%20downloads">](https://www.nuget.org/profiles/durablefunctionsmonitor)
+[<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/microsoft/durablefunctionsmonitor?label=GitHub%20stars">](https://github.com/microsoft/DurableFunctionsMonitor/stargazers) [<img alt="Visual Studio Marketplace Rating" src="https://img.shields.io/visual-studio-marketplace/r/DurableFunctionsMonitor.durablefunctionsmonitor?label=VsCode%20extension%20rating">
+](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.durablefunctionsmonitor)
+
+
+[<img alt="Visual Studio Marketplace Installs" src="https://img.shields.io/visual-studio-marketplace/i/DurableFunctionsMonitor.DurableFunctionsMonitor?label=VsCode%20extension%20installs">](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.durablefunctionsmonitor) [<img src="https://img.shields.io/docker/pulls/scaletone/durablefunctionsmonitor"/>](https://hub.docker.com/r/scaletone/durablefunctionsmonitor) [<img alt="Nuget" src="https://img.shields.io/nuget/dt/DurableFunctionsMonitor.DotNetBackend?label=NuGet%20downloads">](https://www.nuget.org/profiles/durablefunctionsmonitor)
 
 ## How to use
 
