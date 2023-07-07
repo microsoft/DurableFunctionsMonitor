@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 6.3.1
+
+- Mostly technical release. Migrated to latest versions of [MUI](https://github.com/mui) and [Mermaid](https://github.com/mermaid-js/mermaid).
+
+
+
 ## Version 6.2.0
 
 - Full support for [Netherite](https://microsoft.github.io/durabletask-netherite/#/). Netherite-based Task Hubs are automatically discovered and shown in the TreeView:
