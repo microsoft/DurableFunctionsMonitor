@@ -919,13 +919,8 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
  
         const result: StorageAccount[] = [];
 
-        var storageAccountsPartialResponse = await storageManagementClient.storageAccounts.list();
-        result.push(...storageAccountsPartialResponse);
-
-        while (!!storageAccountsPartialResponse.nextLink) {
-
-            storageAccountsPartialResponse = await storageManagementClient.storageAccounts.listNext(storageAccountsPartialResponse.nextLink);
-            result.push(...storageAccountsPartialResponse);
+        for await (const item of storageManagementClient.storageAccounts.list()) {
+            result.push(item);
         }
 
         return result;

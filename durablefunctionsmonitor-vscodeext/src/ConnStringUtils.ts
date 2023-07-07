@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { StorageAccount } from '@azure/arm-storage/esm/models';
+import { StorageAccount } from '@azure/arm-storage';
 import { Settings } from './Settings';
 import { ResourceGraphClient } from '@azure/arm-resourcegraph';
 import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
