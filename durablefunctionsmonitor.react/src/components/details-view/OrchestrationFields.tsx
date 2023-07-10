@@ -241,10 +241,9 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
 
                     <Box width={20} />
 
-                    <FormControl>
+                    <FormControl className="details-toolbar-select">
                         <InputLabel variant="standard">Filtered Column</InputLabel>
                         <Select
-                            className="toolbar-select history-filtered-column-input"
                             variant="standard"
                             disabled={state.inProgress}
                             value={state.filteredColumn}
@@ -262,10 +261,9 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
 
                     <Box width={10} />
                     
-                    <FormControl>
+                    <FormControl className="details-toolbar-select">
                         <InputLabel variant="standard">Filter Operator</InputLabel>
                         <Select
-                            className="toolbar-select"
                             variant="standard"
                             disabled={state.inProgress}
                             value={state.filterOperator}

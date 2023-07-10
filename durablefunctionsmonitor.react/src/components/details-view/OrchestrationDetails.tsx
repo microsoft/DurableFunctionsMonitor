@@ -74,10 +74,9 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
                     <Box width={20} />
                     <Typography style={{ flex: 1 }} />
 
-                    <FormControl>
+                    <FormControl className="details-refresh-select">
                         <InputLabel variant="standard">Auto-refresh</InputLabel>
                         <Select
-                            className="toolbar-select"
                             variant="standard"
                             value={state.autoRefresh}
                             onChange={(evt) => state.autoRefresh = evt.target.value as number}
