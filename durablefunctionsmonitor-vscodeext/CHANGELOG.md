@@ -1,6 +1,6 @@
 # Change Log
 
-## Version 6.3.1
+## Version 6.3.0
 
 - Mostly technical release. Migrated to latest versions of [MUI](https://github.com/mui) and [Mermaid](https://github.com/mermaid-js/mermaid).
 
