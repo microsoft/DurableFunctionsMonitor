@@ -1,19 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Specialized;
+using System.Net;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
 [assembly: InternalsVisibleToAttribute("durablefunctionsmonitor.dotnetbackend.tests")]
 
-namespace DurableFunctionsMonitor.DotNetBackend
+namespace DurableFunctionsMonitor.DotNetIsolated
 {
     static class EnvVariableNames
     {
@@ -58,6 +57,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public const string IdentityBasedConnectionSettingCredentialSuffix = "__credential";
         public const string IdentityBasedConnectionSettingClientIdSuffix = "__clientId";
         public const string IdentityBasedConnectionSettingCredentialValue = "managedidentity";
+
+        public const string DfmModeContextValue = "DfmModeContextValue";
 
         public static void SplitConnNameAndHubName(string connAndHubName, out string connName, out string hubName)
         {
@@ -107,6 +108,60 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public static string FixUndefinedsInJson(this string json)
         {
             return json.Replace("\": undefined", "\": null");
+        }
+
+        // A custom way of returning JSON
+        public static async Task<HttpResponseData> ReturnJson(this HttpRequestData req, object result, Func<string, string> applyThisToJson = null)
+        {
+            string json = JsonConvert.SerializeObject(result, Globals.SerializerSettings);
+            if (applyThisToJson != null)
+            {
+                json = applyThisToJson(json);
+            }
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "application/json");
+            await response.WriteStringAsync(json);
+
+            return response;
+        }
+
+        // Routine to return an HTTP status and a string body
+        public static HttpResponseData ReturnStatus(this HttpRequestData req, HttpStatusCode status, string body = null)
+        {
+            var result = req.CreateResponse(status);
+            if (!string.IsNullOrEmpty(body))
+            {
+                result.WriteString(body);
+            }
+            return result;
+        }
+
+        // Lists all blobs from Azure Blob Container
+        public static async Task<IEnumerable<IListBlobItem>> ListBlobsAsync(this CloudBlobContainer container, string prefix)
+        {
+            var result = new List<IListBlobItem>();
+            BlobContinuationToken token = null;
+            do
+            {
+                var nextBatch = await container.ListBlobsSegmentedAsync(prefix, token);
+                result.AddRange(nextBatch.Results);
+                token = nextBatch.ContinuationToken;
+            }
+            while (token != null);
+            return result;
+        }
+
+        public static IEnumerable<T> ApplyTop<T>(this IEnumerable<T> collection, NameValueCollection query)
+        {
+            var clause = query["$top"];
+            return !string.IsNullOrEmpty(clause) ? collection.Take(int.Parse(clause)) : collection;
+        }
+        
+        public static IEnumerable<T> ApplySkip<T>(this IEnumerable<T> collection, NameValueCollection query)
+        {
+            var clause = query["$skip"];
+            return !string.IsNullOrEmpty(clause) ? collection.Skip(int.Parse(clause)) : collection;
         }
 
         // Shared JSON serialization settings
