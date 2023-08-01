@@ -49,7 +49,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
     internal static class ExtensionMethodsForOrchestrations
     {
         // Adds artificial fields ('lastEvent' and 'parentInstanceId') fields to each entity, when needed
-        internal static IEnumerable<ExpandedOrchestrationStatus> ExpandStatus(this IEnumerable<DurableOrchestrationStatus> orchestrations,
+        internal static IEnumerable<ExpandedOrchestrationStatus> ExpandStatus(this IAsyncEnumerable<OrchestrationMetadata> asyncEnumerable,
             DurableTaskClient client, string connName, string hubName, FilterClause filterClause, HashSet<string> hiddenColumns)
         {
             var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
@@ -58,27 +58,38 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var parallelizationLevel = 256;
             var buf = new List<ExpandedOrchestrationStatus>();
 
-            foreach (var orchestration in orchestrations)
+            //TODO: optimize more
+            var asyncEnumerator = asyncEnumerable.GetAsyncEnumerator();
+            try
             {
-                var expandedStatus = new ExpandedOrchestrationStatus
-                (
-                    orchestration,
-                    // Only loading parentInstanceId when being filtered by it
-                    filterClause.FieldName == "parentInstanceId" ? DfmEndpoint.ExtensionPoints.GetParentInstanceIdRoutine(client, connEnvVariableName, hubName, orchestration.InstanceId) : null,
-                    hiddenColumns
-                );
-
-                buf.Add(expandedStatus);
-
-                if (buf.Count >= parallelizationLevel)
+                while (asyncEnumerator.MoveNextAsync().AsTask().Result)
                 {
-                    foreach(var item in buf)
-                    {
-                        yield return item;
-                    }
+                    var orchestration = new DurableOrchestrationStatus(asyncEnumerator.Current);
 
-                    buf.Clear();
+                    var expandedStatus = new ExpandedOrchestrationStatus
+                    (
+                        orchestration,
+                        // Only loading parentInstanceId when being filtered by it
+                        filterClause.FieldName == "parentInstanceId" ? DfmEndpoint.ExtensionPoints.GetParentInstanceIdRoutine(client, connEnvVariableName, hubName, orchestration.InstanceId) : null,
+                        hiddenColumns
+                    );
+
+                    buf.Add(expandedStatus);
+
+                    if (buf.Count >= parallelizationLevel)
+                    {
+                        foreach(var item in buf)
+                        {
+                            yield return item;
+                        }
+
+                        buf.Clear();
+                    }
                 }
+            }
+            finally
+            {
+                asyncEnumerator.DisposeAsync().AsTask().Wait();
             }
 
             foreach(var item in buf)
@@ -162,7 +173,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         // Intentionally NOT using async/await here, because we need yield return.
         // The magic is to only load all the pages, when it is really needed (e.g. when sorting is used).
-        internal static IEnumerable<DurableOrchestrationStatus> ListAllInstances(this DurableTaskClient durableClient, DateTime? timeFrom, DateTime? timeTill, bool showInput, string[] statuses)
+        internal static IAsyncEnumerable<OrchestrationMetadata> ListAllInstances(this DurableTaskClient durableClient, DateTime? timeFrom, DateTime? timeTill, bool showInput, string[] statuses)
         {
             List<OrchestrationRuntimeStatus> runtimeStatuses = null;
 
@@ -186,10 +197,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 Statuses = runtimeStatuses
             };
 
-            //TODO: try to speed up ToBlockingEnumerable()
-            return durableClient.GetAllInstancesAsync(queryCondition)
-                .ToBlockingEnumerable()
-                .Select(instance => new DurableOrchestrationStatus(instance));
+            return durableClient.GetAllInstancesAsync(queryCondition);
         }
 
         // Some reasonable page size for ListInstancesAsync
