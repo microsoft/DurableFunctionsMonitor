@@ -55,10 +55,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
 
             // Iterating through the stream in batches of this size
-            var parallelizationLevel = 256;
+            var parallelizationLevel = ListInstancesPageSize;
             var buf = new List<ExpandedOrchestrationStatus>();
 
-            //TODO: optimize more
             var asyncEnumerator = asyncEnumerable.GetAsyncEnumerator();
             try
             {
