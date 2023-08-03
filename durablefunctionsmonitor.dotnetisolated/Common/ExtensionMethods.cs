@@ -17,8 +17,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         /// Configures Durable Functions Monitor endpoint
         /// </summary>
         public static IFunctionsWorkerApplicationBuilder UseDurableFunctionsMonitor(
-            this IFunctionsWorkerApplicationBuilder builder, 
-            HostBuilderContext builderContext, 
+            this IFunctionsWorkerApplicationBuilder builder,
             Action<DfmSettings, DfmExtensionPoints> optionsBuilder = null
         )
         {
@@ -66,10 +65,11 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     var log = context.InstanceServices.GetRequiredService<ILogger<object>>();
                     var request = await context.GetHttpRequestDataAsync() ?? throw new ArgumentNullException("HTTP Request is null");
 
+                    OperationKind? operationKind = null;
                     try
                     {
                         // Checking that it is DfMon's Function
-                        var operationKind = TryGetDfmOperationKind(context, log);
+                        operationKind = TryGetDfmOperationKind(context, log);
 
                         if (operationKind.HasValue)
                         {
@@ -85,12 +85,25 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     catch (DfmUnauthorizedException ex)
                     {
                         log.LogError(ex, "DFM failed to authenticate request");
-                        context.GetInvocationResult().Value = request.CreateResponse(HttpStatusCode.Unauthorized);
+                        context.GetInvocationResult().Value = request.ReturnStatus(HttpStatusCode.Unauthorized);
                     }
                     catch (DfmAccessViolationException ex)
                     {
                         log.LogError(ex, "DFM failed to authorize request");
-                        context.GetInvocationResult().Value = request.CreateResponse(HttpStatusCode.Forbidden);
+                        context.GetInvocationResult().Value = request.ReturnStatus(HttpStatusCode.Forbidden);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (operationKind.HasValue)
+                        {
+                            // Only handling DfMon's exceptions
+                            log.LogError(ex, "DFM failed");
+                            context.GetInvocationResult().Value = request.ReturnStatus(HttpStatusCode.BadRequest, ex.Message);
+                        }
+                        else
+                        {
+                            throw;
+                        }
                     }
                 }
              );
@@ -105,7 +118,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             return hostBuilder.ConfigureFunctionsWorkerDefaults((HostBuilderContext builderContext, IFunctionsWorkerApplicationBuilder builder) =>
             {
-                builder.UseDurableFunctionsMonitor(builderContext, optionsBuilder);
+                builder.UseDurableFunctionsMonitor(optionsBuilder);
             });
         }
 

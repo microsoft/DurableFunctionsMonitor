@@ -6,11 +6,13 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask;
 using Microsoft.DurableTask.Client;
 using Microsoft.Azure.Functions.Worker.Http;
 using System.Net;
 using Fluid;
 using Fluid.Values;
+using Microsoft.DurableTask;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
@@ -94,9 +96,19 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             dynamic body = JObject.Parse(bodyString);
 
             string orchestratorFunctionName = body.name;
-            string instanceId = body.id;
+            string instanceId = string.IsNullOrEmpty((string)body.id) ? null : (string)body.id;
 
-            instanceId = await durableClient.ScheduleNewOrchestrationInstanceAsync(orchestratorFunctionName, instanceId, body.data);
+            // ScheduleNewOrchestrationInstanceAsync() misunderstands JObject as input (converts all properties into empty arrays)
+            // Dictionary<string, object> works better. So this is the workaround for that.
+            var dataAsDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(
+                JsonConvert.SerializeObject(body.data)
+            );
+
+            instanceId = await durableClient.ScheduleNewOrchestrationInstanceAsync(
+                orchestratorFunctionName,
+                dataAsDictionary,
+                new StartOrchestrationOptions(instanceId)
+            );
 
             return await req.ReturnJson(new { instanceId });
         }

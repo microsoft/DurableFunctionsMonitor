@@ -12,7 +12,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var host = new HostBuilder()
                 .ConfigureFunctionsWorkerDefaults((hostBuilderContext, workerAppBuilder) => {
 
-                    workerAppBuilder.UseDurableFunctionsMonitor(hostBuilderContext, (settings, extensionPoints) => 
+                    workerAppBuilder.UseDurableFunctionsMonitor((settings, extensionPoints) => 
                     {
                         // Need to reinitialize CustomUserAgent
                         TableClient.CustomUserAgent = $"DurableFunctionsMonitorIsolated-Standalone/{Globals.GetVersion()}";
