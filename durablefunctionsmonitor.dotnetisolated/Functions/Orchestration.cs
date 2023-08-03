@@ -34,7 +34,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             string hubName,
             string instanceId)
         {
-            var metadata = await durableClient.GetInstancesAsync(instanceId, true);
+            var metadata = await durableClient.GetInstanceAsync(instanceId, true);
             if (metadata == null)
             {
                 var notFoundResult = req.CreateResponse(HttpStatusCode.NotFound);
@@ -43,7 +43,13 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
 
             var detailedStatus = await DetailedOrchestrationStatus.CreateFrom(
-                new DurableOrchestrationStatus(metadata), durableClient, connName, hubName, this._logger, this.ExtensionPoints
+                new DurableOrchestrationStatus(metadata), 
+                durableClient, 
+                connName, 
+                hubName, 
+                this._logger, 
+                this.Settings,
+                this.ExtensionPoints
             );
 
             return await req.ReturnJson(detailedStatus, Globals.FixUndefinedsInJson);
@@ -210,7 +216,13 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
             //TODO: load history for markup rendering
             var status = await DetailedOrchestrationStatus.CreateFrom(
-                new DurableOrchestrationStatus(metadata), durableClient, connName, hubName, this._logger, this.ExtensionPoints
+                new DurableOrchestrationStatus(metadata), 
+                durableClient, 
+                connName, 
+                hubName, 
+                this._logger, 
+                this.Settings,
+                this.ExtensionPoints
             );
 
             // The underlying Task never throws, so it's OK.

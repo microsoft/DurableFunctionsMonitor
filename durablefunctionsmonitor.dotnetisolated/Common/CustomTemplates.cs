@@ -133,27 +133,34 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             var result = new LiquidTemplatesMap();
 
-            string binFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string templatesFolder = Path.Combine(binFolder, "..", folderName, Globals.TabTemplateFolderName);
-
-            if (!Directory.Exists(templatesFolder))
+            try 
             {
-                return result;
-            }
+                string binFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string templatesFolder = Path.Combine(binFolder, "..", folderName, Globals.TabTemplateFolderName);
 
-            foreach(var templateFilePath in Directory.EnumerateFiles(templatesFolder, "*.liquid"))
-            {
-                var nameParts = Path.GetFileName(templateFilePath).Split('.');
-                if(nameParts.Length < 2)
+                if (!Directory.Exists(templatesFolder))
                 {
-                    continue;
+                    return result;
                 }
 
-                string tabName = nameParts[0];
-                string entityTypeName = nameParts.Length > 2 ? nameParts[1] : string.Empty;
-                string templateText = await File.ReadAllTextAsync(templateFilePath);
+                foreach (var templateFilePath in Directory.EnumerateFiles(templatesFolder, "*.liquid"))
+                {
+                    var nameParts = Path.GetFileName(templateFilePath).Split('.');
+                    if (nameParts.Length < 2)
+                    {
+                        continue;
+                    }
 
-                result.GetOrAdd(entityTypeName, new ConcurrentDictionary<string, string>())[tabName] = templateText;
+                    string tabName = nameParts[0];
+                    string entityTypeName = nameParts.Length > 2 ? nameParts[1] : string.Empty;
+                    string templateText = await File.ReadAllTextAsync(templateFilePath);
+
+                    result.GetOrAdd(entityTypeName, new ConcurrentDictionary<string, string>())[tabName] = templateText;
+                }
+            }
+            catch (Exception)
+            {
+                // Intentionally swallowing all exceptions here
             }
 
             return result;
@@ -189,15 +196,23 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         // Tries to load code for our meta tag from local folder
         private static async Task<string> GetCustomMetaTagCodeFromFolderAsync(string folderName)
         {
-            string binFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string filePath = Path.Combine(binFolder, "..", folderName, Globals.CustomMetaTagBlobName);
-
-            if(!File.Exists(filePath))
+            try
             {
+                string binFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string filePath = Path.Combine(binFolder, "..", folderName, Globals.CustomMetaTagBlobName);
+
+                if (!File.Exists(filePath))
+                {
+                    return null;
+                }
+
+                return await File.ReadAllTextAsync(filePath);
+            }
+            catch (Exception)
+            {
+                // Intentionally swallowing all exceptions here
                 return null;
             }
-
-            return await File.ReadAllTextAsync(filePath);
         }
 
         // Tries to load Function Maps from underlying Azure Storage
@@ -248,29 +263,34 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         private static async Task<FunctionMapsMap> GetFunctionMapsFromFolderAsync(string folderName)
         {
             var result = new FunctionMapsMap();
-
-            string binFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string functionMapsFolder = Path.Combine(binFolder, "..", folderName, Globals.FunctionMapFolderName);
-
-            if (!Directory.Exists(functionMapsFolder))
+            try
             {
-                return result;
-            }
+                string binFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string functionMapsFolder = Path.Combine(binFolder, "..", folderName, Globals.FunctionMapFolderName);
 
-            foreach(var filePath in Directory.EnumerateFiles(functionMapsFolder, $"{Globals.FunctionMapFilePrefix}*.json"))
-            {
-                var nameParts = Path.GetFileName(filePath).Split('.');
-                if (nameParts.Length < 2)
+                if (!Directory.Exists(functionMapsFolder))
                 {
-                    continue;
+                    return result;
                 }
 
-                string taskHubName = nameParts.Length > 2 ? nameParts[1] : string.Empty;
-                string json = await File.ReadAllTextAsync(filePath);
+                foreach (var filePath in Directory.EnumerateFiles(functionMapsFolder, $"{Globals.FunctionMapFilePrefix}*.json"))
+                {
+                    var nameParts = Path.GetFileName(filePath).Split('.');
+                    if (nameParts.Length < 2)
+                    {
+                        continue;
+                    }
 
-                result.TryAdd(taskHubName, json);
+                    string taskHubName = nameParts.Length > 2 ? nameParts[1] : string.Empty;
+                    string json = await File.ReadAllTextAsync(filePath);
+
+                    result.TryAdd(taskHubName, json);
+                }
             }
-
+            catch (Exception)
+            {
+                // Intentionally swallowing all exceptions here
+            }
             return result;
         }
     }

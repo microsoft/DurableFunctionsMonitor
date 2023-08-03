@@ -19,7 +19,16 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         public EntityId? EntityId { get; private set; }
         public string ParentInstanceId { get; private set; }
 
-        internal static async Task<DetailedOrchestrationStatus> CreateFrom(DurableOrchestrationStatus that, DurableTaskClient durableClient, string connName, string hubName, ILogger log, DfmExtensionPoints extensionPoints)
+        public List<string> TabTemplateNames { get; private set; }
+
+        internal static async Task<DetailedOrchestrationStatus> CreateFrom(
+            DurableOrchestrationStatus that, 
+            DurableTaskClient durableClient, 
+            string connName, 
+            string hubName, 
+            ILogger log, 
+            DfmSettings settings,
+            DfmExtensionPoints extensionPoints)
         {
             var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
 
@@ -54,6 +63,11 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
 
             result.Input = await result.ConvertInput(that.Input, connEnvVariableName);
+
+            // Initializing custom liquid template names
+            // The underlying Task never throws, so it's OK.
+            var templatesMap = await CustomTemplates.GetTabTemplatesAsync(settings);
+            result.TabTemplateNames = templatesMap.GetTemplateNames(result.GetEntityTypeName());
 
             return result;
         }

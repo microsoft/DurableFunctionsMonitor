@@ -30,7 +30,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 var functionMapsMap = await CustomTemplates.GetFunctionMapsAsync();
 
                 var functionMapJson = functionMapsMap.GetFunctionMap(hubName);
-                if(string.IsNullOrEmpty(functionMapJson))
+                if (string.IsNullOrEmpty(functionMapJson))
                 {
                     return new NotFoundObjectResult("No Function Map provided");
                 }
