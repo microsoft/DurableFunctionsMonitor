@@ -12,4 +12,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
     {
         public DfmAccessViolationException(string msg) : base(msg) {}
     }
+
+    internal class DfmNotInitializedException: Exception
+    {
+        public DfmNotInitializedException() : base("Make sure you called UseDurableFunctionsMonitor() at your Function's startup") {}
+    }
 }

@@ -18,9 +18,36 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         /// </summary>
         public static IFunctionsWorkerApplicationBuilder UseDurableFunctionsMonitor(
             this IFunctionsWorkerApplicationBuilder builder, 
-            HostBuilderContext builderContext, Action<DfmSettings> settingsBuilder = null
+            HostBuilderContext builderContext, 
+            Action<DfmSettings, DfmExtensionPoints> optionsBuilder = null
         )
         {
+            // Initializing settings and placing them into DI container
+            var settings = new DfmSettings();
+            var extensionPoints = new DfmExtensionPoints();
+
+            // Also initializing CustomUserAgent value based on input parameters
+            string dfmNonce = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_NONCE);
+            if (!string.IsNullOrEmpty(dfmNonce) && (dfmNonce != Auth.ISureKnowWhatIAmDoingNonce))
+            {
+                TableClient.CustomUserAgent = $"DurableFunctionsMonitorIsolated-VsCodeExt/{Globals.GetVersion()}";
+            }
+            else
+            {
+                TableClient.CustomUserAgent = $"DurableFunctionsMonitorIsolated-Injected/{Globals.GetVersion()}";
+            }
+
+            // Allowing to override settings
+            if (optionsBuilder != null)
+            {
+                optionsBuilder(settings, extensionPoints);
+            }
+
+            // Placing settings and extension points into DI container
+            builder.Services.AddSingleton(settings);
+            builder.Services.AddSingleton(extensionPoints);
+
+            // Adding middleware
             builder.UseWhen
             (
                 (FunctionContext context) =>
@@ -36,10 +63,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
                 async (FunctionContext context, Func<Task> next) =>
                 {
-                    var log = context.InstanceServices.GetService<ILogger>();
+                    var log = context.InstanceServices.GetRequiredService<ILogger<object>>();
                     var request = await context.GetHttpRequestDataAsync() ?? throw new ArgumentNullException("HTTP Request is null");
 
-                    //TODO: check all exceptions thrown
                     try
                     {
                         // Checking that it is DfMon's Function
@@ -48,10 +74,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                         if (operationKind.HasValue)
                         {
                             // If so, invoking DfMon's auth logic
-                            var dfmMode = Auth.ValidateIdentityAsync(request, operationKind.Value);
+                            var dfmMode = await Auth.ValidateIdentityAsync(request, operationKind.Value, settings, extensionPoints);
 
                             // Propagating DfmMode to Functions
-                            context.Items.Add(Globals.DfmModeContextValue, DfmMode.Normal);
+                            context.Items.Add(Globals.DfmModeContextValue, dfmMode);
                         }
 
                         await next();
@@ -75,11 +101,11 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         /// <summary>
         /// Configures Durable Functions Monitor endpoint
         /// </summary>
-        public static IHostBuilder UseDurableFunctionsMonitor(this IHostBuilder hostBuilder, Action<DfmSettings> options = null)
+        public static IHostBuilder UseDurableFunctionsMonitor(this IHostBuilder hostBuilder, Action<DfmSettings, DfmExtensionPoints> optionsBuilder = null)
         {
             return hostBuilder.ConfigureFunctionsWorkerDefaults((HostBuilderContext builderContext, IFunctionsWorkerApplicationBuilder builder) =>
             {
-                builder.UseDurableFunctionsMonitor(builderContext, options);
+                builder.UseDurableFunctionsMonitor(builderContext, optionsBuilder);
             });
         }
 

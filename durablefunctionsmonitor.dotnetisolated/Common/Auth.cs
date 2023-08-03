@@ -58,10 +58,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         }
 
         // If DFM_NONCE was passed as env variable, validates that the incoming request contains it. Throws UnauthorizedAccessException, if it doesn't.
-        public static bool IsNonceSetAndValid(HttpHeadersCollection headers)
+        public static bool IsNonceSetAndValid(DfmSettings settings, HttpHeadersCollection headers)
         {
             // From now on it is the only way to skip auth
-            if (DfmEndpoint.Settings.DisableAuthentication)
+            if (settings.DisableAuthentication)
             {
                 return true;
             }
@@ -90,10 +90,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         /// <returns><see cref="DfmMode"/> value for current request (so that it can be returned to the calling code) </returns>
         /// <exception cref="DfmAccessViolationException"></exception>
         /// <exception cref="DfmUnauthorizedException"></exception>
-        public static async Task<DfmMode> ValidateIdentityAsync(HttpRequestData request, OperationKind operationKind)
+        public static async Task<DfmMode> ValidateIdentityAsync(HttpRequestData request, OperationKind operationKind, DfmSettings settings, DfmExtensionPoints extensionPoints)
         {
             // Checking if the endpoint is in ReadOnly mode
-            if (operationKind != OperationKind.Read && DfmEndpoint.Settings.Mode == DfmMode.ReadOnly)
+            if (operationKind != OperationKind.Read && settings.Mode == DfmMode.ReadOnly)
             {
                 throw new DfmAccessViolationException("Endpoint is in ReadOnly mode");
             }
@@ -105,13 +105,13 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 string connName = connNameAndHubNameMatch.Groups[1].Value;
                 string hubName = connNameAndHubNameMatch.Groups[2].Value;
 
-                await ThrowIfTaskHubNameIsInvalid(Globals.CombineConnNameAndHubName(connName, hubName));
+                await ThrowIfTaskHubNameIsInvalid(Globals.CombineConnNameAndHubName(connName, hubName), extensionPoints);
             }
 
             // Starting with nonce (used when running as a VsCode extension)
-            if (IsNonceSetAndValid(request.Headers))
+            if (IsNonceSetAndValid(settings, request.Headers))
             {
-                return DfmEndpoint.Settings.Mode;
+                return settings.Mode;
             }
 
             // Then validating anti-forgery token
@@ -121,34 +121,35 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var principal = new ClaimsPrincipal(request.Identities);
 
             // Trying with EasyAuth
-            var userNameClaim = principal.FindAll(DfmEndpoint.Settings.UserNameClaimName).SingleOrDefault();
+            var userNameClaim = principal.FindAll(settings.UserNameClaimName).SingleOrDefault();
             if (userNameClaim == null)
             {
                 // Validating and parsing the token ourselves
-                principal = await ValidateToken(request.Headers.GetValues("Authorization").SingleOrDefault());
-                userNameClaim = principal.FindFirst(DfmEndpoint.Settings.UserNameClaimName);
+                request.Headers.TryGetValues("Authorization", out var authHeaderValues);
+                principal = await ValidateToken(authHeaderValues?.SingleOrDefault());
+                userNameClaim = principal.FindFirst(settings.UserNameClaimName);
             }
 
             if (userNameClaim == null)
             {
-                throw new DfmUnauthorizedException($"'{DfmEndpoint.Settings.UserNameClaimName}' claim is missing in the incoming identity. Call is rejected.");
+                throw new DfmUnauthorizedException($"'{settings.UserNameClaimName}' claim is missing in the incoming identity. Call is rejected.");
             }
 
-            if (DfmEndpoint.Settings.AllowedUserNames != null)
+            if (settings.AllowedUserNames != null)
             {
-                if (!DfmEndpoint.Settings.AllowedUserNames.Contains(userNameClaim.Value))
+                if (!settings.AllowedUserNames.Contains(userNameClaim.Value))
                 {
                     throw new DfmUnauthorizedException($"User {userNameClaim.Value} is not mentioned in {EnvVariableNames.DFM_ALLOWED_USER_NAMES} config setting. Call is rejected");
                 }
             }
 
             // Also validating App Roles, but only if any of relevant setting is set
-            var allowedAppRoles = DfmEndpoint.Settings.AllowedAppRoles;
-            var allowedReadOnlyAppRoles = DfmEndpoint.Settings.AllowedReadOnlyAppRoles;
+            var allowedAppRoles = settings.AllowedAppRoles;
+            var allowedReadOnlyAppRoles = settings.AllowedReadOnlyAppRoles;
 
             if (allowedAppRoles != null || allowedReadOnlyAppRoles != null)
             {
-                var roleClaims = principal.FindAll(DfmEndpoint.Settings.RolesClaimName);
+                var roleClaims = principal.FindAll(settings.RolesClaimName);
 
                 bool userIsInAppRole = roleClaims.Any(claim => allowedAppRoles != null && allowedAppRoles.Contains(claim.Value));
                 bool userIsInReadonlyRole = roleClaims.Any(claim => allowedReadOnlyAppRoles != null && allowedReadOnlyAppRoles.Contains(claim.Value));
@@ -165,10 +166,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     throw new DfmAccessViolationException($"User {userNameClaim.Value} is in read-only mode");
                 }
 
-                return userIsInReadonlyRole ? DfmMode.ReadOnly : DfmEndpoint.Settings.Mode;
+                return userIsInReadonlyRole ? DfmMode.ReadOnly : settings.Mode;
             }
 
-            return DfmEndpoint.Settings.Mode;
+            return settings.Mode;
         }
 
         public static async Task<IEnumerable<string>> GetTaskHubNamesFromStorage(string connStringName)
@@ -189,7 +190,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         }
 
         // Lists all allowed Task Hubs. The returned HashSet is configured to ignore case.
-        public static async Task<HashSet<string>> GetAllowedTaskHubNamesAsync()
+        public static async Task<HashSet<string>> GetAllowedTaskHubNamesAsync(DfmExtensionPoints extensionPoints)
         {
             // Respecting DFM_HUB_NAME, if it is set
             string dfmHubName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME);
@@ -209,14 +210,14 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             try
             {
                 var hubNames = new HashSet<string>(
-                    await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage),
+                    await extensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage),
                     StringComparer.InvariantCultureIgnoreCase
                 );
 
                 // Also checking alternative connection strings
                 foreach (var connName in AlternativeConnectionStringNames)
                 {
-                    var connAndHubNames = (await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(Globals.GetFullConnectionStringEnvVariableName(connName)))
+                    var connAndHubNames = (await extensionPoints.GetTaskHubNamesRoutine(Globals.GetFullConnectionStringEnvVariableName(connName)))
                         .Select(hubName => Globals.CombineConnNameAndHubName(connName, hubName));
 
                     hubNames.UnionWith(connAndHubNames);
@@ -236,29 +237,29 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         private static readonly Regex ConnNameAndHubNameRegex = new Regex(@"/a/p/i/([^/]+)-([^/]+)/", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        private static Task<HashSet<string>> HubNamesTask = GetAllowedTaskHubNamesAsync();
+        private static Task<HashSet<string>> HubNamesTask = null;
 
         // Checks that a Task Hub name looks like a Task Hub name
         public static void ThrowIfTaskHubNameHasInvalidSymbols(string hubName)
         {
             if (!ValidTaskHubNameRegex.Match(hubName).Success)
             {
-                throw new ArgumentException($"Task Hub name is invalid.");
+                throw new DfmUnauthorizedException($"Task Hub name is invalid.");
             }
         }
 
         // Checks that a Task Hub name is valid for this instace
-        public static async Task ThrowIfTaskHubNameIsInvalid(string hubName)
+        public static async Task ThrowIfTaskHubNameIsInvalid(string hubName, DfmExtensionPoints extensionPoints)
         {
             // Two bugs away. Validating that the incoming Task Hub name looks like a Task Hub name
             ThrowIfTaskHubNameHasInvalidSymbols(hubName);
 
-            var hubNames = await HubNamesTask;
+            var hubNames = HubNamesTask == null ? null : (await HubNamesTask);
 
             if (hubNames == null || !hubNames.Contains(hubName))
             {
                 // doing double-check, by reloading hub names
-                HubNamesTask = GetAllowedTaskHubNamesAsync();
+                HubNamesTask = GetAllowedTaskHubNamesAsync(extensionPoints);
                 hubNames = await HubNamesTask;
             }
 
@@ -271,21 +272,25 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
             if (!hubNames.Contains(hubName))
             {
-                throw new UnauthorizedAccessException($"Task Hub '{hubName}' is not allowed.");
+                throw new DfmUnauthorizedException($"Task Hub '{hubName}' is not allowed.");
             }
         }
 
         // Compares our XSRF tokens, that come from cookies and headers
         public static void ThrowIfXsrfTokenIsInvalid(HttpHeadersCollection headers, IReadOnlyCollection<IHttpCookie> cookies)
         {
-            string tokenFromHeaders = headers.GetValues(Globals.XsrfTokenCookieAndHeaderName).SingleOrDefault();
+            headers.TryGetValues(Globals.XsrfTokenCookieAndHeaderName, out var xsrfTokenHeaderValues);
+            string tokenFromHeaders = xsrfTokenHeaderValues?.SingleOrDefault();
 
-            if (string.IsNullOrEmpty(tokenFromHeaders))
+            var tokenFromCookies = cookies.SingleOrDefault(c => c.Name == Globals.XsrfTokenCookieAndHeaderName)?.Value;
+
+            if (string.IsNullOrEmpty(tokenFromHeaders) || string.IsNullOrEmpty(tokenFromCookies))
             {
                 throw new DfmUnauthorizedException("XSRF token is missing.");
             }
 
-            var tokenFromCookies = cookies.SingleOrDefault(c => c.Name == Globals.XsrfTokenCookieAndHeaderName)?.Value;
+            // For some reason, in Isolated mode cookies come URL-encoded
+            tokenFromCookies = Uri.UnescapeDataString(tokenFromCookies);
 
             if (tokenFromCookies != tokenFromHeaders)
             {
@@ -338,19 +343,19 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             if (string.IsNullOrEmpty(authorizationHeader))
             {
-                throw new UnauthorizedAccessException("No access token provided. Call is rejected.");
+                throw new DfmUnauthorizedException("No access token provided. Call is rejected.");
             }
 
             string clientId = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID);
             if (string.IsNullOrEmpty(clientId))
             {
-                throw new UnauthorizedAccessException($"Specify the Valid Audience value via '{EnvVariableNames.WEBSITE_AUTH_CLIENT_ID}' config setting. Typically it is the ClientId of your AAD application.");
+                throw new DfmUnauthorizedException($"Specify the Valid Audience value via '{EnvVariableNames.WEBSITE_AUTH_CLIENT_ID}' config setting. Typically it is the ClientId of your AAD application.");
             }
 
             string openIdIssuer = GetEasyAuthIssuer();
             if (string.IsNullOrEmpty(openIdIssuer))
             {
-                throw new UnauthorizedAccessException($"Specify the Valid Issuer value via '{EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER}' config setting. Typically it looks like 'https://login.microsoftonline.com/<your-aad-tenant-id>/v2.0'.");
+                throw new DfmUnauthorizedException($"Specify the Valid Issuer value via '{EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER}' config setting. Typically it looks like 'https://login.microsoftonline.com/<your-aad-tenant-id>/v2.0'.");
             }
 
             string token = authorizationHeader["Bearer ".Length..];
@@ -406,7 +411,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             string openIdIssuer = GetEasyAuthIssuer();
             if (string.IsNullOrEmpty(openIdIssuer))
             {
-                throw new UnauthorizedAccessException($"Specify the Valid Issuer value via '{EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER}' config setting. Typically it looks like 'https://login.microsoftonline.com/<your-aad-tenant-id>/v2.0'.");
+                throw new DfmUnauthorizedException($"Specify the Valid Issuer value via '{EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER}' config setting. Typically it looks like 'https://login.microsoftonline.com/<your-aad-tenant-id>/v2.0'.");
             }
 
             if (openIdIssuer.EndsWith("/v2.0"))

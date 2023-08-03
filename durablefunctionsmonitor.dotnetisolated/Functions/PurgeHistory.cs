@@ -9,8 +9,10 @@ using System.Net;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public class PurgeHistory
+    public class PurgeHistory : DfmFunctionBase
     {
+        public PurgeHistory(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+        
         // Request body
         class PurgeHistoryRequest
         {

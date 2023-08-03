@@ -10,32 +10,28 @@ using System.Net;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public class EasyAuthConfig
+    public class EasyAuthConfig : DfmFunctionBase
     {
-        private readonly ILogger _logger;
-
-        public EasyAuthConfig(ILoggerFactory loggerFactory)
-        {
-            _logger = loggerFactory.CreateLogger<EasyAuthConfig>();
+        public EasyAuthConfig(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints, ILoggerFactory loggerFactory) : base(dfmSettings, extensionPoints) 
+        { 
+            this._logger = loggerFactory.CreateLogger<EasyAuthConfig>();
         }
 
         // Returns EasyAuth configuration settings, specifically the AAD app's Client ID (which is not a secret)
         // GET /a/p/i/easyauth-config
         [Function(nameof(DfmGetEasyAuthConfigFunction))]
         public async Task<HttpResponseData> DfmGetEasyAuthConfigFunction(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "a/p/i/easyauth-config")] HttpRequestData req,
-            FunctionContext context
-        )
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "a/p/i/easyauth-config")] HttpRequestData req)
         {
             // Checking nonce, if it was set as an env variable.
             // Don't care about return value of this method here.
-            Auth.IsNonceSetAndValid(req.Headers);
+            Auth.IsNonceSetAndValid(this.Settings, req.Headers);
 
             string siteName = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME);
             string clientId = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID);
 
             // When deployed to Azure, this tool should always be protected by EasyAuth
-            if (!string.IsNullOrEmpty(siteName) && string.IsNullOrEmpty(clientId) && !DfmEndpoint.Settings.DisableAuthentication)
+            if (!string.IsNullOrEmpty(siteName) && string.IsNullOrEmpty(clientId) && !this.Settings.DisableAuthentication)
             {
                 this._logger.LogError($"You need to configure EasyAuth for your '{siteName}' instance. This tool should never be exposed to the world without authentication.");
 
@@ -57,7 +53,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             {
                 // Assuming it is the server-directed login flow to be used
                 // and returning just the user name (to speed up login process)
-                var userNameClaim = req.Identities?.SingleOrDefault()?.FindAll(DfmEndpoint.Settings.UserNameClaimName).SingleOrDefault();
+                var userNameClaim = req.Identities?.SingleOrDefault()?.FindAll(this.Settings.UserNameClaimName).SingleOrDefault();
                 return await req.ReturnJson(new { userName = userNameClaim?.Value });
             }
 
@@ -80,5 +76,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         }
 
         private static readonly Regex GuidRegex = new Regex(@"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private readonly ILogger _logger;
     }
 }

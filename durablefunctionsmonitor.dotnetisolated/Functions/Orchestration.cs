@@ -14,13 +14,11 @@ using Fluid.Values;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public class Orchestration
+    public class Orchestration : DfmFunctionBase
     {
-        private readonly ILogger _logger;
-
-        public Orchestration(ILoggerFactory loggerFactory)
-        {
-            _logger = loggerFactory.CreateLogger<Orchestration>();
+        public Orchestration(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints, ILoggerFactory loggerFactory) : base(dfmSettings, extensionPoints) 
+        { 
+            this._logger = loggerFactory.CreateLogger<Orchestration>();
         }
 
         // Handles orchestration instance operations.
@@ -42,7 +40,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 return notFoundResult;
             }
 
-            var detailedStatus = await DetailedOrchestrationStatus.CreateFrom(new DurableOrchestrationStatus(metadata), durableClient, connName, hubName, this._logger);
+            var detailedStatus = await DetailedOrchestrationStatus.CreateFrom(
+                new DurableOrchestrationStatus(metadata), durableClient, connName, hubName, this._logger, this.ExtensionPoints
+            );
 
             return await req.ReturnJson(detailedStatus, Globals.FixUndefinedsInJson);
         }
@@ -64,7 +64,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             
             var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
 
-            history = (await DfmEndpoint.ExtensionPoints.GetInstanceHistoryRoutine(durableClient, connEnvVariableName, hubName, instanceId))
+            history = (await this.ExtensionPoints.GetInstanceHistoryRoutine(durableClient, connEnvVariableName, hubName, instanceId))
                 .ApplyTimeFrom(filterClause.TimeFrom)
                 .ApplyFilter(filterClause)
                 .ApplySkip(req.Query)
@@ -197,10 +197,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
 
             //TODO: load history for markup rendering
-            var status = await DetailedOrchestrationStatus.CreateFrom(new DurableOrchestrationStatus(metadata), durableClient, connName, hubName, this._logger);
+            var status = await DetailedOrchestrationStatus.CreateFrom(
+                new DurableOrchestrationStatus(metadata), durableClient, connName, hubName, this._logger, this.ExtensionPoints
+            );
 
             // The underlying Task never throws, so it's OK.
-            var templatesMap = await CustomTemplates.GetTabTemplatesAsync();
+            var templatesMap = await CustomTemplates.GetTabTemplatesAsync(this.Settings);
 
             string templateCode = templatesMap.GetTemplate(status.GetEntityTypeName(), templateName);
             if (templateCode == null)
@@ -237,6 +239,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             "SubOrchestrationInstanceCompleted",
             "SubOrchestrationInstanceFailed",
         };
+
+        private readonly ILogger _logger;
 
         // Need special serializer settings for execution history, to match the way it was originally serialized
         private static JsonSerializerSettings HistorySerializerSettings = new JsonSerializerSettings

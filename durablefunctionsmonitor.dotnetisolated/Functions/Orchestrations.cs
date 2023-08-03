@@ -10,13 +10,15 @@ using System.Collections.Specialized;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public static class Orchestrations
+    public class Orchestrations : DfmFunctionBase
     {
+        public Orchestrations(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+        
         // Adds sorting, paging and filtering capabilities around /runtime/webhooks/durabletask/instances endpoint.
         // GET /a/p/i{connName}-{hubName}/orchestrations?$filter=<filter>&$orderby=<order-by>&$skip=<m>&$top=<n>
         [Function(nameof(DfmGetOrchestrationsFunction))]
         [OperationKind(Kind = OperationKind.Read)]
-        public static Task<HttpResponseData> DfmGetOrchestrationsFunction(
+        public Task<HttpResponseData> DfmGetOrchestrationsFunction(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = Globals.ApiRoutePrefix + "/orchestrations")] HttpRequestData req,
             [DurableClient(TaskHub = Globals.HubNameRouteParamName)] DurableTaskClient durableClient,
             string connName,
@@ -35,7 +37,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
             var orchestrations = durableClient
                 .ListAllInstances(filterClause.TimeFrom, filterClause.TimeTill, !hiddenColumns.Contains("input"), filterClause.RuntimeStatuses)
-                .ExpandStatus(durableClient, connName, hubName, filterClause, hiddenColumns)
+                .ExpandStatus(durableClient, connName, hubName, filterClause, hiddenColumns, this.ExtensionPoints)
                 .ApplyRuntimeStatusesFilter(filterClause.RuntimeStatuses)
                 .ApplyFilter(filterClause)
                 .ApplyOrderBy(req.Query)
@@ -50,7 +52,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
     {
         // Adds artificial fields ('lastEvent' and 'parentInstanceId') fields to each entity, when needed
         internal static IEnumerable<ExpandedOrchestrationStatus> ExpandStatus(this IAsyncEnumerable<OrchestrationMetadata> asyncEnumerable,
-            DurableTaskClient client, string connName, string hubName, FilterClause filterClause, HashSet<string> hiddenColumns)
+            DurableTaskClient client, string connName, string hubName, FilterClause filterClause, HashSet<string> hiddenColumns, DfmExtensionPoints extensionPoints)
         {
             var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
 
@@ -69,7 +71,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     (
                         orchestration,
                         // Only loading parentInstanceId when being filtered by it
-                        filterClause.FieldName == "parentInstanceId" ? DfmEndpoint.ExtensionPoints.GetParentInstanceIdRoutine(client, connEnvVariableName, hubName, orchestration.InstanceId) : null,
+                        filterClause.FieldName == "parentInstanceId" ? extensionPoints.GetParentInstanceIdRoutine(client, connEnvVariableName, hubName, orchestration.InstanceId) : null,
                         hiddenColumns
                     );
 

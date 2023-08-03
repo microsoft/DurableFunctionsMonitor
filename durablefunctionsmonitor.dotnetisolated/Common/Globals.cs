@@ -164,6 +164,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             return !string.IsNullOrEmpty(clause) ? collection.Skip(int.Parse(clause)) : collection;
         }
 
+        public static string GetVersion()
+        {
+            var version = typeof(ExtensionMethods).Assembly.GetName().Version;
+            return $"{version.Major}.{version.Minor}.{version.Build}";
+        }
+
         // Shared JSON serialization settings
         public static JsonSerializerSettings SerializerSettings = GetSerializerSettings();
 

@@ -7,17 +7,18 @@ using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public static class ManageConnection
+    public class ManageConnection : DfmFunctionBase
     {
+        public ManageConnection(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+        
         // Gets Storage Connection String and Hub Name
         // GET /a/p/i/{connName}-{hubName}/manage-connection
         [Function(nameof(DfmGetConnectionInfoFunction))]
         [OperationKind(Kind = OperationKind.Read)]
-        public static async Task<HttpResponseData> DfmGetConnectionInfoFunction(
+        public async Task<HttpResponseData> DfmGetConnectionInfoFunction(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = Globals.ApiRoutePrefix + "/manage-connection")] HttpRequestData req,
             string connName,
-            string hubName,
-            ExecutionContext executionContext)
+            string hubName)
         {
             string connectionString = 
                 Environment.GetEnvironmentVariable(Globals.GetFullConnectionStringEnvVariableName(connName)) ?? 

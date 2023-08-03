@@ -9,8 +9,10 @@ using System.Net;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public class CleanEntityStorage
+    public class CleanEntityStorage : DfmFunctionBase
     {
+        public CleanEntityStorage(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+
         // Request body
         class CleanEntityStorageRequest
         {

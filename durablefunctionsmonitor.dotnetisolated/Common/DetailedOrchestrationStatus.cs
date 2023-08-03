@@ -19,17 +19,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         public EntityId? EntityId { get; private set; }
         public string ParentInstanceId { get; private set; }
 
-        public List<string> TabTemplateNames
-        {
-            get
-            {
-                // The underlying Task never throws, so it's OK.
-                var templatesMap = CustomTemplates.GetTabTemplatesAsync().Result;
-                return templatesMap.GetTemplateNames(this.GetEntityTypeName());
-            }
-        }
-
-        internal static async Task<DetailedOrchestrationStatus> CreateFrom(DurableOrchestrationStatus that, DurableTaskClient durableClient, string connName, string hubName, ILogger log)
+        internal static async Task<DetailedOrchestrationStatus> CreateFrom(DurableOrchestrationStatus that, DurableTaskClient durableClient, string connName, string hubName, ILogger log, DfmExtensionPoints extensionPoints)
         {
             var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
 
@@ -55,7 +45,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 // Trying to get parent orchestrationId for this instance, if it is a subOrchestration
                 try
                 {
-                    result.ParentInstanceId = await DfmEndpoint.ExtensionPoints.GetParentInstanceIdRoutine(durableClient, connEnvVariableName, hubName, result.InstanceId);
+                    result.ParentInstanceId = await extensionPoints.GetParentInstanceIdRoutine(durableClient, connEnvVariableName, hubName, result.InstanceId);
                 }
                 catch(Exception ex)
                 {

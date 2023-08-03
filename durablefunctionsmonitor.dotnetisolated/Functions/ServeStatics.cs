@@ -10,16 +10,12 @@ using System.Net;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public class ServeStatics
+    public class ServeStatics : DfmFunctionBase
     {
-        private readonly ILogger _logger;
-
-        public ServeStatics(ILoggerFactory loggerFactory)
-        {
-            _logger = loggerFactory.CreateLogger<ServeStatics>();
+        public ServeStatics(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints, ILoggerFactory loggerFactory) : base(dfmSettings, extensionPoints) 
+        { 
+            this._logger = loggerFactory.CreateLogger<ServeStatics>();
         }
-
-        private const string StaticsRoute = "{p1?}/{p2?}/{p3?}";
 
         // A simple statics hosting solution
         [Function(nameof(DfmServeStaticsFunction))]
@@ -27,13 +23,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = StaticsRoute)] HttpRequestData req,
             string p1,
             string p2,
-            string p3,
-            ExecutionContext context
+            string p3
         )
         {
             // Checking nonce, if it was set as an env variable.
             // Don't care about return value of this method here.
-            Auth.IsNonceSetAndValid(req.Headers);
+            Auth.IsNonceSetAndValid(this.Settings, req.Headers);
 
             // Two bugs away. Making sure none of these segments ever contain any path separators and/or relative paths
             string path = Path.Join(Path.GetFileName(p1), Path.GetFileName(p2), Path.GetFileName(p3));
@@ -70,17 +65,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 generator.GetBytes(bytes);
                 string token = Convert.ToBase64String(bytes);
 
-                var cookie = new HttpCookie(Globals.XsrfTokenCookieAndHeaderName, token)
-                {
-                    HttpOnly = false
-                };
-
-                htmlResponse.Cookies.Append(cookie);
+                htmlResponse.Cookies.Append(Globals.XsrfTokenCookieAndHeaderName, token);
             }
 
             htmlResponse.Headers.Add("Content-Type", "text/html; charset=UTF-8");
 
-            await htmlResponse.WriteStringAsync(await ReturnIndexHtml(context, this._logger, root, p1, req.Url.AbsolutePath));
+            await htmlResponse.WriteStringAsync(await ReturnIndexHtml(this._logger, root, p1, req.Url.AbsolutePath));
 
             return htmlResponse;
         }
@@ -109,14 +99,18 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             new [] {"logo.svg", "image/svg+xml; charset=UTF-8"},
         };
 
+        private const string StaticsRoute = "{p1?}/{p2?}/{p3?}";
+
+        private readonly ILogger _logger;
+
         // Populates index.html template and serves it
-        private static async Task<string> ReturnIndexHtml(ExecutionContext context, ILogger log, string rootFolderName, string connAndHubName, string requestPath)
+        private async Task<string> ReturnIndexHtml(ILogger log, string rootFolderName, string connAndHubName, string requestPath)
         {
             string indexHtmlPath = Path.Join(rootFolderName, "index.html");
             string html = await File.ReadAllTextAsync(indexHtmlPath);
 
             // Replacing our custom meta tag with customized code from Storage or with default Content Security Policy
-            string customMetaTagCode = (await CustomTemplates.GetCustomMetaTagCodeAsync()) ?? DefaultContentSecurityPolicyMeta;
+            string customMetaTagCode = (await CustomTemplates.GetCustomMetaTagCodeAsync(this.Settings)) ?? DefaultContentSecurityPolicyMeta;
             html = html.Replace("<meta name=\"durable-functions-monitor-meta\">", customMetaTagCode);
 
             // Applying client config, if any
@@ -137,7 +131,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
                 Globals.SplitConnNameAndHubName(connAndHubName, out var connName, out var hubName);
 
-                string functionMap = (await CustomTemplates.GetFunctionMapsAsync()).GetFunctionMap(hubName);
+                string functionMap = (await CustomTemplates.GetFunctionMapsAsync(this.Settings)).GetFunctionMap(hubName);
                 if (!string.IsNullOrEmpty(functionMap))
                 {
                     html = html.Replace("<script>var IsFunctionGraphAvailable=0</script>", "<script>var IsFunctionGraphAvailable=1</script>");

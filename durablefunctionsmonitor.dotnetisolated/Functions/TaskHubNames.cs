@@ -7,13 +7,15 @@ using System.Net;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public static class TaskHubNames
+    public class TaskHubNames : DfmFunctionBase
     {
+        public TaskHubNames(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+        
         // Returns all Task Hub names from the current Storage
         // GET /a/p/i/task-hub-names
         [Function(nameof(DfmGetTaskHubNamesFunction))]
         [OperationKind(Kind = OperationKind.Read)]
-        public static async Task<HttpResponseData> DfmGetTaskHubNamesFunction(
+        public async Task<HttpResponseData> DfmGetTaskHubNamesFunction(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "a/p/i/task-hub-names")] HttpRequestData req
         )
         {
@@ -23,12 +25,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             if (!string.IsNullOrEmpty(dfmNonce))
             {
                 // For VsCode loading Task Hubs directly and without validation
-                hubNames = await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage);
+                hubNames = await this.ExtensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage);
             }
             else
             {
                 // Otherwise applying all the filters
-                hubNames = await Auth.GetAllowedTaskHubNamesAsync();
+                hubNames = await Auth.GetAllowedTaskHubNamesAsync(this.ExtensionPoints);
             }
 
             if (hubNames == null)

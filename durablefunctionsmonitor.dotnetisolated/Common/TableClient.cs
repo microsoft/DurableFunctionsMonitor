@@ -30,7 +30,14 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         // so just leaving this as an internal static variable.
         internal static ITableClient MockedTableClient = null;
 
-         public static async Task<ITableClient> GetTableClient(string connStringName)
+        /// <summary>
+        /// Custom value for 'User-Agent' header for requests to Azure Storage.
+        /// Will only be applied to DfMon's 'native' requests (e.g. retrieving instance history or getting parentInstanceId),
+        /// not to all requests DfMon makes. Still might be useful to track activity via Storage logs.
+        /// </summary>
+        public static string CustomUserAgent { get; set; }
+
+        public static async Task<ITableClient> GetTableClient(string connStringName)
         {
             if (MockedTableClient != null)
             {
@@ -52,16 +59,16 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 var identityBasedToken = await IdentityBasedTokenSource.GetTokenAsync();
                 var credentials = new StorageCredentials(new TokenCredential(identityBasedToken));
 
-                return new TableClient(new CloudTableClient(new Uri(tableServiceUri), credentials));
+                return new TableClient(new CloudTableClient(new Uri(tableServiceUri), credentials), CustomUserAgent);
             }
             else
             {
                 // Using classic connection string
-                return new TableClient(CloudStorageAccount.Parse(connectionString).CreateCloudTableClient());
+                return new TableClient(CloudStorageAccount.Parse(connectionString).CreateCloudTableClient(), CustomUserAgent);
             }
         }
 
-        private TableClient(CloudTableClient client)
+        private TableClient(CloudTableClient client, string customUserAgent)
         {
             this._client = client;
         }
@@ -72,7 +79,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Overriding User-Agent header
             var operationContext = new OperationContext
             {
-                CustomUserAgent = DfmEndpoint.CustomUserAgent
+                CustomUserAgent = CustomUserAgent
             };
 
             var result = new List<string>();
@@ -96,7 +103,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Overriding User-Agent header
             var operationContext = new OperationContext
             {
-                CustomUserAgent = DfmEndpoint.CustomUserAgent
+                CustomUserAgent = CustomUserAgent
             };
 
             TableContinuationToken token = null;
@@ -123,7 +130,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Overriding User-Agent header
             var operationContext = new OperationContext
             {
-                CustomUserAgent = DfmEndpoint.CustomUserAgent
+                CustomUserAgent = CustomUserAgent
             };
 
             var result = new List<TEntity>();
@@ -146,7 +153,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Overriding User-Agent header
             var operationContext = new OperationContext
             {
-                CustomUserAgent = DfmEndpoint.CustomUserAgent
+                CustomUserAgent = CustomUserAgent
             };
 
             return this._client.GetTableReference(tableName).ExecuteAsync(operation, null, operationContext);

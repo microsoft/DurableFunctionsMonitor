@@ -14,34 +14,34 @@ namespace DurableFunctionsMonitor.DotNetIsolated
     // TODO: respect alternative connection strings
     class CustomTemplates
     {
-        internal static Task<LiquidTemplatesMap> GetTabTemplatesAsync()
+        internal static Task<LiquidTemplatesMap> GetTabTemplatesAsync(DfmSettings settings)
         {
             if (TabTemplatesTask == null)
             {
-                TabTemplatesTask = string.IsNullOrEmpty(DfmEndpoint.Settings.CustomTemplatesFolderName) ?
-                    GetTabTemplatesFromStorageAsync() : GetTabTemplatesFromFolderAsync(DfmEndpoint.Settings.CustomTemplatesFolderName);
+                TabTemplatesTask = string.IsNullOrEmpty(settings.CustomTemplatesFolderName) ?
+                    GetTabTemplatesFromStorageAsync() : GetTabTemplatesFromFolderAsync(settings.CustomTemplatesFolderName);
             }
 
             return TabTemplatesTask;
         }
 
-        internal static Task<string> GetCustomMetaTagCodeAsync()
+        internal static Task<string> GetCustomMetaTagCodeAsync(DfmSettings settings)
         {
             if (CustomMetaTagCodeTask == null)
             {
-                CustomMetaTagCodeTask = string.IsNullOrEmpty(DfmEndpoint.Settings.CustomTemplatesFolderName) ?
-                    GetCustomMetaTagCodeFromStorageAsync() : GetCustomMetaTagCodeFromFolderAsync(DfmEndpoint.Settings.CustomTemplatesFolderName);
+                CustomMetaTagCodeTask = string.IsNullOrEmpty(settings.CustomTemplatesFolderName) ?
+                    GetCustomMetaTagCodeFromStorageAsync() : GetCustomMetaTagCodeFromFolderAsync(settings.CustomTemplatesFolderName);
             }
 
             return CustomMetaTagCodeTask;
         }
 
-        internal static Task<FunctionMapsMap> GetFunctionMapsAsync()
+        internal static Task<FunctionMapsMap> GetFunctionMapsAsync(DfmSettings settings)
         {
             if (FunctionMapsTask == null)
             {
-                FunctionMapsTask = string.IsNullOrEmpty(DfmEndpoint.Settings.CustomTemplatesFolderName) ?
-                    GetFunctionMapsFromStorageAsync() : GetFunctionMapsFromFolderAsync(DfmEndpoint.Settings.CustomTemplatesFolderName);
+                FunctionMapsTask = string.IsNullOrEmpty(settings.CustomTemplatesFolderName) ?
+                    GetFunctionMapsFromStorageAsync() : GetFunctionMapsFromFolderAsync(settings.CustomTemplatesFolderName);
             }
 
             return FunctionMapsTask;

@@ -7,8 +7,10 @@ using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public class IdSuggestions
+    public class IdSuggestions : DfmFunctionBase
     {
+        public IdSuggestions(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+
         // Returns a list of orchestration/entity IDs, that start with some prefix
         // GET /a/p/i/{connName}-{hubName}/id-suggestions(prefix='{prefix}')
         [Function(nameof(DfmGetIdSuggestionsFunction))]

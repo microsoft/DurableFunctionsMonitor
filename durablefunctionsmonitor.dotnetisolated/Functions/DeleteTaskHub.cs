@@ -8,8 +8,10 @@ using System.Net;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public class DeleteTaskHub
+    public class DeleteTaskHub : DfmFunctionBase
     {
+        public DeleteTaskHub(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+        
         // Deletes all underlying storage resources for a Task Hub.
         // POST /{connName}-{hubName}/a/p/i/delete-task-hub
         [Function(nameof(DfmDeleteTaskHubFunction))]

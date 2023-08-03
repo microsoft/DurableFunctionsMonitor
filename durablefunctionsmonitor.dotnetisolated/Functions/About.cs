@@ -8,13 +8,15 @@ using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
-    public static class About
+    public class About : DfmFunctionBase
     {
+        public About(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+
         // Returns short connection info and backend version. 
         // GET /a/p/i/{connName}-{hubName}/about
         [Function(nameof(DfmAboutFunction))]
         [OperationKind(Kind = OperationKind.Read)]
-        public static async Task<HttpResponseData> DfmAboutFunction(
+        public async Task<HttpResponseData> DfmAboutFunction(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = Globals.ApiRoutePrefix + "/about")] HttpRequestData req,
             string connName,
             string hubName,
