@@ -25,9 +25,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="DfmStatics\**">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
