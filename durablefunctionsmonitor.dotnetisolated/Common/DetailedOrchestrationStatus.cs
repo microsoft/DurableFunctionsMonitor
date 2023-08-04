@@ -21,6 +21,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         public List<string> TabTemplateNames { get; private set; }
 
+        public JArray History { get; internal set; }
+
         internal static async Task<DetailedOrchestrationStatus> CreateFrom(
             DurableOrchestrationStatus that, 
             DurableTaskClient durableClient, 
@@ -91,7 +93,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 TableQuery.GenerateFilterCondition("ExecutionId", QueryComparisons.Equal, parentExecutionId)
             );
 
-            var tableResult = await tableClient.GetAllAsync<TableEntity>(tableName, executionIdQuery);
+            var tableResult = await tableClient.GetAllAsync(tableName, executionIdQuery);
 
             var parentEntity = tableResult.SingleOrDefault();
 

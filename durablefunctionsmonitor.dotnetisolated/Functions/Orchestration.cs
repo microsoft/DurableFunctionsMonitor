@@ -67,19 +67,17 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             string instanceId)
         {
             var filterClause = new FilterClause(req.Query["$filter"]);
-            HistoryEvent[] history;
-            int? totalCount = null;
             
             var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
 
-            history = (await this.ExtensionPoints.GetInstanceHistoryRoutine(durableClient, connEnvVariableName, hubName, instanceId))
+            var history = (await this.ExtensionPoints.GetInstanceHistoryRoutine(durableClient, connEnvVariableName, hubName, instanceId))
                 .ApplyTimeFrom(filterClause.TimeFrom)
                 .ApplyFilter(filterClause)
                 .ApplySkip(req.Query)
                 .ApplyTop(req.Query)
                 .ToArray();
 
-            string json = JsonConvert.SerializeObject(new { totalCount, history }, HistorySerializerSettings);
+            string json = JsonConvert.SerializeObject(new { history }, HistorySerializerSettings);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "application/json");
@@ -214,7 +212,6 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 return req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
             }
 
-            //TODO: load history for markup rendering
             var status = await DetailedOrchestrationStatus.CreateFrom(
                 new DurableOrchestrationStatus(metadata), 
                 durableClient, 
@@ -224,6 +221,18 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 this.Settings,
                 this.ExtensionPoints
             );
+
+            // Also trying to load execution history
+            try
+            {
+                var connEnvVariableName = Globals.GetFullConnectionStringEnvVariableName(connName);
+
+                status.History = JArray.FromObject(await this.ExtensionPoints.GetInstanceHistoryRoutine(durableClient, connEnvVariableName, hubName, instanceId));
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogWarning(ex, "Failed to load execution history");
+            }
 
             // The underlying Task never throws, so it's OK.
             var templatesMap = await CustomTemplates.GetTabTemplatesAsync(this.Settings);
