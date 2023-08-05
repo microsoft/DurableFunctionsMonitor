@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata minClientVersion="2.5">
+        <id>DurableFunctionsMonitor.DotNetIsolated</id>
+        <version>6.3.0</version>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>DurableFunctionsMonitor.DotNetIsolated</description>
+        <authors>DurableFunctionsMonitor</authors>
+        <repository type="git" url="https://github.com/microsoft/DurableFunctionsMonitor" />
+        <license type="file">LICENSE.txt</license>
+
+        <dependencies>
+            <dependency id="Microsoft.Azure.Functions.Worker" version="1.18.0" />
+            <dependency id="Microsoft.Azure.Functions.Worker.Sdk" version="1.13.0" />
+            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" version="1.0.2" />
+            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.Http" version="3.0.13" />
+            <dependency id="WindowsAzure.Storage" version="9.3.3" />
+            <dependency id="Azure.Identity" version="1.5.0" />
+            <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" version="6.10.2" />
+            <dependency id="Fluid.Core" version="2.1.4" />
+        </dependencies>
+
+    </metadata>
+
+    <files>
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.dll" target="lib/netcoreapp2.1" />
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.xml" target="lib/netcoreapp2.1" />
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.targets" target="build" />
+        <file src="..\output\DfmStatics\**" target="/DfmStatics" />
+        <file src="..\output\LICENSE.txt" target="" />
+    </files>
+</package>
