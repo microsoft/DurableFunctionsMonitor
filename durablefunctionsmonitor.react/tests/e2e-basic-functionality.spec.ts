@@ -16,12 +16,16 @@ const instances = [
   process.env.DfMonTestE2EReadOnlyUrl!,
   process.env.DfMonTestE2EInjectedModeUrl!,
   process.env.DfMonTestE2EInjectedModeReadOnlyUrl!,
+  process.env.DfMonTestE2EIsolatedUrl!,
+  process.env.DfMonTestE2EIsolatedLinuxReadOnlyUrl!,
 ];
 
 const instancesWithHistoryEventIdsSupported = [
   process.env.DfMonTestE2EServerDirectedUrl!,
   process.env.DfMonTestE2EMsSqlUrl!,
   process.env.DfMonTestE2EInjectedModeUrl!,
+  process.env.DfMonTestE2EIsolatedUrl!,
+  process.env.DfMonTestE2EIsolatedLinuxReadOnlyUrl!,
 ];
 
 // Time Histogram tab should be rendered
@@ -47,7 +51,7 @@ for (const baseUri of instances) {
     await page.goto(`${page.url().split('?')[0]}?tabIndex=1&timeFrom=2020-01-01T00%3A00%3A00.000Z`);
     
     // waiting till the load finishes
-    await expect(page.getByText(/\[Show All\]/)).toBeEnabled();
+    await expect(page.getByText(/\[Show All\]/)).toBeEnabled({ timeout: 10 * 1000 });
   
     const itemsShownLabel = await page.getByText(/items shown/);
     const itemsShownLabelText = await itemsShownLabel.textContent();
@@ -84,7 +88,7 @@ for (const baseUri of instances) {
     await page.goto(`${page.url().split('?')[0]}?tabIndex=2&timeFrom=2020-01-01T00%3A00%3A00.000Z`);
     
     // waiting till the load finishes
-    await expect(page.getByText(/\[Show All\]/)).toBeEnabled();
+    await expect(page.getByText(/\[Show All\]/)).toBeEnabled({ timeout: 10 * 1000 });
   
     const itemsShownLabel = await page.getByText(/instances shown/).nth(0);
     const itemsShownLabelText = await itemsShownLabel.textContent();
@@ -117,7 +121,7 @@ for (const baseUri of instances) {
     await page.goto(`${page.url().split('?')[0]}?timeFrom=2020-01-01T00%3A00%3A00.000Z`);
     
     // waiting till the load finishes
-    await expect(page.getByText(/\[Show All\]/)).toBeEnabled();
+    await expect(page.getByText(/\[Show All\]/)).toBeEnabled({ timeout: 10 * 1000 });
 
     const instancePagePromise = page.waitForEvent('popup');
 
@@ -136,7 +140,7 @@ for (const baseUri of instances) {
 
     // Checking the details are loaded
     const executionHistoryLabel = await instancePage.getByText(/Execution History/);
-    await expect(executionHistoryLabel).toBeVisible();
+    await expect(executionHistoryLabel).toBeVisible({ timeout: 10 * 1000 });
   });
 }
 
@@ -163,7 +167,7 @@ for (const baseUri of instancesWithHistoryEventIdsSupported) {
     await page.goto(`${page.url().split('?')[0]}?timeFrom=2020-01-01T00%3A00%3A00.000Z`);
     
     // waiting till the load finishes
-    await expect(page.getByText(/\[Show All\]/)).toBeEnabled();
+    await expect(page.getByText(/\[Show All\]/)).toBeEnabled({ timeout: 10 * 1000 });
     
     // Opening instance details page
     const instancePagePromise = page.waitForEvent('popup');
