@@ -158,8 +158,16 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     string eventName = bodyObject.name;
                     JObject eventData = bodyObject.data;
 
-                    //TODO: check what happens when raising an event to an entity
-                    await durableClient.RaiseEventAsync(instanceId, eventName, eventData);
+                    var match = ExpandedOrchestrationStatus.EntityIdRegex.Match(instanceId);
+                    // if this looks like an Entity
+                    if (match.Success)
+                    {
+                        return req.ReturnStatus(HttpStatusCode.BadRequest, "Durable Entities are not supported in Isolated mode");
+                    }
+                    else 
+                    {
+                        await durableClient.RaiseEventAsync(instanceId, eventName, eventData);
+                    }
 
                     break;
                 case "set-custom-status":
