@@ -21,7 +21,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         // GET /a/p/i/easyauth-config
         [Function(nameof(DfmGetEasyAuthConfigFunction))]
         public async Task<HttpResponseData> DfmGetEasyAuthConfigFunction(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "a/p/i/easyauth-config")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = Globals.DfMonRoutePrefix + "/a/p/i/easyauth-config")] HttpRequestData req)
         {
             // Checking nonce, if it was set as an env variable.
             // Don't care about return value of this method here.

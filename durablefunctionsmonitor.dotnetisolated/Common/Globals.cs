@@ -48,8 +48,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         public const string HubNameRouteParamName = "{hubName}";
 
+        public const string DfMonRoutePrefix = "durable-functions-monitor";
+
         // Constant, that defines the /a/p/i/{connName}-{hubName} route prefix, to let Functions Host distinguish api methods from statics
-        public const string ApiRoutePrefix = "a/p/i/{connName}-{hubName}";
+        public const string ApiRoutePrefix = DfMonRoutePrefix + "/a/p/i/{connName}-{hubName}";
 
         public const string IdentityBasedConnectionSettingAccountNameSuffix = "__accountName";
         public const string IdentityBasedConnectionSettingTableServiceUriSuffix = "__tableServiceUri";

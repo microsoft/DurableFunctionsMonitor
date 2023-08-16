@@ -16,7 +16,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         [Function(nameof(DfmGetTaskHubNamesFunction))]
         [OperationKind(Kind = OperationKind.Read)]
         public async Task<HttpResponseData> DfmGetTaskHubNamesFunction(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "a/p/i/task-hub-names")] HttpRequestData req
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = Globals.DfMonRoutePrefix + "/a/p/i/task-hub-names")] HttpRequestData req
         )
         {
             IEnumerable<string> hubNames;

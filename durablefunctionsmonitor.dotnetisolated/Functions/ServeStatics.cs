@@ -20,7 +20,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         // A simple statics hosting solution
         [Function(nameof(DfmServeStaticsFunction))]
         public async Task<HttpResponseData> DfmServeStaticsFunction(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = StaticsRoute)] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = Globals.DfMonRoutePrefix + "/{p1?}/{p2?}/{p3?}")] HttpRequestData req,
             string p1,
             string p2,
             string p3
@@ -98,8 +98,6 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             new [] {"favicon.png", "image/png"},
             new [] {"logo.svg", "image/svg+xml; charset=UTF-8"},
         };
-
-        private const string StaticsRoute = "{p1?}/{p2?}/{p3?}";
 
         private readonly ILogger _logger;
 
