@@ -1,0 +1,16 @@
+{
+  "version": "2.0",
+  "extensions": {
+    "http": {
+      "routePrefix": ""
+    },
+    "durableTask": {
+      "storageProvider": {
+        "type": "mssql",
+        "connectionStringName": "DFM_SQL_CONNECTION_STRING",
+        "taskEventLockTimeout": "00:02:00",
+        "createDatabaseIfNotExists": true
+      }
+    }
+  }
+}
