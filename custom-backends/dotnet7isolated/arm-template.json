@@ -84,7 +84,7 @@
                 },
 
                 {
-                    "name": "[concat(parameters('functionAppName'), '/authsettings')]",
+                    "name": "[concat(parameters('functionAppName'), '/web')]",
                     "apiVersion": "2018-11-01",
                     "type": "Microsoft.Web/sites/config",
                     "location": "[resourceGroup().location]",
@@ -93,6 +93,7 @@
                     ],
                     "properties": {
                         "enabled": true,
+                        "netFrameworkVersion": "v7.0",
                         "unauthenticatedClientAction": "RedirectToLoginPage",
                         "tokenStoreEnabled": true,
                         "defaultProvider": "AzureActiveDirectory",
