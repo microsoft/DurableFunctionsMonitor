@@ -13,7 +13,6 @@ Custom Durable Functions Monitor .NET 7 Isolated backend project to be used with
   "Values": {
     "AzureWebJobsSecretStorageType": "files",
     "DFM_SQL_CONNECTION_STRING": "your-mssql-connection-string",
-    "DFM_HUB_NAME": "mssql",
     "DFM_NONCE": "i_sure_know_what_i_am_doing",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
   },
