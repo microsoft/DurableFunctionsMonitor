@@ -95,7 +95,7 @@ namespace Dfm.MsSql
 
                 using (var cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.Add(new SqlParameter("@OrchestrationInstanceId", SqlDbType.VarChar, 100) { Value = instanceId });
+                    cmd.Parameters.Add(new SqlParameter("@OrchestrationInstanceId", SqlDbType.VarChar, 256) { Value = instanceId });
                     cmd.Parameters.Add(new SqlParameter("@TaskHub", SqlDbType.VarChar, 50) { Value = hubName });
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
@@ -191,7 +191,7 @@ namespace Dfm.MsSql
 
                 using (var cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.Add(new SqlParameter("@OrchestrationInstanceId", SqlDbType.VarChar, 100) { Value = instanceId });
+                    cmd.Parameters.Add(new SqlParameter("@OrchestrationInstanceId", SqlDbType.VarChar, 256) { Value = instanceId });
                     cmd.Parameters.Add(new SqlParameter("@TaskHub", SqlDbType.VarChar, 50) { Value = hubName });
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
