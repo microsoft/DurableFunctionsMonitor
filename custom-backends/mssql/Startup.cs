@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using DurableFunctionsMonitor.DotNetBackend;
 using Microsoft.Azure.WebJobs;
