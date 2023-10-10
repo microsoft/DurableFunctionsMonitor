@@ -145,10 +145,10 @@ steps:
     OverWrite: true
 
 - task: CopyFiles@2
-  displayName: 'copy LICENSE to durablefunctionsmonitor.dotnetisolated/output'
+  displayName: 'copy LICENSE.txt to durablefunctionsmonitor.dotnetisolated/output'
   inputs:
     Contents: |
-     LICENSE
+     durablefunctionsmonitor.dotnetisolated/LICENSE.txt
     TargetFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetisolated/output'
     OverWrite: true
 
