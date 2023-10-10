@@ -157,6 +157,13 @@ steps:
   inputs:
     versionSpec: 
 
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: 'ls'
+    workingDirectory: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend'
+  
+
 - task: NuGetCommand@2
   displayName: 'package dotnetbackend into a Nuget package'
   inputs:
