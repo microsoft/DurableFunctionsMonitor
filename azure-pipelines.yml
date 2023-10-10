@@ -63,7 +63,7 @@ steps:
     command: publish
     publishWebProjects: false
     projects: durablefunctionsmonitor.dotnetbackend
-    arguments: '--output $(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend'
+    arguments: '--output $(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend/output'
     zipAfterPublish: false
     modifyOutputPath: false
 
@@ -73,14 +73,14 @@ steps:
     command: publish
     publishWebProjects: false
     projects: durablefunctionsmonitor.dotnetisolated
-    arguments: '--output $(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetisolated'
+    arguments: '--output $(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetisolated/output'
     zipAfterPublish: false
     modifyOutputPath: false
 
 - task: CopyFiles@2
   displayName: 'copy dotnetbackend to durablefunctionsmonitor-vscodeext/backend'
   inputs:
-    SourceFolder: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend'
+    SourceFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend/output'
     Contents: |
      **
      !logo.svg
@@ -137,19 +137,19 @@ steps:
     OverWrite: true
 
 - task: CopyFiles@2
-  displayName: 'copy LICENSE to output/durablefunctionsmonitor.dotnetbackend'
+  displayName: 'copy LICENSE to durablefunctionsmonitor.dotnetbackend/output'
   inputs:
     Contents: |
      LICENSE
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend/output'
     OverWrite: true
 
 - task: CopyFiles@2
-  displayName: 'copy LICENSE to output/durablefunctionsmonitor.dotnetisolated'
+  displayName: 'copy LICENSE to durablefunctionsmonitor.dotnetisolated/output'
   inputs:
     Contents: |
      LICENSE
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetisolated'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetisolated/output'
     OverWrite: true
 
 - task: NuGetToolInstaller@1
@@ -168,7 +168,7 @@ steps:
   displayName: 'package dotnetbackend into a Nuget package'
   inputs:
     command: 'pack'
-    packagesToPack: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend/nuspec.nuspec'
+    packagesToPack: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend/output/nuspec.nuspec'
     packDestination: '$(Build.ArtifactStagingDirectory)'
     versioningScheme: 'off'
 
@@ -176,7 +176,7 @@ steps:
   displayName: 'package dotnetisolated into a Nuget package'
   inputs:
     command: 'pack'
-    packagesToPack: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetisolated/nuspec.nuspec'
+    packagesToPack: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetisolated/output/nuspec.nuspec'
     packDestination: '$(Build.ArtifactStagingDirectory)'
     versioningScheme: 'off'
 
