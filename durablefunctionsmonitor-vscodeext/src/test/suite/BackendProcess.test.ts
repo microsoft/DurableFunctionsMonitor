@@ -19,7 +19,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const tempBackendFolder = await copyBackendProjectToTempFolder('netcore31');
+		const tempBackendFolder = await copyBackendProjectToTempFolder('dotnet7isolated');
 
 		const connSettings = new StorageConnectionSettings('my-invalid-conn-string', 'my-task-hub');
 
@@ -72,7 +72,7 @@ suite('BackendProcess Test Suite', () => {
 
 			// Assert
 
-			assert.strictEqual(err.message?.startsWith(`Func: Value cannot be null. (Parameter 'provider')`), true);
+			assert.strictEqual(err.message?.includes(`Value cannot be null. (Parameter 'provider')`), true);
 
 			assert.strictEqual(backendWasPublished, true);
 			assert.strictEqual(callbackWasCalled, true);
