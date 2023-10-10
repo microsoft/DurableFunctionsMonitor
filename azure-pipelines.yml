@@ -63,14 +63,24 @@ steps:
     command: publish
     publishWebProjects: false
     projects: durablefunctionsmonitor.dotnetbackend
-    arguments: '--output $(Build.ArtifactStagingDirectory)/output'
+    arguments: '--output $(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend'
+    zipAfterPublish: false
+    modifyOutputPath: false
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish durablefunctionsmonitor.dotnetisolated'
+  inputs:
+    command: publish
+    publishWebProjects: false
+    projects: durablefunctionsmonitor.dotnetisolated
+    arguments: '--output $(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetisolated'
     zipAfterPublish: false
     modifyOutputPath: false
 
 - task: CopyFiles@2
   displayName: 'copy dotnetbackend to durablefunctionsmonitor-vscodeext/backend'
   inputs:
-    SourceFolder: '$(Build.ArtifactStagingDirectory)/output'
+    SourceFolder: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend'
     Contents: |
      **
      !logo.svg
@@ -127,11 +137,19 @@ steps:
     OverWrite: true
 
 - task: CopyFiles@2
-  displayName: 'copy LICENSE to output'
+  displayName: 'copy LICENSE to output/durablefunctionsmonitor.dotnetbackend'
   inputs:
     Contents: |
      LICENSE
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/output'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend'
+    OverWrite: true
+
+- task: CopyFiles@2
+  displayName: 'copy LICENSE to output/durablefunctionsmonitor.dotnetisolated'
+  inputs:
+    Contents: |
+     LICENSE
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetisolated'
     OverWrite: true
 
 - task: NuGetToolInstaller@1
@@ -143,7 +161,15 @@ steps:
   displayName: 'package dotnetbackend into a Nuget package'
   inputs:
     command: 'pack'
-    packagesToPack: '$(Build.ArtifactStagingDirectory)/output/nuspec.nuspec'
+    packagesToPack: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetbackend/nuspec.nuspec'
+    packDestination: '$(Build.ArtifactStagingDirectory)'
+    versioningScheme: 'off'
+
+- task: NuGetCommand@2
+  displayName: 'package dotnetisolated into a Nuget package'
+  inputs:
+    command: 'pack'
+    packagesToPack: '$(Build.ArtifactStagingDirectory)/output/durablefunctionsmonitor.dotnetisolated/nuspec.nuspec'
     packDestination: '$(Build.ArtifactStagingDirectory)'
     versioningScheme: 'off'
 
