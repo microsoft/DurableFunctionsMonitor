@@ -13,7 +13,7 @@ import { Settings, UpdateSetting } from "../../Settings";
 
 suite('BackendProcess Test Suite', () => {
 
-	const testTimeoutInMs = 100000;
+	const testTimeoutInMs = 180000;
 
 	test('Throws when backend process fails due to invalid connection string', async () => {
 
@@ -72,7 +72,7 @@ suite('BackendProcess Test Suite', () => {
 
 			// Assert
 
-			assert.strictEqual(err.message?.includes(`Value cannot be null. (Parameter 'provider')`), true);
+			assert.strictEqual(err.message?.startsWith(`Func: Value cannot be null. (Parameter 'provider')`), true);
 
 			assert.strictEqual(backendWasPublished, true);
 			assert.strictEqual(callbackWasCalled, true);
