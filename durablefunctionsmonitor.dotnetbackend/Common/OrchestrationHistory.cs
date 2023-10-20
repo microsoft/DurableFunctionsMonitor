@@ -145,7 +145,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 Name = string.IsNullOrEmpty(evt.Name) ? functionName : evt.Name,
                 Result = evt.Result,
                 Details = evt.Details,
-                SubOrchestrationId = subOrchestrationId,
+                SubOrchestrationId = subOrchestrationId ?? evt.InstanceId,
                 ScheduledTime = scheduledTime,
                 DurationInMs = scheduledTime.HasValue ? (evt._Timestamp - scheduledTime.Value).TotalMilliseconds : 0
             };
