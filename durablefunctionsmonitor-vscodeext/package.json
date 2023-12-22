@@ -336,7 +336,7 @@
         "@types/rimraf": "^3.0.0",
         "axios": "^1.3.5",
         "az-func-as-a-graph.core": "^1.3.0",
-        "crypto-js": "^4.1.1",
+        "crypto-js": "^4.2.0",
         "open": "^8.4.0",
         "portscanner": "^2.2.0",
         "rimraf": "^3.0.2"
