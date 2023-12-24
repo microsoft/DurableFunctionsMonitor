@@ -10,6 +10,7 @@ import { CancelToken } from '../../CancelToken';
 import { dfmContextInstance } from '../../DfmContext';
 import { DateTimeHelpers } from 'src/DateTimeHelpers';
 import { QueryString } from '../QueryString';
+import { LongJsonDialogState } from '../dialogs/LongJsonDialogState';
 
 // Represents the state of a tab in the results pane
 export interface IResultsTabState {
@@ -22,9 +23,6 @@ export interface IResultsTabState {
 // Resulting list of orchestrations represented as a plain table
 export class ResultsListTabState implements IResultsTabState {
 
-    @observable
-    longJsonDialogState = {};
-    
     @observable
     columnUnderMouse: string;
 
@@ -72,7 +70,11 @@ export class ResultsListTabState implements IResultsTabState {
 
     get backendClient(): IBackendClient { return this._backendClient; }
 
+    readonly longJsonDialogState: LongJsonDialogState;
+
     constructor(private _backendClient: IBackendClient, private _refresh: () => void) {
+
+        this.longJsonDialogState = new LongJsonDialogState(this._backendClient);
 
         const queryString = new QueryString();
         

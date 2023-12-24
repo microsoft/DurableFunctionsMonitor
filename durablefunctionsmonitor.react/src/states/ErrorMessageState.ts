@@ -13,8 +13,10 @@ export class ErrorMessageState {
 
         if (typeof err === 'string') {
             this.errorMessage = `${msg}. ${err}`;
+        } else if (typeof err.response?.data === 'string') {
+            this.errorMessage = `${msg}. ${err.response.data}`;
         } else {
-            this.errorMessage = `${msg}. ${(!err.response || !err.response.data) ? err.message : err.response.data}`;
+            this.errorMessage = `${msg}. ${err.message}`;
         }
     }
 }

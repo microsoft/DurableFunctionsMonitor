@@ -4,24 +4,30 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Grid, TextField } from '@mui/material';
+import { Grid, Link, TextField } from '@mui/material';
 
-import { DurableOrchestrationStatus } from '../../states/DurableOrchestrationStatus';
 import { RuntimeStatusToStyle } from '../../theme';
 import { LongJsonDialog } from '../dialogs/LongJsonDialog';
 import { DfmContextType } from '../../DfmContext';
+import { OrchestrationDetailsState } from 'src/states/details-view/OrchestrationDetailsState';
+import { Theme } from '../../theme';
 
 // Fields for detailed durable entity view
 @observer
-export class DurableEntityFields extends React.Component<{ details: DurableOrchestrationStatus }> {
+export class DurableEntityFields extends React.Component<{ state: OrchestrationDetailsState }> {
 
     static contextType = DfmContextType;
     context!: React.ContextType<typeof DfmContextType>;
 
     render(): JSX.Element {
-        const details = this.props.details;
+
+        const state = this.props.state;
+        const details = state.details;
 
         const runtimeStatusStyle = RuntimeStatusToStyle(details.runtimeStatus);
+
+        const inputFieldValue = LongJsonDialog.convertLongField(details.input);
+        const customStatusFieldValue = LongJsonDialog.convertLongField(details.customStatus);
 
         return (<>
             <Grid container className="grid-container">
@@ -87,9 +93,18 @@ export class DurableEntityFields extends React.Component<{ details: DurableOrche
                 <Grid item xs={12} zeroMinWidth className="grid-item">
                     <TextField
                         label="input"
-                        value={LongJsonDialog.formatJson(details.input)}
+                        value={inputFieldValue.value}
                         margin="normal"
-                        InputProps={{ readOnly: true }}
+                        InputProps={{
+                            readOnly: true,
+                            inputComponent: !inputFieldValue.isUrl ? undefined :
+                                () => <Link className="link-with-pointer-cursor" 
+                                    color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
+                                    onClick={() => state.downloadFieldValue('input')}
+                                >
+                                    {inputFieldValue.value}
+                                </Link>
+                        }}
                         InputLabelProps={{ shrink: true }}
                         variant="outlined"
                         fullWidth
@@ -100,9 +115,18 @@ export class DurableEntityFields extends React.Component<{ details: DurableOrche
                 <Grid item xs={12} zeroMinWidth className="grid-item">
                     <TextField
                         label="customStatus"
-                        value={LongJsonDialog.formatJson(details.customStatus)}
+                        value={customStatusFieldValue.value}
                         margin="normal"
-                        InputProps={{ readOnly: true }}
+                        InputProps={{
+                            readOnly: true,
+                            inputComponent: !customStatusFieldValue.isUrl ? undefined :
+                                () => <Link className="link-with-pointer-cursor" 
+                                    color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
+                                    onClick={() => state.downloadFieldValue('custom-status')}
+                                >
+                                    {customStatusFieldValue.value}
+                                </Link>
+                        }}
                         InputLabelProps={{ shrink: true }}
                         variant="outlined"
                         fullWidth

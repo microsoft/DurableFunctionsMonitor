@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -184,6 +186,33 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             var clause = query["$skip"];
             return clause.Any() ? collection.Skip(int.Parse(clause)) : collection;
+        }
+
+        public static async Task<CloudBlobClient> GetCloudBlobClient(string connStringName)
+        {
+            string connectionString = Environment.GetEnvironmentVariable(connStringName);
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                // Trying with Managed Identity/local Azure login
+
+                string blobServiceUri = Environment.GetEnvironmentVariable(connStringName + Globals.IdentityBasedConnectionSettingBlobServiceUriSuffix);
+                if (string.IsNullOrEmpty(blobServiceUri))
+                {
+                    string accountName = Environment.GetEnvironmentVariable(connStringName + Globals.IdentityBasedConnectionSettingAccountNameSuffix);
+                    blobServiceUri = $"https://{accountName}.blob.core.windows.net";
+                }
+
+                var identityBasedToken = await IdentityBasedTokenSource.GetTokenAsync();
+                var credentials = new StorageCredentials(new TokenCredential(identityBasedToken));
+
+                return new CloudBlobClient(new Uri(blobServiceUri), credentials);
+            }
+            else
+            {
+                // Using classic connection string
+                return CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
+            }
         }
 
         private static JsonSerializerSettings GetSerializerSettings()

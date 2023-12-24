@@ -18,6 +18,7 @@ import { FunctionsMap } from 'az-func-as-a-graph.core/dist/FunctionsMap';
 import { FilterOperatorEnum, toOdataFilterQuery } from '../FilterOperatorEnum';
 import { QueryString } from '../QueryString';
 import { DateTimeHelpers } from '../../DateTimeHelpers';
+import { LongJsonDialogState } from '../dialogs/LongJsonDialogState';
 
 // State of OrchestrationDetails view
 export class OrchestrationDetailsState extends ErrorMessageState {
@@ -231,19 +232,20 @@ export class OrchestrationDetailsState extends ErrorMessageState {
     @observable
     restartWithNewInstanceId: boolean = true;
 
-    @observable
-    longJsonDialogState = {};
-
     @computed
     get tabStates(): ICustomTabState[] { return this._tabStates; }
 
     get backendClient(): IBackendClient { return this._backendClient; }
+
+    readonly longJsonDialogState: LongJsonDialogState;
 
     constructor(private _orchestrationId: string,
         private _isFunctionGraphAvailable: boolean,
         private _backendClient: IBackendClient,
         private _localStorage: ITypedLocalStorage<OrchestrationDetailsState>) {
         super();
+
+        this.longJsonDialogState = new LongJsonDialogState(this._backendClient);
 
         const autoRefreshString = this._localStorage.getItem('autoRefresh');
         if (!!autoRefreshString) {
@@ -257,6 +259,19 @@ export class OrchestrationDetailsState extends ErrorMessageState {
 
         // Storing filter in query string only. Don't want it to stick to every instance in VsCode.
         this.readFilterFromQueryString();
+    }
+
+    downloadFieldValue(fieldName: 'input' | 'output' | 'custom-status') {
+
+        const uri = `/orchestrations('${this._orchestrationId}')/${fieldName}`;
+        this._inProgress = true;
+
+        this._backendClient.download(uri, fieldName).then(() => {
+            this._inProgress = false;
+        }, err => {
+            this._inProgress = false;
+            this.showError('Failed to download field value', err);
+        });
     }
 
     rewind() {

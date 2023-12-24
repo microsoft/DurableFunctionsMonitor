@@ -16,6 +16,8 @@ using Fluid;
 using Fluid.Values;
 using Newtonsoft.Json;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask.ContextImplementations;
+using System.IO;
+using System.IO.Compression;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
@@ -221,6 +223,19 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
                         await durableClient.RestartAsync(instanceId, restartWithNewInstanceId);
                         break;
+
+                    case "input":
+
+                        return await this.DownloadFieldValue(durableClient, Globals.GetFullConnectionStringEnvVariableName(connName), instanceId, status => status.Input.ToString());
+
+                    case "output":
+
+                        return await this.DownloadFieldValue(durableClient, Globals.GetFullConnectionStringEnvVariableName(connName), instanceId, status => status.Output.ToString());
+
+                    case "custom-status":
+
+                        return await this.DownloadFieldValue(durableClient, Globals.GetFullConnectionStringEnvVariableName(connName), instanceId, status => status.CustomStatus.ToString());
+
                     default:
                         return new NotFoundResult();
                 }
@@ -342,6 +357,59 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     var timestamp = e.Value<DateTime>("Timestamp").ToUniversalTime();
                     var duration = timestamp - scheduledTime;
                     e["DurationInMs"] = duration.TotalMilliseconds;
+                }
+            }
+        }
+
+        private async Task<IActionResult> DownloadFieldValue(IDurableClient durableClient, 
+            string connEnvVariableName, 
+            string instanceId, 
+            Func<DurableOrchestrationStatus, string> fieldGetter)
+        {
+            var status = await durableClient.GetStatusAsync(instanceId);
+            if (status == null)
+            {
+                return new NotFoundObjectResult($"Instance {instanceId} doesn't exist");
+            }
+
+            string blobUrl = fieldGetter(status);
+
+            var blobClient = await Globals.GetCloudBlobClient(connEnvVariableName);
+            var blob = await blobClient.GetBlobReferenceFromServerAsync(new Uri(blobUrl));
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await blob.DownloadToStreamAsync(memoryStream);
+                memoryStream.Position = 0;
+                
+                using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                using (var streamReader = new StreamReader(gzipStream))
+                {
+                    string data = await streamReader.ReadToEndAsync();
+
+                    // If it looks like JSON
+                    if (data[0] == '{')
+                    {
+                        return new ContentResult() { Content = data, ContentType = "application/json" };
+                    }
+
+                    // If it looks like a base64 string
+                    if (data[0] == '"')
+                    {
+                        try
+                        {
+                            var bytes = Convert.FromBase64String(data[1..^1]);
+
+                            return new FileContentResult(bytes, "application/octet-stream");
+                        }
+                        catch (Exception)
+                        {
+                            // Let's think it is just a plain string
+                        }
+                    }
+
+                    // Otherwise just returning it as text
+                    return new ContentResult() { Content = data, ContentType = "text/plain" };
                 }
             }
         }

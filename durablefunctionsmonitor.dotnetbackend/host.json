@@ -3,6 +3,11 @@
     "extensions": {
         "http": {
             "routePrefix": ""
+        },
+        "durableTask": {
+            "storageProvider": {
+                "FetchLargeMessagesAutomatically": false
+            }
         }
     }
 }

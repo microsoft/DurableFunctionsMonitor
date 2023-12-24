@@ -27,7 +27,7 @@ export class BackendClient implements IBackendClient {
     call(method: Method, url: string, data?: any): Promise<any> {
 
         // Two-bugs away
-        if (!['get', 'post', 'put'].includes(method.toLowerCase())) {
+        if (!this.isMethodSupported(method)) {
             return Promise.reject(new Error(`Method ${method} not supported`));
         }
 
@@ -35,22 +35,47 @@ export class BackendClient implements IBackendClient {
 
             this._getAuthorizationHeaderAsync().then(headers => {
 
-                // Workaround for https://github.com/Azure/azure-functions-durable-extension/issues/1926
-                var hubName = this._getTaskHubName();
-                if (hubName.endsWith('TestHubName') && method === 'POST' && url.match(/\/(orchestrations|restart)$/i)) {
-                    // Turning task hub name into lower case, this allows to bypass function name validation
-                    hubName = hubName.replace('TestHubName', 'testhubname');
-                }
-
-                // Need to add preceding dash to a plain taskHubName, otherwise it won't route properly
-                if (!hubName.includes('-')) {
-                    hubName = '--' + hubName;
-                }
-
                 axios.request({
-                    url: BackendUri + '/' + hubName + url,
+                    url: BackendUri + '/' + this.getTaskHubName(method, url) + url,
                     method, data, headers
                 }).then(r => { resolve(r.data); }, reject);
+            });
+        });
+    }
+
+    download(url: string, fileName: string): Promise<void> {
+
+        return new Promise<void>((resolve, reject) => {
+
+            this._getAuthorizationHeaderAsync().then(headers => {
+
+                axios.request({
+                    url: BackendUri + '/' + this.getTaskHubName('POST', url) + url,
+                    responseType: 'arraybuffer',
+                    method: 'POST', headers
+                }).then(r => {
+
+                    switch (r.headers['content-type']) {
+                        case 'application/json':
+                            fileName = `${fileName}.json`;
+                            break;
+                        case 'text/plain':
+                            fileName = `${fileName}.txt`;
+                            break;
+                        default:
+                            fileName = `${fileName}.dat`;
+                            break;
+                    }
+        
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = window.URL.createObjectURL(new Blob([r.data]));
+                    downloadLink.setAttribute('download', fileName);
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+       
+                    resolve();
+
+                }, reject);
             });
         });
     }
@@ -61,5 +86,27 @@ export class BackendClient implements IBackendClient {
         instanceId = instanceId?.replace(/javascript:/gi, '');
 
         window.open(`${this.routePrefixAndTaskHubName}${OrchestrationsPathPrefix}${instanceId}`);
+    }
+
+    private getTaskHubName(method: Method, url: string): string {
+
+        // Workaround for https://github.com/Azure/azure-functions-durable-extension/issues/1926
+        let hubName = this._getTaskHubName();
+        if (hubName.endsWith('TestHubName') && method === 'POST' && url.match(/\/(orchestrations|restart)$/i)) {
+            // Turning task hub name into lower case, this allows to bypass function name validation
+            hubName = hubName.replace('TestHubName', 'testhubname');
+        }
+
+        // Need to add preceding dash to a plain taskHubName, otherwise it won't route properly
+        if (!hubName.includes('-')) {
+            hubName = '--' + hubName;
+        }
+
+        return hubName;
+    }
+
+    private isMethodSupported(method: Method): boolean {
+
+        return ['get', 'post', 'put'].includes(method.toLowerCase());
     }
 }

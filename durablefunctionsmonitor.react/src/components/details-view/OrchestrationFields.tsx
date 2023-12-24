@@ -60,6 +60,10 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
 
         const showParentInstanceId = !!details.parentInstanceId;
 
+        const inputFieldValue = LongJsonDialog.convertLongField(details.input);
+        const outputFieldValue = LongJsonDialog.convertLongField(details.output);
+        const customStatusFieldValue = LongJsonDialog.convertLongField(details.customStatus);
+
         return (<>
             <Grid container className="grid-container">
                 <Grid item xs={12} sm={12} md={showParentInstanceId ? 2 : 3} zeroMinWidth className="grid-item">
@@ -149,9 +153,18 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                 <Grid item xs={12} zeroMinWidth className="grid-item">
                     <TextField
                         label="input"
-                        value={LongJsonDialog.formatJson(details.input)}
+                        value={inputFieldValue.value}
                         margin="normal"
-                        InputProps={{ readOnly: true }}
+                        InputProps={{
+                            readOnly: true,
+                            inputComponent: !inputFieldValue.isUrl ? undefined :
+                                () => <Link className="link-with-pointer-cursor" 
+                                    color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
+                                    onClick={() => state.downloadFieldValue('input')}
+                                >
+                                    {inputFieldValue.value}
+                                </Link>
+                        }}
                         InputLabelProps={{ shrink: true }}
                         variant="outlined"
                         fullWidth
@@ -162,9 +175,18 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                 <Grid item xs={12} zeroMinWidth className="grid-item">
                     <TextField
                         label="output"
-                        value={LongJsonDialog.formatJson(details.output)}
+                        value={outputFieldValue.value}
                         margin="normal"
-                        InputProps={{ readOnly: true }}
+                        InputProps={{
+                            readOnly: true,
+                            inputComponent: !outputFieldValue.isUrl ? undefined :
+                                () => <Link className="link-with-pointer-cursor" 
+                                    color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
+                                    onClick={() => state.downloadFieldValue('output')}
+                                >
+                                    {outputFieldValue.value}
+                                </Link>
+                        }}
                         InputLabelProps={{ shrink: true }}
                         variant="outlined"
                         fullWidth
@@ -175,9 +197,18 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                 <Grid item xs={12} zeroMinWidth className="grid-item">
                     <TextField
                         label="customStatus"
-                        value={LongJsonDialog.formatJson(details.customStatus)}
+                        value={customStatusFieldValue.value}
                         margin="normal"
-                        InputProps={{ readOnly: true }}
+                        InputProps={{
+                            readOnly: true,
+                            inputComponent: !customStatusFieldValue.isUrl ? undefined :
+                                () => <Link className="link-with-pointer-cursor" 
+                                    color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
+                                    onClick={() => state.downloadFieldValue('custom-status')}
+                                >
+                                    {customStatusFieldValue.value}
+                                </Link>
+                        }}
                         InputLabelProps={{ shrink: true }}
                         variant="outlined"
                         fullWidth
@@ -303,7 +334,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
             {!!history.length && this.renderTable(history)}
 
             <LongJsonDialog state={state.longJsonDialogState} />
-
+            
         </>);
     }
 
@@ -383,10 +414,10 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                                     {this.context.formatDateTimeString(event.ScheduledTime)}
                                 </TableCell>
                                 <TableCell className="long-text-cell" style={cellStyle}>
-                                    {LongJsonDialog.renderJson(event.Result, `${event.EventType} / ${event.Name} / ${HistoryEventFields[5]}`, this.props.state.longJsonDialogState)}
+                                    {LongJsonDialog.renderJson(event.Result, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[5]}`, event.Result))}
                                 </TableCell>
                                 <TableCell className="long-text-cell" style={cellStyle}>
-                                    {LongJsonDialog.renderJson(event.Details, `${event.EventType} / ${event.Name} / ${HistoryEventFields[6]}`, this.props.state.longJsonDialogState)}
+                                    {LongJsonDialog.renderJson(event.Details, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[6]}`, event.Details))}
                                 </TableCell>
                             </TableRow>
                         );

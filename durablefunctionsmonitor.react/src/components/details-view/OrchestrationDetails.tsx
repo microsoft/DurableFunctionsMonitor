@@ -135,7 +135,7 @@ export class OrchestrationDetails extends React.Component<{ state: Orchestration
             </>)}
 
             {!state.tabIndex && state.details.entityType === "DurableEntity" &&
-                <DurableEntityFields details={state.details} />
+                <DurableEntityFields state={state} />
             }
 
             {!!state.selectedTab && state.selectedTab.tabType === CustomTabTypeEnum.FunctionGraph && (

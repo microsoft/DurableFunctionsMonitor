@@ -15,4 +15,7 @@ export interface IBackendClient {
 
     // Opens instance details in a new tab
     showDetails(instanceId: string): void;
+
+    // Downloads data as a file
+    download(url: string, fileName: string): Promise<void>;
 }

@@ -5,38 +5,46 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import {
-    Button, Dialog, DialogActions, DialogContent, DialogTitle, InputBase
+    Button, Dialog, DialogActions, DialogContent, DialogTitle, InputBase, Link
 } from '@mui/material';
 
 import { renderFilteredField } from '../RenderHelpers';
 
 import { PrimaryButtonColor } from '../../theme';
+import { LongJsonDialogState } from 'src/states/dialogs/LongJsonDialogState';
+import { ErrorMessage } from '../ErrorMessage';
+import { Theme } from '../../theme';
 
 const MaxJsonLengthToShow = 512;
 
-export type LongJsonDialogState = { title?: string, jsonString?: string, filterValue?: string };
-
 // Dialog to display long JSON strings
 @observer
-export class LongJsonDialog extends React.Component<{ state: LongJsonDialogState }> {
+export class LongJsonDialog extends React.Component<{ filterValue?: string, state: LongJsonDialogState }> {
     
-    public static formatJson(jsonObject: any): string {
+    public static convertLongField(value: any): { value: string, isUrl: boolean } {
 
-        if (!jsonObject) {
-            return "";
+        if (!value) {
+            return { value: '', isUrl: false };
+        }
+
+        if (typeof value === 'string' && LongJsonDialog.isBlobLink(value)) {
+            return { value, isUrl: true };
         }
 
         // Converting from a string inside a string
-        if (typeof jsonObject === 'string') {
+        if (typeof value === 'string') {
             try {
-                jsonObject = JSON.parse(jsonObject);
+                value = JSON.parse(value);
             } catch {}
         }
 
-        return (typeof jsonObject === 'string' ? jsonObject : JSON.stringify(jsonObject, null, 3));
+        return {
+            value: (typeof value === 'string' ? value : JSON.stringify(value, null, 3)),
+            isUrl: false
+        };
     }
 
-    public static renderJson(jsonObject: any, dialogTitle: string, dialogState: LongJsonDialogState, filterValue?: string): JSX.Element {
+    public static renderJson(jsonObject: any, filterValue: string, onClick: () => void): JSX.Element {
 
         if (!jsonObject) {
             return null;
@@ -49,48 +57,58 @@ export class LongJsonDialog extends React.Component<{ state: LongJsonDialogState
             } catch {}
         }
 
-        const jsonString = (typeof jsonObject === 'string' ? jsonObject : JSON.stringify(jsonObject));
-        const jsonFormattedString = (typeof jsonObject === 'string' ? jsonObject : JSON.stringify(jsonObject, null, 3));
+        let jsonString = (typeof jsonObject === 'string' ? jsonObject : JSON.stringify(jsonObject));
+        jsonString = jsonString.substr(0, MaxJsonLengthToShow);
 
-        return (<div className="long-text-cell-input"
-            onClick={() => {
-                dialogState.title = dialogTitle;
-                dialogState.jsonString = jsonFormattedString;
-                dialogState.filterValue = filterValue;
-            }}
-        >
-            {renderFilteredField(jsonString.substr(0, MaxJsonLengthToShow), filterValue)}
-        </div>);
+        return (
+            <div className="long-text-cell-input" onClick={onClick}>
+                {renderFilteredField(jsonString, filterValue)}
+            </div>
+        );
     }
 
     render(): JSX.Element {
         const state = this.props.state;
 
         return (
-            <Dialog fullWidth={true} maxWidth="md" open={!!state.jsonString} onClose={() => state.jsonString = ''}>
+            <Dialog fullWidth={true} maxWidth="md" open={!!state.value} onClose={() => state.hideDialog()}>
 
                 <DialogTitle>{state.title}</DialogTitle>
 
                 <DialogContent>
+                    {
+                        LongJsonDialog.isBlobLink(state.value) ? (
 
-                    {!state.filterValue ? (
+                            <Link className="link-with-pointer-cursor"
+                                color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'}
+                                onClick={() => state.downloadFieldValue()}
+                            >
+                                {state.value}
+                            </Link>
 
-                        <InputBase multiline fullWidth readOnly value={state.jsonString} />
-                        
-                    ) : 
-                            
-                        renderFilteredField(state.jsonString, state.filterValue)
+                        ) : (
+                                
+                            !this.props.filterValue ? 
+                                (<InputBase multiline fullWidth readOnly value={state.value} />) : 
+                                renderFilteredField(state.value, this.props.filterValue)
+                        )
                     }
+
+                    <ErrorMessage state={state} />
 
                 </DialogContent>
                 
                 <DialogActions>
-                    <Button onClick={() => state.jsonString = ''} color={PrimaryButtonColor}>
+                    <Button onClick={() => state.hideDialog()} color={PrimaryButtonColor}>
                         Close
                     </Button>
                 </DialogActions>
 
             </Dialog>
        );
+    }
+
+    private static isBlobLink(str: string): boolean {
+        return /^https:\/\//i.test(str);
     }
 }

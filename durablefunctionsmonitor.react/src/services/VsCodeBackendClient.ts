@@ -65,6 +65,18 @@ export class VsCodeBackendClient implements IBackendClient {
         });
     }
 
+    download(url: string, fileName: string): Promise<void> {
+
+        const requestId = Math.random().toString();
+
+        // Sending request to VsCode
+        this._vsCodeApi.postMessage({ id: requestId, method: 'Download', url, data: fileName });
+
+        return new Promise<any>((resolve, reject) => {
+            this._requests[requestId] = { resolve, reject };
+        });
+    }
+
     showDetails(instanceId: string) {
         this.call('OpenInNewWindow', instanceId);
     }

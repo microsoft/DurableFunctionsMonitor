@@ -198,25 +198,45 @@ export class MonitorView
     // Does communication between code in WebView and this class
     private handleMessageFromWebView(webView: vscode.Webview, request: any, messageToWebView: any): void {
 
+        // Workaround for https://github.com/Azure/azure-functions-durable-extension/issues/1926
+        let hubName = this.hubNameWithoutSchema;
+        if (hubName === 'TestHubName' && request.method === 'POST' && request.url.match(/\/(orchestrations|restart)$/i)) {
+            // Turning task hub name into lower case, this allows to bypass function name validation
+            hubName = 'testhubname';
+        }
+
+        const headers: any = {};
+        headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
+
         switch (request.method) {
-            case 'IAmReady':
+
+            case 'IAmReady': {
+
                 // Sending an initial message (if any), when the webView is ready
                 if (!!messageToWebView) {
                     webView.postMessage(messageToWebView);
                     messageToWebView = undefined;
                 }
+
                 return;
-            case 'PersistState':
+            }
+            case 'PersistState': {
+
                 // Persisting state values
                 const webViewState = this._context.globalState.get(MonitorView.GlobalStateName, {}) as any;
                 webViewState[request.key] = request.data;
                 this._context.globalState.update(MonitorView.GlobalStateName, webViewState);
+
                 return;
-            case 'OpenInNewWindow':
+            }
+            case 'OpenInNewWindow': {
+
                 // Opening another WebView
                 this._childWebViewPanels.push(this.showWebView(request.url));
+
                 return;
-            case 'SaveAs':
+            }
+            case 'SaveAs': {
 
                 // Just to be extra sure...
                 if (!MonitorView.looksLikeSvg(request.data)) {
@@ -227,7 +247,7 @@ export class MonitorView
                 // Saving some file to local hard drive
                 vscode.window.showSaveDialog({ filters: { 'SVG Images': ['svg'] } }).then(filePath => {
 
-                    if (!filePath || !filePath.fsPath) { 
+                    if (!filePath || !filePath.fsPath) {
                         return;
                     }
 
@@ -239,7 +259,9 @@ export class MonitorView
                         }
                     });
                 });
+
                 return;
+            }
             case 'GotoFunctionCode': {
 
                 const func = this._functionsAndProxies[request.url];
@@ -269,6 +291,59 @@ export class MonitorView
 
                 return;
             }
+            case 'Download': {
+
+                axios.post(`${this._backend.backendUrl}/--${hubName}${request.url}`, undefined, { responseType: 'arraybuffer', headers })
+                    .then(response => {
+
+                        let fileName;
+                        let filters;
+
+                        switch (response.headers['content-type']) {
+                            case 'application/json':
+
+                                fileName = `${request.data}.json`;
+                                filters = { 'JSON Files': ['json'] };
+
+                                break;
+                            case 'text/plain':
+
+                                fileName = `${request.data}.txt`;
+                                filters = { 'TXT Files': ['txt'] };
+
+                                break;
+                            default:
+
+                                fileName = `${request.data}.dat`;
+                                filters = { 'DAT Files': ['dat'] };
+
+                                break;
+                        }
+    
+                        vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(fileName), filters }).then(filePath => {
+
+                            if (!filePath || !filePath.fsPath) { 
+                                return;
+                            }
+        
+                            fs.writeFile(filePath!.fsPath, response.data, err => {
+                                if (!err) {
+                                    vscode.window.showInformationMessage(`Saved to ${filePath!.fsPath}`);
+                                } else {
+                                    vscode.window.showErrorMessage(`Failed to save. ${err}`);
+                                }
+                            });
+                        });        
+
+                        webView.postMessage({ id: request.id });
+                    })
+                    .catch(err => {
+
+                        webView.postMessage({ id: request.id, err: { message: err.message } });
+                    });
+
+                return;
+            }
         }
 
         // Intercepting request for Function Map
@@ -278,7 +353,6 @@ export class MonitorView
                 return;
             }
 
-            const requestId = request.id;
             this._functionGraphList.traverseFunctions(this._functionProjectPath).then(result => {
 
                 this._functionsAndProxies = {};
@@ -290,7 +364,7 @@ export class MonitorView
                 }
 
                 webView.postMessage({
-                    id: requestId,
+                    id: request.id,
                     data: { 
                         functions: result.functions,
                         proxies: result.proxies
@@ -299,37 +373,27 @@ export class MonitorView
 
             }, err => {
                 // err might fail to serialize here, so passing err.message only
-                webView.postMessage({ id: requestId, err: { message: err.message } });
+                webView.postMessage({ id: request.id, err: { message: err.message } });
             });
 
             return;
         }
 
         // Then it's just a propagated HTTP request
-        const requestId = request.id;
-
-        const headers: any = {};
-        headers[SharedConstants.NonceHeaderName] = this._backend.backendCommunicationNonce;
-
-        // Workaround for https://github.com/Azure/azure-functions-durable-extension/issues/1926
-        var hubName = this.hubNameWithoutSchema;
-        if (hubName === 'TestHubName' && request.method === 'POST' && request.url.match(/\/(orchestrations|restart)$/i)) {
-            // Turning task hub name into lower case, this allows to bypass function name validation
-            hubName = 'testhubname';
-        }
 
         axios.request({
             url: `${this._backend.backendUrl}/--${hubName}${request.url}`,
             method: request.method,
             data: request.data,
             headers
+
         }).then(response => {
 
-            webView.postMessage({ id: requestId, data: response.data });
+            webView.postMessage({ id: request.id, data: response.data });
             
         }, err => {
 
-            webView.postMessage({ id: requestId, err: { message: err.message, response: { data: !err.response ? undefined : err.response.data } } });
+            webView.postMessage({ id: request.id, err: { message: err.message, response: { data: !err.response ? undefined : err.response.data } } });
         });
     }
 

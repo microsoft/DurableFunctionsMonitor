@@ -128,7 +128,7 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
                 {this.renderTable(state)}
             </Paper>
 
-            <LongJsonDialog state={state.longJsonDialogState} />
+            <LongJsonDialog state={state.longJsonDialogState} filterValue={state.clientFilterValue} />
             
         </>);
     }
@@ -265,20 +265,35 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
                                 )}
                                 {visibleColumns.includes('input') && (
                                     <TableCell className="output-cell" style={cellStyle}>
-                                        {LongJsonDialog.renderJson(orchestration.input, `${orchestration.instanceId} / input`,
-                                            state.longJsonDialogState, state.clientFilteredColumn === 'input' ? state.clientFilterValue : '')}
+                                        {
+                                            LongJsonDialog.renderJson(
+                                                orchestration.input,
+                                                state.clientFilteredColumn === 'input' ? state.clientFilterValue : '',
+                                                () => state.longJsonDialogState.showDialog(`${orchestration.instanceId} / input`, orchestration.input, orchestration.instanceId, 'input')
+                                            )
+                                        }
                                     </TableCell>
                                 )}
                                 {visibleColumns.includes('output') && (
                                     <TableCell className="output-cell" style={cellStyle}>
-                                        {LongJsonDialog.renderJson(orchestration.output, `${orchestration.instanceId} / output`,
-                                            state.longJsonDialogState, state.clientFilteredColumn === 'output' ? state.clientFilterValue : '')}
+                                        {
+                                            LongJsonDialog.renderJson(
+                                                orchestration.output,
+                                                state.clientFilteredColumn === 'output' ? state.clientFilterValue : '',
+                                                () => state.longJsonDialogState.showDialog(`${orchestration.instanceId} / output`, orchestration.output, orchestration.instanceId, 'output')
+                                            )
+                                        }
                                     </TableCell>
                                 )}
                                 {visibleColumns.includes('customStatus') && (
                                     <TableCell className="output-cell" style={cellStyle}>
-                                        {LongJsonDialog.renderJson(orchestration.customStatus, `${orchestration.instanceId} / customStatus`,
-                                            state.longJsonDialogState, state.clientFilteredColumn === 'customStatus' ? state.clientFilterValue : '')}
+                                        {
+                                            LongJsonDialog.renderJson(
+                                                orchestration.customStatus,
+                                                state.clientFilteredColumn === 'customStatus' ? state.clientFilterValue : '',
+                                                () => state.longJsonDialogState.showDialog(`${orchestration.instanceId} / customStatus`, orchestration.customStatus, orchestration.instanceId, 'custom-status')
+                                            )
+                                        }
                                     </TableCell>
                                 )}
                             </TableRow>
