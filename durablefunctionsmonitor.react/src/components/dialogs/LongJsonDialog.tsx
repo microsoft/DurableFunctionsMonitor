@@ -88,9 +88,7 @@ export class LongJsonDialog extends React.Component<{ filterValue?: string, stat
 
                         ) : (
                                 
-                            !this.props.filterValue ? 
-                                (<InputBase multiline fullWidth readOnly value={state.value} />) : 
-                                renderFilteredField(state.value, this.props.filterValue)
+                            !this.props.filterValue ? (<InputBase multiline fullWidth readOnly value={state.value} />) : renderFilteredField(state.value, this.props.filterValue)
                         )
                     }
 

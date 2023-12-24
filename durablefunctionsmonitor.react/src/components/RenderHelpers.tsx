@@ -8,7 +8,7 @@ import { Theme } from '../theme';
 // Highlights filter string in a text being rendered
 export function renderFilteredField(text: string, filterValue: string): string | JSX.Element[] {
 
-    if (!filterValue) {
+    if (!text || !filterValue) {
         return text;
     }
 
