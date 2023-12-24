@@ -64,7 +64,14 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 }
             }
 
-            result.Input = await result.ConvertInput(that.Input, connEnvVariableName);
+            if (result.EntityType == EntityTypeEnum.DurableEntity)
+            {
+                result.Input = ConvertInput(that.Input, connEnvVariableName);
+            }
+            else
+            {
+                result.Input = that.Input;
+            }
 
             // Initializing custom liquid template names
             // The underlying Task never throws, so it's OK.
@@ -114,31 +121,11 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             return this.EntityType == EntityTypeEnum.DurableEntity ? this.EntityId.Value.EntityName : this.Name;
         }
 
-        private async Task<JToken> ConvertInput(JToken input, string connEnvVariableName)
+        private static JToken ConvertInput(JToken input, string connEnvVariableName)
         {
-            if (this.EntityType != EntityTypeEnum.DurableEntity)
+            if (input.Type == JTokenType.String)
             {
                 return input;
-            }
-
-            // Temp fix for https://github.com/Azure/azure-functions-durable-extension/issues/1786
-            if (input.Type == JTokenType.String && input.ToString().ToLowerInvariant().StartsWith("https://"))
-            {
-                string connectionString = Environment.GetEnvironmentVariable(connEnvVariableName);
-                var blobClient = CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
-                var blob = await blobClient.GetBlobReferenceFromServerAsync(new Uri(input.ToString()));
-
-                using (var memoryStream = new MemoryStream())
-                {
-                    await blob.DownloadToStreamAsync(memoryStream);
-                    memoryStream.Position = 0;
-                    using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
-                    using (var streamReader = new StreamReader(gzipStream))
-                    using (var jsonTextReader = new JsonTextReader(streamReader))
-                    {
-                        input = JToken.ReadFrom(jsonTextReader);
-                    }
-                }
             }
 
             var stateToken = input["state"];

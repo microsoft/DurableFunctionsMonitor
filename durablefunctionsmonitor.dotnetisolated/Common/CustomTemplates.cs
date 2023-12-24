@@ -56,40 +56,13 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         private static Task<FunctionMapsMap> FunctionMapsTask;
 
-        private static async Task<CloudBlobClient> GetCloudBlobClient()
-        {
-            string connectionString = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage);
-
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                // Trying with Managed Identity/local Azure login
-
-                string blobServiceUri = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + Globals.IdentityBasedConnectionSettingBlobServiceUriSuffix);
-                if (string.IsNullOrEmpty(blobServiceUri))
-                {
-                    string accountName = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsStorage + Globals.IdentityBasedConnectionSettingAccountNameSuffix);
-                    blobServiceUri = $"https://{accountName}.blob.core.windows.net";
-                }
-
-                var identityBasedToken = await IdentityBasedTokenSource.GetTokenAsync();
-                var credentials = new StorageCredentials(new TokenCredential(identityBasedToken));
-
-                return new CloudBlobClient(new Uri(blobServiceUri), credentials);
-            }
-            else
-            {
-                // Using classic connection string
-                return CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
-            }
-        }
-
         // Tries to load liquid templates from underlying Azure Storage
         private static async Task<LiquidTemplatesMap> GetTabTemplatesFromStorageAsync()
         {
             var result = new LiquidTemplatesMap();
             try
             {
-                var blobClient = await GetCloudBlobClient();
+                var blobClient = await Globals.GetCloudBlobClient(EnvVariableNames.AzureWebJobsStorage);
 
                 // Listing all blobs in durable-functions-monitor/tab-templates folder
                 var container = blobClient.GetContainerReference(Globals.TemplateContainerName);
@@ -171,7 +144,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             try
             {
-                var blobClient = await GetCloudBlobClient();
+                var blobClient = await Globals.GetCloudBlobClient(EnvVariableNames.AzureWebJobsStorage);
                 var container = blobClient.GetContainerReference(Globals.TemplateContainerName);
                 var blob = container.GetBlobReference(Globals.CustomMetaTagBlobName);
 
@@ -221,7 +194,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var result = new FunctionMapsMap();
             try
             {
-                var blobClient = await GetCloudBlobClient();
+                var blobClient = await Globals.GetCloudBlobClient(EnvVariableNames.AzureWebJobsStorage);
 
                 // Listing all blobs in durable-functions-monitor/function-maps folder
                 var container = blobClient.GetContainerReference(Globals.TemplateContainerName);

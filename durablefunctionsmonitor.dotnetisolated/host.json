@@ -6,7 +6,8 @@
     },
     "durableTask": {
       "storageProvider": {
-        "type": "AzureStorage"
+        "type": "AzureStorage",
+        "FetchLargeMessagesAutomatically": false
       }
     }
   }

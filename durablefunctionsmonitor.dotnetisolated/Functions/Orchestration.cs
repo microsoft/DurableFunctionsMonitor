@@ -13,6 +13,7 @@ using System.Net;
 using Fluid;
 using Fluid.Values;
 using Microsoft.DurableTask;
+using System.IO.Compression;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
@@ -37,9 +38,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var metadata = await durableClient.GetInstanceAsync(instanceId, true);
             if (metadata == null)
             {
-                var notFoundResult = req.CreateResponse(HttpStatusCode.NotFound);
-                notFoundResult.WriteString($"Instance {instanceId} doesn't exist");
-                return notFoundResult;
+                return req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
             }
 
             var detailedStatus = await DetailedOrchestrationStatus.CreateFrom(
@@ -193,7 +192,21 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
                     break;
                 case "restart":
+
                     return req.ReturnStatus(HttpStatusCode.BadRequest, "Restart is not supported in Isolated mode");
+
+                case "input":
+
+                    return await this.DownloadFieldValue(req, durableClient, Globals.GetFullConnectionStringEnvVariableName(connName), instanceId, status => status.SerializedInput);
+
+                case "output":
+
+                    return await this.DownloadFieldValue(req, durableClient, Globals.GetFullConnectionStringEnvVariableName(connName), instanceId, status => status.SerializedOutput);
+
+                case "custom-status":
+
+                    return await this.DownloadFieldValue(req, durableClient, Globals.GetFullConnectionStringEnvVariableName(connName), instanceId, status => status.SerializedCustomStatus);
+
                 default:
                     return req.ReturnStatus(HttpStatusCode.NotFound);
             }
@@ -320,6 +333,71 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     var timestamp = e.Value<DateTime>("Timestamp").ToUniversalTime();
                     var duration = timestamp - scheduledTime;
                     e["DurationInMs"] = duration.TotalMilliseconds;
+                }
+            }
+        }
+
+        private async Task<HttpResponseData> DownloadFieldValue(HttpRequestData req,
+            DurableTaskClient durableClient, 
+            string connEnvVariableName, 
+            string instanceId, 
+            Func<OrchestrationMetadata, string> fieldGetter)
+        {
+            var status = await durableClient.GetInstanceAsync(instanceId, true);
+            if (status == null)
+            {
+                return req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
+            }
+
+            string blobUrl = fieldGetter(status);
+
+            var blobClient = await Globals.GetCloudBlobClient(connEnvVariableName);
+            var blob = await blobClient.GetBlobReferenceFromServerAsync(new Uri(blobUrl));
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await blob.DownloadToStreamAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                using (var streamReader = new StreamReader(gzipStream))
+                {
+                    string data = await streamReader.ReadToEndAsync();
+
+                    var response = req.CreateResponse(HttpStatusCode.OK);
+
+                    // If it looks like JSON
+                    if (data[0] == '{')
+                    {
+                        response.Headers.Add("Content-Type", "application/json");
+                        await response.WriteStringAsync(data);
+
+                        return response;
+                    }
+
+                    // If it looks like a base64 string
+                    if (data[0] == '"')
+                    {
+                        try
+                        {
+                            var bytes = Convert.FromBase64String(data[1..^1]);
+
+                            response.Headers.Add("Content-Type", "application/octet-stream");
+                            await response.WriteBytesAsync(bytes);
+
+                            return response;
+                        }
+                        catch (Exception)
+                        {
+                            // Let's think it is just a plain string
+                        }
+                    }
+
+                    // Otherwise just returning it as text
+                    response.Headers.Add("Content-Type", "text/plain");
+                    await response.WriteStringAsync(data);
+
+                    return response;
                 }
             }
         }
