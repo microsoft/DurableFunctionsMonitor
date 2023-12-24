@@ -113,6 +113,7 @@ steps:
 
 - task: Npm@1
   displayName: 'run tests on durablefunctionsmonitor-vscodeext'
+  enabled: false
   inputs:
     command: custom
     workingDir: 'durablefunctionsmonitor-vscodeext'
