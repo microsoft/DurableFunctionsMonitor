@@ -312,7 +312,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
 
                 string hubName = hostJson.extensions.durableTask.hubName;
-                if (hubName.StartsWith('%') && hubName.EndsWith('%'))
+                if (hubName != null && hubName.StartsWith('%') && hubName.EndsWith('%'))
                 {
                     hubName = Environment.GetEnvironmentVariable(hubName.Trim('%'));
                 }

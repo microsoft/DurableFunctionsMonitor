@@ -263,6 +263,10 @@ export class OrchestrationDetailsState extends ErrorMessageState {
 
     downloadFieldValue(fieldName: 'input' | 'output' | 'custom-status') {
 
+        if (!!this._inProgress) {
+            return;
+        }
+
         const uri = `/orchestrations('${this._orchestrationId}')/${fieldName}`;
         this._inProgress = true;
 

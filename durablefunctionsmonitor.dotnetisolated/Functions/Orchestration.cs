@@ -14,6 +14,7 @@ using Fluid;
 using Fluid.Values;
 using Microsoft.DurableTask;
 using System.IO.Compression;
+using Microsoft.WindowsAzure.Storage;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
@@ -337,6 +338,23 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
         }
 
+        private void CheckBlobUrl(string blobUrl, StorageUri storageUri)
+        {
+            blobUrl = blobUrl.ToLower();
+
+            string primaryUri = storageUri.PrimaryUri.ToString().ToLower();
+            string secondaryUri = storageUri.SecondaryUri?.ToString().ToLower();
+            if (string.IsNullOrEmpty(secondaryUri))
+            {
+                secondaryUri = primaryUri;
+            }
+
+            if (!blobUrl.StartsWith(primaryUri) && !blobUrl.StartsWith(secondaryUri))
+            {
+                throw new NotSupportedException("The field value is not a valid blob URL");
+            }
+        }
+
         private async Task<HttpResponseData> DownloadFieldValue(HttpRequestData req,
             DurableTaskClient durableClient, 
             string connEnvVariableName, 
@@ -352,6 +370,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             string blobUrl = fieldGetter(status);
 
             var blobClient = await Globals.GetCloudBlobClient(connEnvVariableName);
+
+            // Important check, to make sure we're not trying to access anything other than our own blob storage
+            this.CheckBlobUrl(blobUrl, blobClient.StorageUri);
+
             var blob = await blobClient.GetBlobReferenceFromServerAsync(new Uri(blobUrl));
 
             using (var memoryStream = new MemoryStream())

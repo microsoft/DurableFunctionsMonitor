@@ -5,7 +5,8 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import {
-    Button, Dialog, DialogActions, DialogContent, DialogTitle, InputBase, Link
+    Box,
+    Button, Dialog, DialogActions, DialogContent, DialogTitle, InputBase, LinearProgress, Link
 } from '@mui/material';
 
 import { renderFilteredField } from '../RenderHelpers';
@@ -76,6 +77,9 @@ export class LongJsonDialog extends React.Component<{ filterValue?: string, stat
                 <DialogTitle>{state.title}</DialogTitle>
 
                 <DialogContent>
+
+                    {state.inProgress ? (<LinearProgress />) : (<Box height={4} />)}
+
                     {
                         LongJsonDialog.isBlobLink(state.value) ? (
 
@@ -97,7 +101,7 @@ export class LongJsonDialog extends React.Component<{ filterValue?: string, stat
                 </DialogContent>
                 
                 <DialogActions>
-                    <Button onClick={() => state.hideDialog()} color={PrimaryButtonColor}>
+                    <Button onClick={() => state.hideDialog()} color={PrimaryButtonColor} disabled={state.inProgress}>
                         Close
                     </Button>
                 </DialogActions>
