@@ -129,8 +129,9 @@ namespace Dfm.DotNetIsolatedMsSql
                     h.TaskID as EventId,
                     h.Name as Name,
                     IIF(h2.TaskID IS NULL, NULL, h.Timestamp) as ScheduledTime,
-                    p.Text as Result,
-                    p.Reason as Details,
+                    p1.Text as Input,
+                    p2.Text as Result,
+                    p2.Reason as Details,
                     cih.InstanceID as SubOrchestrationId
                 FROM
                     [{SchemaName}].Instances i
@@ -149,9 +150,13 @@ namespace Dfm.DotNetIsolatedMsSql
                         h.InstanceID = h2.InstanceID AND h.ExecutionID = h2.ExecutionID AND h.TaskHub = h2.TaskHub AND h.TaskID = h2.TaskID AND h.SequenceNumber != h2.SequenceNumber
                     )
                     LEFT JOIN
-                    [{SchemaName}].Payloads p
+                    [{SchemaName}].Payloads p1
                     ON
-                    p.PayloadID = h2.DataPayloadID AND p.TaskHub = h2.TaskHub AND p.InstanceID = h2.InstanceID
+                    p1.PayloadID = h.DataPayloadID AND p1.TaskHub = h.TaskHub AND p1.InstanceID = h.InstanceID
+                    LEFT JOIN
+                    [{SchemaName}].Payloads p2
+                    ON
+                    p2.PayloadID = h2.DataPayloadID AND p2.TaskHub = h2.TaskHub AND p2.InstanceID = h2.InstanceID
                     LEFT JOIN
                     (
                         select 

@@ -95,7 +95,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
                                 evt._Timestamp,
                                 evt.Name,
                                 correlatedEvt.EventType == "GenericEvent" ? evt.EventType : null,
-                                evt.InstanceId
+                                evt.InstanceId,
+                                evt.Input
                             );
                         }
                         else
@@ -135,7 +136,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
             DateTimeOffset? scheduledTime = null, 
             string functionName = null, 
             string eventType = null,
-            string subOrchestrationId = null)
+            string subOrchestrationId = null,
+            string input = null)
         {
             return new HistoryEvent
             {
@@ -143,6 +145,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 EventType = eventType ?? evt.EventType,
                 EventId = evt.TaskScheduledId,
                 Name = string.IsNullOrEmpty(evt.Name) ? functionName : evt.Name,
+                Input = string.IsNullOrEmpty(evt.Input) ? input : evt.Input,
                 Result = evt.Result,
                 Details = evt.Details,
                 SubOrchestrationId = subOrchestrationId ?? evt.InstanceId,
@@ -170,6 +173,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 EventId = dynamicToken.EventId,
                 Name = name,
                 ScheduledTime = dynamicToken.ScheduledTime,
+                Input = dynamicToken.Input?.ToString(),
                 Result = dynamicToken.Result?.ToString(),
                 Details = dynamicToken.Details?.ToString(),
                 DurationInMs = dynamicToken.DurationInMs,
@@ -198,6 +202,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public int? EventId { get; set; }
         public string Name { get; set; }
         public DateTimeOffset? ScheduledTime { get; set; }
+        public string Input { get; set; }
         public string Result { get; set; }
         public string Details { get; set; }
         public double? DurationInMs { get; set; }
@@ -211,6 +216,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public string EventType { get; set; }
         public string Name { get; set; }
         public DateTimeOffset _Timestamp { get; set; }
+        public string Input { get; set; }
         public string Result { get; set; }
         public string Details { get; set; }
         public int EventId { get; set; }

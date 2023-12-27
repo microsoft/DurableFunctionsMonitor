@@ -414,10 +414,13 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                                     {this.context.formatDateTimeString(event.ScheduledTime)}
                                 </TableCell>
                                 <TableCell className="long-text-cell" style={cellStyle}>
-                                    {LongJsonDialog.renderJson(event.Result, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[5]}`, event.Result))}
+                                    {LongJsonDialog.renderJson(event.Input, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[5]}`, event.Input))}
                                 </TableCell>
                                 <TableCell className="long-text-cell" style={cellStyle}>
-                                    {LongJsonDialog.renderJson(event.Details, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[6]}`, event.Details))}
+                                    {LongJsonDialog.renderJson(event.Result, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[6]}`, event.Result))}
+                                </TableCell>
+                                <TableCell className="long-text-cell" style={cellStyle}>
+                                    {LongJsonDialog.renderJson(event.Details, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[7]}`, event.Details))}
                                 </TableCell>
                             </TableRow>
                         );

@@ -10,6 +10,7 @@ export class HistoryEvent {
     ScheduledTime: string;
     DurationInMs: number;
     SubOrchestrationId: string;
+    Input: any;
     Result: any;
     Details: any;
 }
@@ -26,6 +27,7 @@ export const HistoryEventFields = [
     'EventId',
     'Name',
     'ScheduledTime',
+    'Input',
     'Result',
     'Details',
 ];

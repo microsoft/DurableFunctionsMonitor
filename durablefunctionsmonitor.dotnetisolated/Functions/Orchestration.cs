@@ -12,7 +12,6 @@ using Microsoft.Azure.Functions.Worker.Http;
 using System.Net;
 using Fluid;
 using Fluid.Values;
-using Microsoft.DurableTask;
 using System.IO.Compression;
 using Microsoft.WindowsAzure.Storage;
 
