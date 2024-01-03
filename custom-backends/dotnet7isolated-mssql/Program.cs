@@ -81,12 +81,8 @@ namespace Dfm.DotNetIsolatedMsSql
                     i.ParentInstanceID as ParentInstanceID
                 FROM
                     [{SchemaName}].Instances i
-                    LEFT JOIN
-                    [{SchemaName}].Instances i2
-                    ON
-                    (i2.InstanceID = i.InstanceID AND i2.TaskHub = @TaskHub)
                 WHERE
-                    i.InstanceID = @OrchestrationInstanceId AND i.TaskHub = IIF(i2.InstanceID IS NULL, 'dbo', @TaskHub)";
+                    i.InstanceID = @OrchestrationInstanceId AND i.TaskHub = @TaskHub";
 
             using (var conn = new SqlConnection(ConnString))
             {
@@ -134,11 +130,7 @@ namespace Dfm.DotNetIsolatedMsSql
                     p2.Reason as Details,
                     cih.InstanceID as SubOrchestrationId
                 FROM
-                    [{SchemaName}].Instances i
-                    INNER JOIN
                     [{SchemaName}].History h
-                    ON
-                    (i.InstanceID = h.InstanceID AND i.ExecutionID = h.ExecutionID AND i.TaskHub = h.TaskHub)
                     LEFT JOIN
                     [{SchemaName}].History h2
                     ON
@@ -173,10 +165,6 @@ namespace Dfm.DotNetIsolatedMsSql
                     ) cih
                     ON
                     (cih.ParentInstanceID = h.InstanceID AND cih.TaskHub = h.TaskHub AND cih.TaskID = h.TaskID AND h.EventType = 'SubOrchestrationInstanceCreated')
-                    LEFT JOIN
-                    [{SchemaName}].Instances i2
-                    ON
-                    (i2.InstanceID = i.InstanceID AND i2.TaskHub = @TaskHub)
                 WHERE
                     h.EventType IN 
                     (
@@ -184,7 +172,7 @@ namespace Dfm.DotNetIsolatedMsSql
                         'ContinueAsNew', 'TimerCreated', 'TimerFired', 'EventRaised', 'EventSent'
                     )
                     AND
-                    i.InstanceID = @OrchestrationInstanceId AND i.TaskHub = IIF(i2.InstanceID IS NULL, 'dbo', @TaskHub)
+                    h.InstanceID = @OrchestrationInstanceId AND h.TaskHub = @TaskHub
                 ORDER BY
                     h.SequenceNumber";
 
