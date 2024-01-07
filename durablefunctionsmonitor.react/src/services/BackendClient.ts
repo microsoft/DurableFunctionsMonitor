@@ -8,8 +8,12 @@ import { OrchestrationsPathPrefix } from '../states/LoginState';
 // DFM-specific route prefix, that is passed to us from the backend via a global static variable
 declare const DfmRoutePrefix: string;
 
-const RoutePrefix = !process.env.REACT_APP_BACKEND_BASE_URI ? (!DfmRoutePrefix ? '/' : `/${DfmRoutePrefix}/`) : process.env.REACT_APP_BACKEND_BASE_URI + '/';
-export const BackendUri = RoutePrefix + process.env.REACT_APP_BACKEND_PATH;
+// API route prefix
+declare const DfmApiRoutePrefix: string;
+
+const dfmRoutePrefixWithSlashes = !DfmRoutePrefix ? '/' : `/${DfmRoutePrefix}/`;
+const RoutePrefix = !process.env.REACT_APP_BACKEND_BASE_URI ? dfmRoutePrefixWithSlashes : process.env.REACT_APP_BACKEND_BASE_URI + '/';
+export const BackendUri = !DfmApiRoutePrefix ? RoutePrefix + 'a/p/i' : '/' + DfmApiRoutePrefix;
 
 // Common IBackendClient implementation, sends HTTP requests directly
 export class BackendClient implements IBackendClient {

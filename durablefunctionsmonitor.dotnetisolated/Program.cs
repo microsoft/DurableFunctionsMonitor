@@ -14,8 +14,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
                     workerAppBuilder.UseDurableFunctionsMonitor((settings, extensionPoints) => 
                     {
-                        // Need to reinitialize CustomUserAgent
-                        TableClient.CustomUserAgent = $"DurableFunctionsMonitorIsolated-Standalone/{Globals.GetVersion()}";
+                        // Need to initialize CustomUserAgent
+                        settings.CustomUserAgentPrefix = "DurableFunctionsMonitorIsolated-Standalone";
                     });
 
                 })

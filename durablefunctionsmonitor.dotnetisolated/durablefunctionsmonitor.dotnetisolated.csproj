@@ -21,6 +21,9 @@
     <PackageReference Include="Fluid.Core" Version="2.1.4" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\durablefunctionsmonitor.dotnetisolated.core\durablefunctionsmonitor.dotnetisolated.core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="host.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
