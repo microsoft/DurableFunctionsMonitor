@@ -26,7 +26,6 @@
         <file src="..\output\durablefunctionsmonitor.dotnetisolated.dll" target="lib/netcoreapp2.1" />
         <file src="..\output\durablefunctionsmonitor.dotnetisolated.xml" target="lib/netcoreapp2.1" />
         <file src="..\output\durablefunctionsmonitor.dotnetisolated.targets" target="build" />
-        <file src="..\output\DfmStatics\**" target="/DfmStatics" />
-        <file src="..\output\LICENSE.txt" target="" />
+        <file src="..\output\**" target="/" />
     </files>
 </package>
