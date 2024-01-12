@@ -23,9 +23,11 @@
     </metadata>
 
     <files>
-        <file src="..\output\durablefunctionsmonitor.dotnetisolated.dll" target="lib/netcoreapp2.1" />
-        <file src="..\output\durablefunctionsmonitor.dotnetisolated.xml" target="lib/netcoreapp2.1" />
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.core.dll" target="lib/netcoreapp2.1" />
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.core.xml" target="lib/netcoreapp2.1" />
         <file src="..\output\durablefunctionsmonitor.dotnetisolated.targets" target="build" />
-        <file src="..\output\**" target="/" />
+        <file src="..\output\*" target="/" />
+        <file src="..\output\.azurefunctions\**" target="/.azurefunctions" />
+        <file src="..\output\DfmStatics\**" target="/DfmStatics" />
     </files>
 </package>
