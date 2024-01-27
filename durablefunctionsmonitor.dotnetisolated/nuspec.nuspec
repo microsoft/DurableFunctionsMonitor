@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata minClientVersion="2.5">
         <id>DurableFunctionsMonitor.DotNetIsolated</id>
-        <version>6.3.0</version>
+        <version>6.3.0-beta7</version>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>DurableFunctionsMonitor.DotNetIsolated</description>
         <authors>DurableFunctionsMonitor</authors>
@@ -10,10 +10,10 @@
         <license type="file">LICENSE.txt</license>
 
         <dependencies>
-            <dependency id="Microsoft.Azure.Functions.Worker" version="1.18.0" />
+            <dependency id="Microsoft.Azure.Functions.Worker" version="1.20.1" />
             <dependency id="Microsoft.Azure.Functions.Worker.Sdk" version="1.13.0" />
-            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" version="1.0.2" />
-            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.Http" version="3.0.13" />
+            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" version="1.1.1" />
+            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.Http" version="3.1.0" />
             <dependency id="WindowsAzure.Storage" version="9.3.3" />
             <dependency id="Azure.Identity" version="1.10.4" />
             <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" version="6.10.2" />
