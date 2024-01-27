@@ -16,7 +16,7 @@
             <dependency id="Microsoft.Azure.Functions.Worker.Extensions.Http" version="3.1.0" />
             <dependency id="WindowsAzure.Storage" version="9.3.3" />
             <dependency id="Azure.Identity" version="1.10.4" />
-            <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" version="6.10.2" />
+            <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" version="6.35.0" />
             <dependency id="Fluid.Core" version="2.1.4" />
         </dependencies>
 
