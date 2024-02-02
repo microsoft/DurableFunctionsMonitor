@@ -114,6 +114,11 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
         private static readonly Regex SubOrchestrationIdRegex = new Regex(@"(.+):\d+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+        private static JsonSerializerSettings InputSerializerSettings = new JsonSerializerSettings
+        {
+            DateParseHandling = DateParseHandling.None
+        };
+
         private DetailedOrchestrationStatus() {}
 
         internal string GetEntityTypeName()
@@ -141,7 +146,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             }
 
             // Converting JSON string into JSON object
-            input["state"] = JObject.Parse(stateString);
+            input["state"] = (JToken)JsonConvert.DeserializeObject(stateString, InputSerializerSettings);
             return input;
         }
     }
