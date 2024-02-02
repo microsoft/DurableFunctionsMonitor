@@ -179,7 +179,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
                         dynamic bodyObject = JObject.Parse(bodyString);
                         string eventName = bodyObject.name;
-                        JObject eventData = bodyObject.data;
+                        JToken eventData = bodyObject.data;
 
                         var match = ExpandedOrchestrationStatus.EntityIdRegex.Match(instanceId);
                         // if this looks like an Entity
