@@ -14,6 +14,7 @@ using Fluid;
 using Fluid.Values;
 using System.IO.Compression;
 using Microsoft.WindowsAzure.Storage;
+using System.Text.Json.Nodes;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
@@ -96,20 +97,14 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             string hubName)
         {
             string bodyString = await req.ReadAsStringAsync();
-            dynamic body = JObject.Parse(bodyString);
+            var body = System.Text.Json.JsonSerializer.Deserialize<JsonNode>(bodyString);
 
-            string orchestratorFunctionName = body.name;
-            string instanceId = string.IsNullOrEmpty((string)body.id) ? null : (string)body.id;
-
-            // ScheduleNewOrchestrationInstanceAsync() misunderstands JObject as input (converts all properties into empty arrays)
-            // Dictionary<string, object> works better. So this is the workaround for that.
-            var dataAsDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(
-                JsonConvert.SerializeObject(body.data)
-            );
+            string orchestratorFunctionName = body["name"].ToString();
+            string instanceId = body["id"]?.ToString();
 
             instanceId = await durableClient.ScheduleNewOrchestrationInstanceAsync(
                 orchestratorFunctionName,
-                dataAsDictionary,
+                body["data"],
                 new StartOrchestrationOptions(instanceId)
             );
 
@@ -153,9 +148,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     break;
                 case "raise-event":
 
-                    dynamic bodyObject = JObject.Parse(bodyString);
-                    string eventName = bodyObject.name;
-                    JObject eventData = bodyObject.data;
+                    var bodyObject = System.Text.Json.JsonSerializer.Deserialize<JsonNode>(bodyString);
+                    string eventName = bodyObject["name"].ToString();
+                    var eventData = bodyObject["data"];
 
                     var match = ExpandedOrchestrationStatus.EntityIdRegex.Match(instanceId);
                     // if this looks like an Entity
