@@ -3,6 +3,7 @@
 
 using System.Collections.Specialized;
 using System.Net;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.WindowsAzure.Storage;
@@ -198,6 +199,24 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 // Using classic connection string
                 return CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
             }
+        }
+
+        public static string GetHostJsonPath()
+        {
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+
+            // First trying current folder
+            string result = Path.Combine(Path.GetDirectoryName(assemblyLocation), "host.json");
+
+            if (File.Exists(result))
+            {
+                return result;
+            }
+
+            // Falling back to parent folder
+            result = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(assemblyLocation)), "host.json");
+
+            return result;
         }
 
         // Shared JSON serialization settings

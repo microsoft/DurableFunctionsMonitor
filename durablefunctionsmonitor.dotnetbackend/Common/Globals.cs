@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -213,6 +215,24 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 // Using classic connection string
                 return CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
             }
+        }
+
+        public static string GetHostJsonPath()
+        {
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+
+            // First trying current folder
+            string result = Path.Combine(Path.GetDirectoryName(assemblyLocation), "host.json");
+
+            if (File.Exists(result))
+            {
+                return result;
+            }
+
+            // Falling back to parent folder
+            result = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(assemblyLocation)), "host.json");
+
+            return result;
         }
 
         private static JsonSerializerSettings GetSerializerSettings()

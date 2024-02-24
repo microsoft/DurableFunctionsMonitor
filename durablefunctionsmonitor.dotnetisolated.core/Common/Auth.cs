@@ -317,10 +317,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             try
             {
-                string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-                string functionAppFolder = Path.GetDirectoryName(Path.GetDirectoryName(assemblyLocation));
-
-                string hostJsonFileName = Path.Combine(functionAppFolder, "host.json");
+                string hostJsonFileName = Globals.GetHostJsonPath();
                 dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
 
                 string hubName = hostJson.extensions.durableTask.hubName;
