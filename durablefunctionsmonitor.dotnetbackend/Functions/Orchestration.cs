@@ -410,7 +410,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     string data = await streamReader.ReadToEndAsync();
 
                     // If it looks like JSON
-                    if (data[0] == '{')
+                    if (data[0] == '{' || data[0] == '[')
                     {
                         return new ContentResult() { Content = data, ContentType = "application/json" };
                     }

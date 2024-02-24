@@ -383,7 +383,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     var response = req.CreateResponse(HttpStatusCode.OK);
 
                     // If it looks like JSON
-                    if (data[0] == '{')
+                    if (data[0] == '{' || data[0] == '[')
                     {
                         response.Headers.Add("Content-Type", "application/json");
                         await response.WriteStringAsync(data);
