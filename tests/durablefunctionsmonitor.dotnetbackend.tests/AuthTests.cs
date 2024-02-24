@@ -725,7 +725,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         {
             // Arrange
 
-            await File.WriteAllTextAsync("../host.json", $"{{\"extensions\":{{\"durableTask\": {{\"hubName\": \"MyTaskHub\"}}}}}}");
+            await File.WriteAllTextAsync("./host.json", $"{{\"extensions\":{{\"durableTask\": {{\"hubName\": \"MyTaskHub\"}}}}}}");
 
             // Act
 
@@ -733,7 +733,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Assert
 
-            File.Delete("../host.json");
+            File.Delete("./host.json");
 
             Assert.IsTrue(hubNames.Contains("mYtASKhUB"));
         }
