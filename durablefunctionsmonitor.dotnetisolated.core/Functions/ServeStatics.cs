@@ -183,11 +183,42 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
 
             // The API endpoint path is now locked, so we need to pass it explicitly, as a separate parameter.
-            string apiRoutePrefix = $"{ingressRoutePrefix}/{Globals.DfMonRoutePrefix}/a/p/i".Trim('/');
+            string apiRoutePrefix = $"{ingressRoutePrefix}{GetHttpRoutePrefix()}/{Globals.DfMonRoutePrefix}/a/p/i".Trim('/');
 
             html = html.Replace("<script>var DfmApiRoutePrefix=\"\"</script>", $"<script>var DfmApiRoutePrefix=\"{apiRoutePrefix}\"</script>");
 
             return html;
+        }
+
+        private static string GetHttpRoutePrefix()
+        {
+            try
+            {
+                // First trying config setting
+                string result = Environment.GetEnvironmentVariable("AzureFunctionsJobHost__extensions__http__routePrefix");
+
+                if (result == null)
+                {
+                    // Now reading host.json
+                    string hostJsonFileName = Globals.GetHostJsonPath();
+                    dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
+
+                    result = hostJson.extensions.http.routePrefix;
+                }
+
+                result = result.Trim(' ', '/');
+
+                if (result != string.Empty)
+                {
+                    result = $"/{result}";
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return "/api";
+            }
         }
     }
 }

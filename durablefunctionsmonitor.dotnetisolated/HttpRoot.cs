@@ -19,7 +19,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         [Function(nameof(HttpRoot))]
         public Task<HttpResponseData> ServeDfMonStatics(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "/{p1?}/{p2?}/{p3?}")] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{p1?}/{p2?}/{p3?}")] HttpRequestData req,
             string p1,
             string p2,
             string p3
