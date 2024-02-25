@@ -236,7 +236,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         }
 
         // Some reasonable page size for ListInstancesAsync
-        private const int ListInstancesPageSize = 500;
+        private const int ListInstancesPageSize = 1000;
 
         private const string DurableEntityRuntimeStatus = "DurableEntities";
 
