@@ -6,13 +6,18 @@ using System.Linq.Expressions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.DurableTask.Client;
+using Microsoft.Extensions.Logging;
 using System.Collections.Specialized;
+using Microsoft.DurableTask.Client.Entities;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
     public class Orchestrations : DfmFunctionBase
     {
-        public Orchestrations(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints) : base(dfmSettings, extensionPoints) { }
+        public Orchestrations(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints, ILoggerFactory loggerFactory) : base(dfmSettings, extensionPoints) 
+        { 
+            this._logger = loggerFactory.CreateLogger<Orchestrations>();
+        }
         
         // Adds sorting, paging and filtering capabilities around /runtime/webhooks/durabletask/instances endpoint.
         // GET /a/p/i{connName}-{hubName}/orchestrations?$filter=<filter>&$orderby=<order-by>&$skip=<m>&$top=<n>
@@ -38,6 +43,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var orchestrations = durableClient
                 .ListAllInstances(filterClause.TimeFrom, filterClause.TimeTill, !hiddenColumns.Contains("input"), filterClause.RuntimeStatuses)
                 .ExpandStatus(durableClient, connName, hubName, filterClause, hiddenColumns, this.ExtensionPoints)
+                .ListDurableEntities(durableClient, filterClause.TimeFrom, filterClause.TimeTill, filterClause.RuntimeStatuses, hiddenColumns, this._logger)
                 .ApplyRuntimeStatusesFilter(filterClause.RuntimeStatuses)
                 .ApplyFilter(filterClause)
                 .ApplyOrderBy(req.Query)
@@ -46,6 +52,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
             return req.ReturnJson(orchestrations, Globals.FixUndefinedsInJson);
         }
+
+        private readonly ILogger _logger;
     }
 
     internal static class ExtensionMethodsForOrchestrations
@@ -172,33 +180,59 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             });
         }
 
-        // Intentionally NOT using async/await here, because we need yield return.
-        // The magic is to only load all the pages, when it is really needed (e.g. when sorting is used).
+        // Fetches orchestration instances
         internal static IAsyncEnumerable<OrchestrationMetadata> ListAllInstances(this DurableTaskClient durableClient, DateTime? timeFrom, DateTime? timeTill, bool showInput, string[] statuses)
         {
-            List<OrchestrationRuntimeStatus> runtimeStatuses = null;
-
-            if (statuses != null)
-            {
-                runtimeStatuses = statuses.ToRuntimeStatuses().ToList();
-
-                // Durable Entities are always 'Running'
-                if (statuses.Contains(DurableEntityRuntimeStatus, StringComparer.OrdinalIgnoreCase))
-                {
-                    runtimeStatuses.Add(OrchestrationRuntimeStatus.Running);
-                }
-            }
-
             var queryCondition = new OrchestrationQuery()
             {
                 PageSize = ListInstancesPageSize,
                 FetchInputsAndOutputs = showInput,
                 CreatedFrom = timeFrom.HasValue ? timeFrom.Value : null,
                 CreatedTo = timeTill.HasValue ? timeTill.Value : null,
-                Statuses = runtimeStatuses
+                Statuses = statuses?.ToRuntimeStatuses().ToList()
             };
 
             return durableClient.GetAllInstancesAsync(queryCondition);
+        }
+
+        // Fetches and adds Durable Entities to the dataset (needs to be done separately, since there's now a separate method for fetching them)
+        // Again, we need to do it sequentially, so that the actual fetch only happens on demand.
+        internal static IEnumerable<ExpandedOrchestrationStatus> ListDurableEntities(this IEnumerable<ExpandedOrchestrationStatus> orchestrations, 
+            DurableTaskClient client, DateTime? timeFrom, DateTime? timeTill, string[] statuses, HashSet<string> hiddenColumns, ILogger log)
+        {
+            foreach (var orch in orchestrations)
+            {
+                yield return orch;
+            }
+
+            if (statuses != null && !statuses.Contains(DurableEntityRuntimeStatus, StringComparer.OrdinalIgnoreCase))
+            {
+                yield break;
+            }
+
+            IEnumerable<EntityMetadata> instances;
+            try
+            {
+                var filter = new EntityQuery
+                {
+                    LastModifiedFrom = timeFrom.HasValue ? timeFrom.Value : null,
+                    LastModifiedTo = timeTill.HasValue ? timeTill.Value : null,
+                    IncludeState = true,
+                    IncludeTransient = true
+                };
+
+                instances = client.Entities.GetAllEntitiesAsync(filter).ToBlockingEnumerable();
+            }
+            catch (Exception ex)
+            {
+                log.LogWarning(ex, $"Failed to list Durable Entities");
+                yield break;
+            }
+
+            foreach (var entityMetadata in instances)
+            {
+                yield return new ExpandedOrchestrationStatus(entityMetadata, hiddenColumns);
+            }
         }
 
         // Some reasonable page size for ListInstancesAsync

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+using Microsoft.DurableTask.Client;
+using Microsoft.DurableTask.Client.Entities;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
@@ -87,6 +89,20 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
 
             this._parentInstanceIdTask = parentInstanceIdTask;
+        }
+
+        public ExpandedOrchestrationStatus(EntityMetadata that, HashSet<string> hiddenColumns) 
+        {
+            this.Name = that.Id.ToString();
+            this.InstanceId = that.Id.ToString();
+            this.CreatedTime = that.LastModifiedTime.UtcDateTime;
+            this.LastUpdatedTime = that.LastModifiedTime.UtcDateTime;
+            this.RuntimeStatus = OrchestrationRuntimeStatus.Running;
+
+            this.EntityType = EntityTypeEnum.DurableEntity;
+            this.EntityId = new EntityId(that.Id.Name, that.Id.Key);
+
+            this.Input = (!that.IncludesState || hiddenColumns.Contains("input")) ? null : that.State.Value;
         }
 
         internal string GetEntityTypeName()
