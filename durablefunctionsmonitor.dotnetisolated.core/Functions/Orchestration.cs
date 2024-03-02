@@ -165,12 +165,14 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     var eventData = bodyObject["data"];
 
                     // if this looks like an Entity
-                    if (ExpandedOrchestrationStatus.TryGetEntityId(instanceId, out var _))
+                    if (ExpandedOrchestrationStatus.TryGetEntityInstanceId(instanceId, out var entityInstanceId))
                     {
-                        return req.ReturnStatus(HttpStatusCode.BadRequest, "Durable Entities are not supported in Isolated mode");
+                        // then sending signal
+                        await durableClient.Entities.SignalEntityAsync(entityInstanceId, eventName, eventData);
                     }
                     else
                     {
+                        // otherwise raising event
                         await durableClient.RaiseEventAsync(instanceId, eventName, eventData);
                     }
 
