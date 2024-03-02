@@ -36,6 +36,18 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             string hubName,
             string instanceId)
         {
+            // If it looks like an entity
+            if (ExpandedOrchestrationStatus.TryGetEntityInstanceId(instanceId, out var entityInstanceId))
+            {
+                var entityMetadata = await durableClient.Entities.GetEntityAsync(entityInstanceId);
+                if (entityMetadata == null)
+                {
+                    return req.ReturnStatus(HttpStatusCode.NotFound, $"Entity {instanceId} either doesn't exist or is in 'transient' state");
+                }
+
+                return await req.ReturnJson(DetailedOrchestrationStatus.CreateFrom(entityMetadata), Globals.FixUndefinedsInJson);
+            }
+
             var metadata = await durableClient.GetInstanceAsync(instanceId, true);
             if (metadata == null)
             {
@@ -152,13 +164,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     string eventName = bodyObject["name"].ToString();
                     var eventData = bodyObject["data"];
 
-                    var match = ExpandedOrchestrationStatus.EntityIdRegex.Match(instanceId);
                     // if this looks like an Entity
-                    if (match.Success)
+                    if (ExpandedOrchestrationStatus.TryGetEntityId(instanceId, out var _))
                     {
                         return req.ReturnStatus(HttpStatusCode.BadRequest, "Durable Entities are not supported in Isolated mode");
                     }
-                    else 
+                    else
                     {
                         await durableClient.RaiseEventAsync(instanceId, eventName, eventData);
                     }
@@ -253,7 +264,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // The underlying Task never throws, so it's OK.
             var templatesMap = await CustomTemplates.GetTabTemplatesAsync(this.Settings);
 
-            string templateCode = templatesMap.GetTemplate(status.GetEntityTypeName(), templateName);
+            string templateCode = templatesMap.GetTemplate(status.GetInstanceTypeName(), templateName);
             if (templateCode == null)
             {
                 return req.ReturnStatus(HttpStatusCode.NotFound, "The specified template doesn't exist");

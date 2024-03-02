@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.DurableTask.Client;
+using Microsoft.DurableTask.Client.Entities;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
@@ -22,6 +23,23 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         public List<string> TabTemplateNames { get; private set; }
 
         public JArray History { get; internal set; }
+
+        internal static DetailedOrchestrationStatus CreateFrom(EntityMetadata that)
+        {
+            return new DetailedOrchestrationStatus
+            {
+                Name = that.Id.ToString(),
+                InstanceId = that.Id.ToString(),
+                CreatedTime = that.LastModifiedTime.UtcDateTime,
+                LastUpdatedTime = that.LastModifiedTime.UtcDateTime,
+                RuntimeStatus = OrchestrationRuntimeStatus.Running,
+
+                EntityType = EntityTypeEnum.DurableEntity,
+                EntityId = new EntityId(that.Id.Name, that.Id.Key),
+
+                Input = that.IncludesState ? ConvertInput(ToJToken(that.State.Value)) : null
+            };            
+        }
 
         internal static async Task<DetailedOrchestrationStatus> CreateFrom(
             DurableOrchestrationStatus that, 
@@ -43,40 +61,22 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             result.RuntimeStatus = that.RuntimeStatus;
             result.Output = that.Output;
             result.CustomStatus = that.CustomStatus;
+            result.Input = that.Input;
 
-            // Detecting whether it is an Orchestration or a Durable Entity
-            var match = ExpandedOrchestrationStatus.EntityIdRegex.Match(result.InstanceId);
-            if (match.Success)
+            // Trying to get parent orchestrationId for this instance, if it is a subOrchestration
+            try
             {
-                result.EntityType = EntityTypeEnum.DurableEntity;
-                result.EntityId = new EntityId(match.Groups[1].Value, match.Groups[2].Value);
+                result.ParentInstanceId = await extensionPoints.GetParentInstanceIdRoutine(durableClient, connEnvVariableName, hubName, result.InstanceId);
             }
-            else
+            catch(Exception ex)
             {
-                // Trying to get parent orchestrationId for this instance, if it is a subOrchestration
-                try
-                {
-                    result.ParentInstanceId = await extensionPoints.GetParentInstanceIdRoutine(durableClient, connEnvVariableName, hubName, result.InstanceId);
-                }
-                catch(Exception ex)
-                {
-                    log.LogWarning(ex, "Failed to get parent instanceId");
-                }
-            }
-
-            if (result.EntityType == EntityTypeEnum.DurableEntity)
-            {
-                result.Input = ConvertInput(that.Input, connEnvVariableName);
-            }
-            else
-            {
-                result.Input = that.Input;
+                log.LogWarning(ex, "Failed to get parent instanceId");
             }
 
             // Initializing custom liquid template names
             // The underlying Task never throws, so it's OK.
             var templatesMap = await CustomTemplates.GetTabTemplatesAsync(settings);
-            result.TabTemplateNames = templatesMap.GetTemplateNames(result.GetEntityTypeName());
+            result.TabTemplateNames = templatesMap.GetTemplateNames(result.GetInstanceTypeName());
 
             return result;
         }
@@ -121,12 +121,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         private DetailedOrchestrationStatus() {}
 
-        internal string GetEntityTypeName()
+        internal string GetInstanceTypeName()
         {
             return this.EntityType == EntityTypeEnum.DurableEntity ? this.EntityId.Value.EntityName : this.Name;
         }
 
-        private static JToken ConvertInput(JToken input, string connEnvVariableName)
+        private static JToken ConvertInput(JToken input)
         {
             if (input.Type == JTokenType.String)
             {

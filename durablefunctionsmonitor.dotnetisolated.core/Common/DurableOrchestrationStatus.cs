@@ -25,27 +25,25 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             this.Name = data.Name;
             this.CreatedTime = data.CreatedAt.UtcDateTime;
             this.LastUpdatedTime = data.LastUpdatedAt.UtcDateTime;
-            this.Input = this.ToJToken(data.SerializedInput);
-            this.Output = this.ToJToken(data.SerializedOutput);
+            this.Input = ToJToken(data.SerializedInput);
+            this.Output = ToJToken(data.SerializedOutput);
             this.RuntimeStatus = data.RuntimeStatus;
-            this.CustomStatus = this.ToJToken(data.SerializedCustomStatus);
+            this.CustomStatus = ToJToken(data.SerializedCustomStatus);
         }
 
-        private JToken ToJToken(string str)
+        protected static JToken ToJToken(string str)
         {
             if (str == null)
             {
                 return string.Empty;
             }
 
-            if (str.StartsWith("{"))
+            if (str.StartsWith('{') || str.StartsWith('['))
             {
                 return JToken.Parse(str);
             }
-            else
-            {
-                return str;
-            }
+
+            return str;
         }
     }
 }

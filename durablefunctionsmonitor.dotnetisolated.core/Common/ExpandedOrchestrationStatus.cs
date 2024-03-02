@@ -3,6 +3,7 @@
 
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Client.Entities;
+using Microsoft.DurableTask.Entities;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
@@ -81,11 +82,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             this.CustomStatus = hiddenColumns.Contains("customStatus") ? null : that.CustomStatus;
 
             // Detecting whether it is an Orchestration or a Durable Entity
-            var match = EntityIdRegex.Match(this.InstanceId);
-            if (match.Success)
+            if (TryGetEntityId(this.InstanceId, out var entityId))
             {
                 this.EntityType = EntityTypeEnum.DurableEntity;
-                this.EntityId = new EntityId(match.Groups[1].Value, match.Groups[2].Value);
+                this.EntityId = entityId;
             }
 
             this._parentInstanceIdTask = parentInstanceIdTask;
@@ -103,6 +103,32 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             this.EntityId = new EntityId(that.Id.Name, that.Id.Key);
 
             this.Input = (!that.IncludesState || hiddenColumns.Contains("input")) ? null : that.State.Value;
+        }
+
+        public static bool TryGetEntityId(string instanceId, out EntityId result)
+        {
+            var match = EntityIdRegex.Match(instanceId);
+            if (match.Success)
+            {
+                result = new EntityId(match.Groups[1].Value, match.Groups[2].Value);
+                return true;
+            }
+
+            result = default(EntityId);
+            return false;
+        }
+
+        public static bool TryGetEntityInstanceId(string instanceId, out EntityInstanceId result)
+        {
+            var match = EntityIdRegex.Match(instanceId);
+            if (match.Success)
+            {
+                result = new EntityInstanceId(match.Groups[1].Value, match.Groups[2].Value);
+                return true;
+            }
+
+            result = default(EntityInstanceId);
+            return false;
         }
 
         internal string GetEntityTypeName()

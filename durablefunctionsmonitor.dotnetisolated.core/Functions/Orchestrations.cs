@@ -217,7 +217,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 {
                     LastModifiedFrom = timeFrom.HasValue ? timeFrom.Value : null,
                     LastModifiedTo = timeTill.HasValue ? timeTill.Value : null,
-                    IncludeState = true,
+                    // Cannot iterate through entities with state included, because when state is too large,
+                    // iteration fails with "Received message exceeds the maximum configured message size."
+                    // and there's no way to handle that gracefully.
+                    IncludeState = false,
                     IncludeTransient = true
                 };
 
