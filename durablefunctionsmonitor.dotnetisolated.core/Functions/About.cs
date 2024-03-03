@@ -45,7 +45,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             {
                 accountName,
                 hubName = hubName,
-                version = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                version = Assembly.GetExecutingAssembly().GetName().Version.ToString() + " (isolated)",
                 permissions
             });            
         }
