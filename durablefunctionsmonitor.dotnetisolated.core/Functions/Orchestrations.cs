@@ -210,7 +210,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 yield break;
             }
 
-            IEnumerable<EntityMetadata> instances;
+            IEnumerator<EntityMetadata> instancesEnumerator;
             try
             {
                 var filter = new EntityQuery
@@ -224,7 +224,18 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     IncludeTransient = true
                 };
 
-                instances = client.Entities.GetAllEntitiesAsync(filter).ToBlockingEnumerable();
+                // Need to try getting the first item _inside_ try/catch block, because this is the only way 
+                // to know for sure whether Entities are supported. That's why all the complexity with GetEnumerator(). 
+                instancesEnumerator = client.Entities
+                    .GetAllEntitiesAsync(filter)
+                    .ToBlockingEnumerable()
+                    .GetEnumerator();
+
+                // This line will throw, if Entities are not supported
+                if (!instancesEnumerator.MoveNext())
+                {
+                    yield break;
+                }
             }
             catch (Exception ex)
             {
@@ -232,10 +243,11 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 yield break;
             }
 
-            foreach (var entityMetadata in instances)
+            do
             {
-                yield return new ExpandedOrchestrationStatus(entityMetadata, hiddenColumns);
+                yield return new ExpandedOrchestrationStatus(instancesEnumerator.Current, hiddenColumns);
             }
+            while (instancesEnumerator.MoveNext());
         }
 
         // Some reasonable page size for ListInstancesAsync

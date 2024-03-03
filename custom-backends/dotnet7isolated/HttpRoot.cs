@@ -1,20 +1,32 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-using System.Net;
+using DurableFunctionsMonitor.DotNetIsolated;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Dfm.DotNetIsolated
 {
-    public class HttpRoot
+    /// <summary>
+    /// Exposes DfMon at the root
+    /// </summary>
+    public class HttpRoot: ServeStatics
     {
-        [Function(nameof(HttpRoot))]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "/")] HttpRequestData req)
+        public HttpRoot(DfmSettings dfmSettings, DfmExtensionPoints extensionPoints, ILoggerFactory loggerFactory) : 
+            base(dfmSettings, extensionPoints, loggerFactory)
         {
-            var response = req.CreateResponse(HttpStatusCode.TemporaryRedirect);
-            response.Headers.Add("Location", "durable-functions-monitor");
-            return response;
+        }
+
+        [Function(nameof(HttpRoot))]
+        public Task<HttpResponseData> ServeDfMonStatics(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{p1?}/{p2?}/{p3?}")] HttpRequestData req,
+            string p1,
+            string p2,
+            string p3
+        )
+        {
+            return this.DfmServeStaticsFunction(req, p1, p2, p3);
         }
     }
 }
