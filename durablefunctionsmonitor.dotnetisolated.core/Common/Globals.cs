@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-[assembly: InternalsVisibleToAttribute("durablefunctionsmonitor.dotnetisolated.tests")]
+[assembly: InternalsVisibleToAttribute("durablefunctionsmonitor.dotnetisolated.core.tests")]
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {

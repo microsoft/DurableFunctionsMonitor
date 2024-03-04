@@ -20,6 +20,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         // in the Blob Storage, or from a custom local folder.
         // GET /{connName}-{hubName}/a/p/i/delete-task-hub
         [Function(nameof(DfmGetFunctionMap))]
+        [OperationKind(Kind = OperationKind.Read)]
         public async Task<HttpResponseData> DfmGetFunctionMap(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = Globals.ApiRoutePrefix + "/function-map")] HttpRequestData req,
             string connName,
