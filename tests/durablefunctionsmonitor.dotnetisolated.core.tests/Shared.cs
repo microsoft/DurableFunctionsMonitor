@@ -70,6 +70,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
     class FakeHttpRequestData : HttpRequestData
     {
+        private List<HttpCookie> _cookies = new List<HttpCookie>();
+        private List<ClaimsIdentity> _identities = new List<ClaimsIdentity>();
+
         public FakeHttpRequestData(Uri uri) : base(new FakeFunctionContext())
         {
             this.Headers = new HttpHeadersCollection();
@@ -80,17 +83,27 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
         public override HttpHeadersCollection Headers { get; }
 
-        public override IReadOnlyCollection<IHttpCookie> Cookies => throw new NotImplementedException();
+        public override IReadOnlyCollection<IHttpCookie> Cookies => this._cookies;
 
         public override Uri Url { get; }
 
-        public override IEnumerable<ClaimsIdentity> Identities => throw new NotImplementedException();
+        public override IEnumerable<ClaimsIdentity> Identities => this._identities;
 
         public override string Method { get; }
 
         public override HttpResponseData CreateResponse()
         {
             return new FakeHttpResponseData(this.FunctionContext);
+        }
+
+        public void AddCookie(string name, string val)
+        {
+            this._cookies.Add(new HttpCookie(name, val));
+        }
+
+        public void AddIdentity(ClaimsIdentity identity)
+        {
+            this._identities.Add(identity);
         }
     }
 
