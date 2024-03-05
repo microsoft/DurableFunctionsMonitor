@@ -58,6 +58,12 @@ steps:
     projects: 'tests/durablefunctionsmonitor.dotnetbackend.tests/*.csproj'
 
 - task: DotNetCoreCLI@2
+  displayName: 'dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests'
+  inputs:
+    command: 'test'
+    projects: 'tests/durablefunctionsmonitor.dotnetisolated.core.tests/*.csproj'
+
+- task: DotNetCoreCLI@2
   displayName: 'dotnet publish durablefunctionsmonitor.dotnetbackend'
   inputs:
     command: publish
