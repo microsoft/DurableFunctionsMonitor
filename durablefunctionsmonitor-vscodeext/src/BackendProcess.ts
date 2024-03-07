@@ -444,6 +444,9 @@ export class BackendProcess {
                 .stdout
                 .split('\n')[0];
             
+            // some users reported that npm list might return " -> .\" at the end of the path string
+            npmGlobalFolder = npmGlobalFolder.replace(/ -> \.\\$/, '');
+            
         } catch (err) {
             this._log(`npm list -g failed. ${!(err as any).message ? err : (err as any).message}`)
         }
