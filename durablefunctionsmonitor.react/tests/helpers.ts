@@ -11,6 +11,7 @@ export async function login(page: Page, user: TestUser) {
     await page.getByRole('button', { name: 'Next' }).click();
   
     const passwordInput = page.locator(`//input[@type='password']`);
+    await passwordInput.waitFor({ timeout: 10000 });
     await passwordInput.fill(user.pwd);
     await page.getByRole('button', { name: 'Sign in' }).click();
   

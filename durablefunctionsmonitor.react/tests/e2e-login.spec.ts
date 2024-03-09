@@ -24,12 +24,15 @@ const instances = [
   process.env.DfMonTestE2EInjectedModeReadOnlyUrl!,
   process.env.DfMonTestE2EIsolatedUrl!,
   process.env.DfMonTestE2EIsolatedLinuxReadOnlyUrl!,
+  process.env.DfMonTestE2EIsolatedInjectedModeReadOnlyUrl!,
+  process.env.DfMonTestE2EIsolatedClientDirectedUrl!,
 ];
 
 const readOnlyInstances = [
   process.env.DfMonTestE2EReadOnlyUrl!,
   process.env.DfMonTestE2EInjectedModeReadOnlyUrl!,
   process.env.DfMonTestE2EIsolatedLinuxReadOnlyUrl!,
+  process.env.DfMonTestE2EIsolatedInjectedModeReadOnlyUrl!,
 ];
 
 const instancesWithOnlyOneAvailableTaskHub = [
@@ -164,7 +167,10 @@ for (const baseUri of instances) {
     await expect(setCustomStatusButton).toBeDisabled();
 
     // Checking that API method returns 401 or 403
-    const response = await page.request.post(`${baseUri}/a/p/i/--DurableFunctionsHub/orchestrations('${instanceId}')/suspend`);
+
+    const apiBaseUri = baseUri.includes('isolated') ? `${baseUri}/durable-functions-monitor` : baseUri;
+
+    const response = await page.request.post(`${apiBaseUri}/a/p/i/--DurableFunctionsHub/orchestrations('${instanceId}')/suspend`);
 
     expect(response.status() === 401 || response.status() === 403).toBeTruthy();
   });
@@ -183,7 +189,7 @@ for (const baseUri of instances) {
 
     // An error message should be displayed
     const errorMessageLabel = await page.getByText(/Login failed/);
-    await expect(errorMessageLabel).toBeVisible();
+    await expect(errorMessageLabel).toBeVisible({ timeout: 10 * 1000 });
 
     const errorMessageLabelText = await errorMessageLabel.textContent();
     expect(errorMessageLabelText).toBe(`Login failed. Failed to load the list of Task Hubs. Request failed with status code 401`);
@@ -203,7 +209,7 @@ for (const baseUri of instances) {
 
       // An error message should be displayed
       const errorMessageLabel = await page.getByText(/Failed to get user permissions/);
-      await expect(errorMessageLabel).toBeVisible();
+      await expect(errorMessageLabel).toBeVisible({ timeout: 20 * 1000 });
 
       const errorMessageLabelText = await errorMessageLabel.textContent();
       expect(errorMessageLabelText).toBe(`Failed to get user permissions. Request failed with status code 401`);

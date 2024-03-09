@@ -18,6 +18,8 @@ const instances = [
   process.env.DfMonTestE2EInjectedModeReadOnlyUrl!,
   process.env.DfMonTestE2EIsolatedUrl!,
   process.env.DfMonTestE2EIsolatedLinuxReadOnlyUrl!,
+  process.env.DfMonTestE2EIsolatedInjectedModeReadOnlyUrl!,
+  process.env.DfMonTestE2EIsolatedClientDirectedUrl!,
 ];
 
 const instancesWithHistoryEventIdsSupported = [
@@ -26,6 +28,8 @@ const instancesWithHistoryEventIdsSupported = [
   process.env.DfMonTestE2EInjectedModeUrl!,
   process.env.DfMonTestE2EIsolatedUrl!,
   process.env.DfMonTestE2EIsolatedLinuxReadOnlyUrl!,
+  process.env.DfMonTestE2EIsolatedInjectedModeReadOnlyUrl!,
+  process.env.DfMonTestE2EIsolatedClientDirectedUrl!,
 ];
 
 // Time Histogram tab should be rendered
