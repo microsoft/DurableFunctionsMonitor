@@ -3,13 +3,21 @@
 ## Version 6.4.0
 
 - Pending/running suborchestrations are now also clickable (#132).
+  
 - Large inputs/outputs/custom statuses will now first appear as links. Clicking on that link will initiate a file download, the downloaded file will contain the data (#124).
+  
 - Activity inputs should now be visible in orchestration's execution history (#127).
+  
 - Improved performance of the SQL query that fetches execution history from MSSQL storage (#129). Thanks @bhugot for contribution!
+  
 - Instance list settings (column visibility, sorting and client filtering) are now persisted (#134).
+  
 - 'Send Signal' dialog for Entities now accepts strings and other data types (numbers etc.) as a signal input (#139).
+  
 - Fixed an issue with Entity's DateTime properties being shown in an incorrect time zone (#140).
+  
 - Fixed an issue with npm global package folder being incorrectly resolved under certain circumstances (#145).
+  
 - Moved to [az-func-as-a-graph](https://github.com/scale-tone/az-func-as-a-graph) v1.3.2.
 
 
