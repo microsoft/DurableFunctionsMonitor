@@ -8,7 +8,7 @@
   
 - Activity inputs should now be visible in orchestration's execution history ([#127](https://github.com/microsoft/DurableFunctionsMonitor/issues/127)).
   
-- Improved performance of the SQL query that fetches execution history from MSSQL storage ([#129](https://github.com/microsoft/DurableFunctionsMonitor/issues/129)). Thanks @bhugot for contribution!
+- Improved performance of the SQL query that fetches execution history from MSSQL storage ([#129](https://github.com/microsoft/DurableFunctionsMonitor/issues/129)). Thanks [@bhugot](https://github.com/bhugot) for contribution!
   
 - Instance list settings (column visibility, sorting and client filtering) are now persisted ([#134](https://github.com/microsoft/DurableFunctionsMonitor/issues/134)).
   
