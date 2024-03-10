@@ -24,7 +24,7 @@
         },
         "applicationPackageUrl": {
             "type": "string",
-            "defaultValue": "https://www.nuget.org/api/v2/package/DurableFunctionsMonitor.DotNetIsolated/6.3.0-beta6",
+            "defaultValue": "https://www.nuget.org/api/v2/package/DurableFunctionsMonitor.DotNetIsolated",
             "metadata": {
                 "description": "The DFM app will be deployed from this package (ZIP-file or Nuget package). You can override this URL, if you wish."
             }
