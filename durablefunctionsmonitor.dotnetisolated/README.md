@@ -17,4 +17,3 @@ NOTE: the instance will be deployed to the selected Resource Group's location. T
 ## Limitations
 
 * Multiple Storage connection strings are not supported, only the default one (`AzureWebJobsStorage`).
-* Support for Durable Entities is limited (since they are not supported in Isolated mode yet anyway).
