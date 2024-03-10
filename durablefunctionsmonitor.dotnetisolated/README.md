@@ -2,8 +2,6 @@
 
 "Standalone" [.NET 7 Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) version of DurableFunctionsMonitor backend.
 
-NOTE that this functionality is *in preview*.
-
 ## How to deploy to Azure
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2FDurableFunctionsMonitor%2Fmain%2Fdurablefunctionsmonitor.dotnetisolated%2Farm-template.json) 
