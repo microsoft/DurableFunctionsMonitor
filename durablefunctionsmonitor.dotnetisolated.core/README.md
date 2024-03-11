@@ -8,7 +8,7 @@ NOTE that this functionality is *in preview*.
 
 * Install from NuGet:
    ```
-   dotnet add package DurableFunctionsMonitor.DotNetIsolated --version 6.3.0-beta6
+   dotnet add package DurableFunctionsMonitor.DotNetIsolated --version 6.4.0
    ```
 * Initialize by calling **.UseDurableFunctionMonitor()** extension method during your Function's startup, like this:
    ```
@@ -66,6 +66,5 @@ NOTE that this functionality is *in preview*.
 ## Limitations
 
 * Multiple Storage connection strings are not supported, only the default one (`AzureWebJobsStorage`).
-* Support for Durable Entities is limited (since they are not supported in Isolated mode yet anyway).
 * For non-default durability providers you'll need to provide custom routines for retrieving instance history etc. This should be done via **extensionPoints** parameter of **.UseDurableFunctionsMonitor()** configuration method. Code for MSSQL storage provider can be directly copied [from here](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/custom-backends/mssql/Startup.cs).
 
