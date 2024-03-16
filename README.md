@@ -16,13 +16,21 @@ A monitoring/debugging UI tool for Azure Durable Functions
 
 ## How to use
 
-You can run this tool [as a VsCode extension](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.durablefunctionsmonitor), [as a Standalone service](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-run-DfMon-in-Standalone-mode) or [in Injected mode](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/NUGET_README.md) (installed [as a NuGet package](https://www.nuget.org/profiles/durablefunctionsmonitor) to your .Net Functions project).
+You can run this tool: 
+* [as a VsCode extension](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.durablefunctionsmonitor).
+* [as a Standalone service](https://github.com/microsoft/DurableFunctionsMonitor/wiki/How-to-run-DfMon-in-Standalone-mode).
+* ["Injected" into your .NET InProc Function](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetbackend/NUGET_README.md).
+* ["Injected" into your .NET Isolated Function](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetisolated.core#durablefunctionsmonitordotnetisolatedcore).
+
+"Injected" DfMon can only be injected into a .NET Function project (either InProc or Isolated). All other DfMon incarnations work with any platforms/programming languages supported by Durable Task Framework.
 
 See [detailed instructions in our Wiki](https://github.com/microsoft/DurableFunctionsMonitor/wiki).
 
 ## Contents of this repo
 
-* [durablefunctionsmonitor.dotnetbackend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) - the main component, implemented as a .Net-based Azure Function. Implements a thin layer of RESTful APIs on top of [Durable Task Framework](https://github.com/Azure/azure-functions-durable-extension), also serves [client UI statics](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.react).
+* [durablefunctionsmonitor.dotnetbackend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) - a .NET InProc version of the backend. Implements a thin layer of RESTful APIs on top of [Durable Task Framework](https://github.com/Azure/azure-functions-durable-extension), also serves [client UI statics](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.react).
+* [durablefunctionsmonitor.dotnetisolated.core](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetisolated.core) - a .NET Isolated version of the backend. Implements a thin layer of RESTful APIs on top of [Durable Task Framework](https://github.com/microsoft/durabletask-dotnet), also serves [client UI statics](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.react). This is what you will "inject" into *your* .NET Isolated Function projects.
+* [durablefunctionsmonitor.dotnetisolated](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetisolated) - a .NET Isolated Function project, that references [durablefunctionsmonitor.dotnetisolated.core](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetisolated.core) and can be deployed as a standalone Function App instance.
 * [durablefunctionsmonitor.react](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.react) - client UI implementation. A React app written in TypeScript. Compiled HTML/JS/CSS statics from this project are copied to [this folder](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend/DfmStatics) and then served by the backend.
 * [durablefunctionsmonitor-vscodeext](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor-vscodeext) - VsCode extension implementation, written in TypeScript.
 * [custom-backends](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/custom-backends) - a set of backend implementations for older framework versions or non-default storage providers (e.g. for [MSSQL](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/custom-backends/mssql) and [Netherite](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/custom-backends/netherite)).
