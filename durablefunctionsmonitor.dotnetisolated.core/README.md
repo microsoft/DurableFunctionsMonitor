@@ -6,7 +6,7 @@ An incarnation of DurableFunctionsMonitor that can be "injected" into your [.NET
 
 * Install from NuGet:
    ```
-   dotnet add package DurableFunctionsMonitor.DotNetIsolated --version 6.4.0
+   dotnet add package DurableFunctionsMonitor.DotNetIsolated
    ```
 * Initialize by calling **.UseDurableFunctionMonitor()** extension method during your Function's startup, like this:
    ```
