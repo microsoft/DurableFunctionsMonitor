@@ -2,8 +2,6 @@
 
 An incarnation of DurableFunctionsMonitor that can be "injected" into your [.NET 7 Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) Azure Function.
 
-NOTE that this functionality is *in preview*.
-
 ## How to use
 
 * Install from NuGet:
