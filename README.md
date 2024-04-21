@@ -14,6 +14,8 @@ A monitoring/debugging UI tool for Azure Durable Functions
 
 [<img alt="Visual Studio Marketplace Installs" src="https://img.shields.io/visual-studio-marketplace/i/DurableFunctionsMonitor.DurableFunctionsMonitor?label=VsCode%20extension%20installs">](https://marketplace.visualstudio.com/items?itemName=DurableFunctionsMonitor.durablefunctionsmonitor) [<img src="https://img.shields.io/docker/pulls/scaletone/durablefunctionsmonitor"/>](https://hub.docker.com/r/scaletone/durablefunctionsmonitor) [<img alt="Nuget" src="https://img.shields.io/nuget/dt/DurableFunctionsMonitor.DotNetBackend?label=NuGet%20downloads">](https://www.nuget.org/profiles/durablefunctionsmonitor)
 
+DISCLAIMER: this is NOT an official Microsoft product (read: the maintainers are NOT being paid or rewarded for doing this). Please, do not expect any "ETAs" or any immediate response. We are merely doing our best. Hope for your understanding.
+
 ## How to use
 
 You can run this tool: 
