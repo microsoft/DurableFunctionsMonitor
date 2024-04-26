@@ -143,7 +143,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 Name = string.IsNullOrEmpty(evt.Name) ? functionName : evt.Name,
                 Input = string.IsNullOrEmpty(evt.Input) ? input : evt.Input,
                 Result = evt.Result,
-                Details = evt.Details,
+                // Fallback to FailureDetails, see: https://github.com/microsoft/DurableFunctionsMonitor/issues/174
+                Details = evt.Details ?? evt.FailureDetails,
                 SubOrchestrationId = subOrchestrationId ?? evt.InstanceId,
                 ScheduledTime = scheduledTime,
                 DurationInMs = scheduledTime.HasValue ? (evt._Timestamp - scheduledTime.Value).TotalMilliseconds : 0
@@ -171,7 +172,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 ScheduledTime = dynamicToken.ScheduledTime,
                 Input = dynamicToken.Input?.ToString(),
                 Result = dynamicToken.Result?.ToString(),
-                Details = dynamicToken.Details?.ToString(),
+                // Fallback to FailureDetails, see: https://github.com/microsoft/DurableFunctionsMonitor/issues/174
+                Details = dynamicToken.Details?.ToString() ?? dynamicToken.FailureDetails?.ToString(),
                 DurationInMs = dynamicToken.DurationInMs,
                 SubOrchestrationId = dynamicToken.SubOrchestrationId
             };
@@ -215,6 +217,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         public string Input { get; set; }
         public string Result { get; set; }
         public string Details { get; set; }
+        public string FailureDetails { get; set; }
         public int EventId { get; set; }
         public int? TaskScheduledId { get; set; }
     }
