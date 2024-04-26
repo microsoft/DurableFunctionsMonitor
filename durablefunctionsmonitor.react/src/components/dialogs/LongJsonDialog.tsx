@@ -72,7 +72,7 @@ export class LongJsonDialog extends React.Component<{ filterValue?: string, stat
         const state = this.props.state;
 
         return (
-            <Dialog fullWidth={true} maxWidth="md" open={!!state.value} onClose={() => state.hideDialog()}>
+            <Dialog fullWidth={true} maxWidth="lg" open={!!state.value} onClose={() => state.hideDialog()}>
 
                 <DialogTitle>{state.title}</DialogTitle>
 

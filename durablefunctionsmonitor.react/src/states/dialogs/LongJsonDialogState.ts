@@ -24,6 +24,13 @@ export class LongJsonDialogState extends ErrorMessageState {
 
     showDialog(title: string, jsonObject: any, instanceId?: string, fieldName?: 'input' | 'output' | 'custom-status') {
 
+        // Converting from a string inside a string
+        if (typeof jsonObject === 'string') {
+            try {
+                jsonObject = JSON.parse(jsonObject);
+            } catch {}
+        }
+
         this._instanceId = instanceId;
         this._fieldName = fieldName;
 
