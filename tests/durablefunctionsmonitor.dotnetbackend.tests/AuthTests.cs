@@ -50,7 +50,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             // Getting the list of all functions to be validated
             var functionsToBeCalled = typeof(DfmEndpoint).Assembly.DefinedTypes
                 .Where(t => t.IsClass)
-                .SelectMany(t => t.GetMethods(BindingFlags.Static | BindingFlags.Public))
+                .SelectMany(t => t.GetMethods())
                 .Where(m => m.CustomAttributes.Any(a => a.AttributeType == typeof(FunctionNameAttribute)))
                 .Select(m => m.Name)
                 .ToHashSet();
@@ -59,61 +59,65 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             functionsToBeCalled.Remove(nameof(ServeStatics.DfmServeStaticsFunction));
             functionsToBeCalled.Remove(nameof(EasyAuthConfig.DfmGetEasyAuthConfigFunction));
 
-            // Collecting the list of functions that were actually called by this test
-            var functionsThatWereCalled = new HashSet<string>();
-
             logMoq.Setup(log => log.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()))
                 .Callback((LogLevel l, EventId i, object s, Exception ex, object o) =>
                 {
                     // Ensuring the correct type of exception was raised internally
                     Assert.IsInstanceOfType(ex, typeof(UnauthorizedAccessException));
                     Assert.AreEqual("No access token provided. Call is rejected.", ex.Message);
-
-                    // Also extracting the function name, that was called, from current stack trace
-                    foreach (var stackFrame in new StackTrace().GetFrames())
-                    {
-                        var method = stackFrame.GetMethod();
-                        if (method.CustomAttributes.Any(a => a.AttributeType == typeof(FunctionNameAttribute)))
-                        {
-                            functionsThatWereCalled.Add(method.Name);
-                        }
-                    }
                 });
 
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
 
+            // Collecting the list of functions that were actually called by this test
+            var functionsThatWereCalled = new HashSet<string>();
+
+            // Calling functions via these routines, to record the fact that a function was called
+            var callStaticFunction = async (Type type, string name, object[] args) => 
+            {
+                functionsThatWereCalled.Add(name);
+                return await (Task<IActionResult>)type.GetMethod(name).Invoke(null, args);
+            };
+
+            var callInstanceFunction = async (object instance, string name, object[] args) =>
+            {
+                functionsThatWereCalled.Add(name);
+                return await (Task<IActionResult>)instance.GetType().GetMethod(name).Invoke(instance, args);
+            };
+
             // Act
+
             var results = new List<IActionResult>()
             {
-                await About.DfmAboutFunction(request, "-", "TestHub", logMoq.Object),
+                await callStaticFunction(typeof(About), nameof(About.DfmAboutFunction), new object[] { request, "-", "TestHub", logMoq.Object }),
 
-                await new CleanEntityStorage(null).DfmCleanEntityStorageFunction(request, durableClientMoq.Object, "-", "TestHub", logMoq.Object),
+                await callInstanceFunction(new CleanEntityStorage(null), nameof(CleanEntityStorage.DfmCleanEntityStorageFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", logMoq.Object }),
 
-                await new DeleteTaskHub(null).DfmDeleteTaskHubFunction(request, durableClientMoq.Object, "-", "TestHub", logMoq.Object),
+                await callInstanceFunction(new DeleteTaskHub(null), nameof(DeleteTaskHub.DfmDeleteTaskHubFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", logMoq.Object }),
 
-                await new IdSuggestions(null).DfmGetIdSuggestionsFunction(request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object),
+                await callInstanceFunction(new IdSuggestions(null), nameof(IdSuggestions.DfmGetIdSuggestionsFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object }),
 
-                await ManageConnection.DfmGetConnectionInfoFunction(request, "-", "TestHub", new Microsoft.Azure.WebJobs.ExecutionContext(), logMoq.Object),
+                await callStaticFunction(typeof(ManageConnection), nameof(ManageConnection.DfmGetConnectionInfoFunction), new object[] { request, "-", "TestHub", new Microsoft.Azure.WebJobs.ExecutionContext(), logMoq.Object }),
 
-                await new IdSuggestions(null).DfmGetIdSuggestionsFunction(request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object),
+                await callInstanceFunction(new IdSuggestions(null), nameof(IdSuggestions.DfmGetIdSuggestionsFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object }),
 
-                await new Orchestration(null).DfmGetOrchestrationFunction(request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object),
+                await callInstanceFunction(new Orchestration(null), nameof(Orchestration.DfmGetOrchestrationFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object }),
 
-                await new Orchestration(null).DfmGetOrchestrationHistoryFunction(request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object),
+                await callInstanceFunction(new Orchestration(null), nameof(Orchestration.DfmGetOrchestrationHistoryFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", "abc", logMoq.Object }),
 
-                await new Orchestration(null).DfmStartNewOrchestrationFunction(request, durableClientMoq.Object, "-", "TestHub", logMoq.Object),
+                await callInstanceFunction(new Orchestration(null), nameof(Orchestration.DfmStartNewOrchestrationFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", logMoq.Object }),
 
-                await new Orchestration(null).DfmPostOrchestrationFunction(request, durableClientMoq.Object, "-", "TestHub", "abc", "todo", logMoq.Object),
+                await callInstanceFunction(new Orchestration(null), nameof(Orchestration.DfmPostOrchestrationFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", "abc", "todo", logMoq.Object }),
 
-                await new Orchestration(null).DfmGetOrchestrationTabMarkupFunction(request, durableClientMoq.Object, "-", "TestHub", "abc", "todo", logMoq.Object),
+                await callInstanceFunction(new Orchestration(null), nameof(Orchestration.DfmGetOrchestrationTabMarkupFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", "abc", "todo", logMoq.Object }),
 
-                await new Orchestrations(null).DfmGetOrchestrationsFunction(request, durableClientMoq.Object, "-", "TestHub", logMoq.Object),
+                await callInstanceFunction(new Orchestrations(null), nameof(Orchestrations.DfmGetOrchestrationsFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", logMoq.Object }),
 
-                await new PurgeHistory(null).DfmPurgeHistoryFunction(request, durableClientMoq.Object, "-", "TestHub", logMoq.Object),
+                await callInstanceFunction(new PurgeHistory(null), nameof(PurgeHistory.DfmPurgeHistoryFunction), new object[] { request, durableClientMoq.Object, "-", "TestHub", logMoq.Object }),
 
-                await TaskHubNames.DfmGetTaskHubNamesFunction(request, logMoq.Object),
+                await callStaticFunction(typeof(TaskHubNames), nameof(TaskHubNames.DfmGetTaskHubNamesFunction), new object[] { request, logMoq.Object }),
 
-                await FunctionMap.DfmGetFunctionMap(request, "-", "TestHub", logMoq.Object),
+                await callStaticFunction(typeof(FunctionMap), nameof(FunctionMap.DfmGetFunctionMap), new object[] { request, "-", "TestHub", logMoq.Object }),
             };
 
             // Assert
