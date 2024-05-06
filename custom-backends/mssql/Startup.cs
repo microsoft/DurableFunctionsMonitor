@@ -94,7 +94,7 @@ namespace Dfm.MsSql
                 {
                     cmd.Parameters.Add(new SqlParameter("@OrchestrationInstanceId", SqlDbType.VarChar, 256) { Value = instanceId });
                     cmd.Parameters.Add(new SqlParameter("@TaskHub", SqlDbType.VarChar, 50) { Value = hubName });
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    using (var reader = cmd.ExecuteReader())
                     {
                         if (await reader.ReadAsync())
                         {
@@ -187,7 +187,7 @@ namespace Dfm.MsSql
                 {
                     cmd.Parameters.Add(new SqlParameter("@OrchestrationInstanceId", SqlDbType.VarChar, 256) { Value = instanceId });
                     cmd.Parameters.Add(new SqlParameter("@TaskHub", SqlDbType.VarChar, 50) { Value = hubName });
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    using (var reader = cmd.ExecuteReader())
                     {
                         // Memorizing 'ExecutionStarted' event, to further correlate with 'ExecutionCompleted'
                         DateTimeOffset? executionStartedTimestamp = null;

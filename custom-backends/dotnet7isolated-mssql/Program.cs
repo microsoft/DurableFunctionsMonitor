@@ -95,7 +95,7 @@ namespace Dfm.DotNetIsolatedMsSql
                 {
                     cmd.Parameters.AddWithValue("@OrchestrationInstanceId", instanceId);
                     cmd.Parameters.AddWithValue("@TaskHub", hubName);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    using (var reader = cmd.ExecuteReader())
                     {
                         if (await reader.ReadAsync())
                         {
@@ -188,7 +188,7 @@ namespace Dfm.DotNetIsolatedMsSql
                 {
                     cmd.Parameters.AddWithValue("@OrchestrationInstanceId", instanceId);
                     cmd.Parameters.AddWithValue("@TaskHub", hubName);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    using (var reader = cmd.ExecuteReader())
                     {
                         // Memorizing 'ExecutionStarted' event, to further correlate with 'ExecutionCompleted'
                         DateTimeOffset? executionStartedTimestamp = null;
