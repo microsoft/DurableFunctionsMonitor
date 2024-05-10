@@ -10,6 +10,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
+    /// <summary>
+    /// Extension methods for configuring DfMon
+    /// </summary>
     public static class ExtensionMethods
     {
         /// <summary>
@@ -88,12 +91,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     catch (DfmUnauthorizedException ex)
                     {
                         log.LogError(ex, "DFM failed to authenticate request");
-                        context.GetInvocationResult().Value = request.ReturnStatus(HttpStatusCode.Unauthorized);
+                        context.GetInvocationResult().Value = await request.ReturnStatus(HttpStatusCode.Unauthorized);
                     }
                     catch (DfmAccessViolationException ex)
                     {
                         log.LogError(ex, "DFM failed to authorize request");
-                        context.GetInvocationResult().Value = request.ReturnStatus(HttpStatusCode.Forbidden);
+                        context.GetInvocationResult().Value = await request.ReturnStatus(HttpStatusCode.Forbidden);
                     }
                     catch (Exception ex)
                     {
@@ -101,7 +104,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                         {
                             // Only handling DfMon's exceptions
                             log.LogError(ex, "DFM failed");
-                            context.GetInvocationResult().Value = request.ReturnStatus(HttpStatusCode.BadRequest, ex.Message);
+                            context.GetInvocationResult().Value = await request.ReturnStatus(HttpStatusCode.BadRequest, ex.Message);
                         }
                         else
                         {

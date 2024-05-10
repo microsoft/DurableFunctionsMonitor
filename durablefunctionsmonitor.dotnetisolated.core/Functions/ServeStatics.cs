@@ -50,7 +50,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 fileResponse.Headers.Add("Content-Type", contentType[1]);
                 fileResponse.Headers.Add("Last-Modified", File.GetLastWriteTimeUtc(fullPath).ToString("R"));
 
-                fileResponse.Body = File.OpenRead(fullPath);
+                await fileResponse.WriteBytesAsync(await File.ReadAllBytesAsync(fullPath));
 
                 return fileResponse;
             }

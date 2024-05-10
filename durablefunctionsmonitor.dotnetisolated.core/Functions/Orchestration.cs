@@ -42,7 +42,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 var entityMetadata = await durableClient.Entities.GetEntityAsync(entityInstanceId);
                 if (entityMetadata == null)
                 {
-                    return req.ReturnStatus(HttpStatusCode.NotFound, $"Entity {instanceId} either doesn't exist or is in 'transient' state");
+                    return await req.ReturnStatus(HttpStatusCode.NotFound, $"Entity {instanceId} either doesn't exist or is in 'transient' state");
                 }
 
                 return await req.ReturnJson(DetailedOrchestrationStatus.CreateFrom(entityMetadata), Globals.FixUndefinedsInJson);
@@ -51,7 +51,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var metadata = await durableClient.GetInstanceAsync(instanceId, true);
             if (metadata == null)
             {
-                return req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
+                return await req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
             }
 
             var detailedStatus = await DetailedOrchestrationStatus.CreateFrom(
@@ -154,7 +154,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     await durableClient.PurgeInstanceAsync(instanceId);
                     break;
                 case "rewind":
-                    return req.ReturnStatus(HttpStatusCode.BadRequest, "Rewind is not supported in Isolated mode");
+                    return await req.ReturnStatus(HttpStatusCode.BadRequest, "Rewind is not supported in Isolated mode");
                 case "terminate":
                     await durableClient.TerminateInstanceAsync(instanceId, bodyString);
                     break;
@@ -201,7 +201,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     break;
                 case "restart":
 
-                    return req.ReturnStatus(HttpStatusCode.BadRequest, "Restart is not supported in Isolated mode");
+                    return await req.ReturnStatus(HttpStatusCode.BadRequest, "Restart is not supported in Isolated mode");
 
                 case "input":
 
@@ -216,10 +216,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     return await this.DownloadFieldValue(req, durableClient, Globals.GetFullConnectionStringEnvVariableName(connName), instanceId, status => status.SerializedCustomStatus);
 
                 default:
-                    return req.ReturnStatus(HttpStatusCode.NotFound);
+                    return await req.ReturnStatus(HttpStatusCode.NotFound);
             }
 
-            return req.ReturnStatus(HttpStatusCode.OK);
+            return await req.ReturnStatus(HttpStatusCode.OK);
         }
 
         // Renders a custom tab liquid template for this instance and returns the resulting HTML.
@@ -238,7 +238,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var metadata = await durableClient.GetInstancesAsync(instanceId, true);
             if (metadata == null)
             {
-                return req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
+                return await req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
             }
 
             var status = await DetailedOrchestrationStatus.CreateFrom(
@@ -269,7 +269,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             string templateCode = templatesMap.GetTemplate(status.GetInstanceTypeName(), templateName);
             if (templateCode == null)
             {
-                return req.ReturnStatus(HttpStatusCode.NotFound, "The specified template doesn't exist");
+                return await req.ReturnStatus(HttpStatusCode.NotFound, "The specified template doesn't exist");
             }
 
             try
@@ -291,7 +291,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
             catch (Exception ex)
             {
-                return req.ReturnStatus(HttpStatusCode.BadRequest, ex.Message);
+                return await req.ReturnStatus(HttpStatusCode.BadRequest, ex.Message);
             }
         }
 
@@ -371,7 +371,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var status = await durableClient.GetInstanceAsync(instanceId, true);
             if (status == null)
             {
-                return req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
+                return await req.ReturnStatus(HttpStatusCode.NotFound, $"Instance {instanceId} doesn't exist");
             }
 
             string blobUrl = fieldGetter(status);

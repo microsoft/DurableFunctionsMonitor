@@ -132,12 +132,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         }
 
         // Routine to return an HTTP status and a string body
-        public static HttpResponseData ReturnStatus(this HttpRequestData req, HttpStatusCode status, string body = null)
+        public static async Task<HttpResponseData> ReturnStatus(this HttpRequestData req, HttpStatusCode status, string body = null)
         {
             var result = req.CreateResponse(status);
             if (!string.IsNullOrEmpty(body))
             {
-                result.WriteString(body);
+                await result.WriteStringAsync(body);
             }
             return result;
         }

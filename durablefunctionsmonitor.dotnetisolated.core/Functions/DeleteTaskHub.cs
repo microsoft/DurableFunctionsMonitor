@@ -24,7 +24,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             string connectionString = Environment.GetEnvironmentVariable(Globals.GetFullConnectionStringEnvVariableName(connName));
 
-            return req.ReturnStatus(HttpStatusCode.BadRequest, "Deleting Task Hubs is not supported in Isolated mode");
+            return await req.ReturnStatus(HttpStatusCode.BadRequest, "Deleting Task Hubs is not supported in Isolated mode");
         }
     }
 }

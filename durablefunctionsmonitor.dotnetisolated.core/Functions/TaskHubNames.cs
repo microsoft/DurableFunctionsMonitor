@@ -36,7 +36,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             if (hubNames == null)
             {
                 var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-                errorResponse.WriteString("Failed to load the list of Task Hubs");
+                await errorResponse.WriteStringAsync("Failed to load the list of Task Hubs");
                 return errorResponse;
             }
 

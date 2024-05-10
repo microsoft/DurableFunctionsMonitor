@@ -32,7 +32,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             var request = JsonConvert.DeserializeObject<CleanEntityStorageRequest>(await req.ReadAsStringAsync());
 
-            return req.ReturnStatus(HttpStatusCode.BadRequest, "Cleaning entity storage is not supported in Isolated mode");
+            return await req.ReturnStatus(HttpStatusCode.BadRequest, "Cleaning entity storage is not supported in Isolated mode");
         }
     }
 }

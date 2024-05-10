@@ -32,7 +32,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             var functionMapJson = functionMapsMap.GetFunctionMap(hubName);
             if (string.IsNullOrEmpty(functionMapJson))
             {
-                return req.ReturnStatus(HttpStatusCode.NotFound, "No Function Map provided");
+                return await req.ReturnStatus(HttpStatusCode.NotFound, "No Function Map provided");
             }
 
             var response = req.CreateResponse(HttpStatusCode.OK);

@@ -38,7 +38,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             //TODO: try to implement purging for entities
             if (request.EntityType == EntityTypeEnum.DurableEntity)
             {
-                return req.ReturnStatus(HttpStatusCode.BadRequest, "Purging entities is not supported in Isolated mode");
+                return await req.ReturnStatus(HttpStatusCode.BadRequest, "Purging entities is not supported in Isolated mode");
             }
 
             var result = await durableClient.PurgeAllInstancesAsync(new PurgeInstancesFilter(DateTimeOffset.Parse(request.TimeFrom), DateTime.Parse(request.TimeTill), request.Statuses));
