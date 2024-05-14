@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 6.4.1
+
+- Fix for Task Hubs being partially shown ([#175](https://github.com/microsoft/DurableFunctionsMonitor/issues/175)).
+
 ## Version 6.4.0
 
 - Pending/running suborchestrations are now also clickable ([#132](https://github.com/microsoft/DurableFunctionsMonitor/issues/132)).
