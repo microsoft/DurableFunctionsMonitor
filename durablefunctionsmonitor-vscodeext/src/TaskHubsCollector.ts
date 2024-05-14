@@ -82,13 +82,13 @@ export class TaskHubsCollector {
     private readonly _tableEndpointUrl: string;
     private readonly _accountName: string    
 
-    private getTaskHubNamesFromTableNames(tableNames: string[]): string[] {
+    private getTaskHubNamesFromTableNames(tableNames: {TableName : string}[]): string[] {
 
-        const instancesTables: string[] = tableNames.map((table: any) => table.TableName)
+        const instancesTables: string[] = tableNames.map(table => table.TableName)
             .filter((tableName: string) => tableName.endsWith('Instances'))
             .map((tableName: string) => tableName.substr(0, tableName.length - 'Instances'.length));
 
-        const historyTables: string[] = tableNames.map((table: any) => table.TableName)
+        const historyTables: string[] = tableNames.map(table => table.TableName)
             .filter((tableName: string) => tableName.endsWith('History'))
             .map((tableName: string) => tableName.substr(0, tableName.length - 'History'.length));
 
@@ -98,13 +98,34 @@ export class TaskHubsCollector {
 
     private async getTaskHubNamesFromTableStorage(authHeaders: {}): Promise<string[] | undefined> {
 
-        const response = await axios.get(`${this._tableEndpointUrl}Tables`, { headers: authHeaders });
+        let result: {TableName: string}[] | undefined = undefined;
 
-        if (!response?.data?.value) {
-            return;
+        let url = `${this._tableEndpointUrl}Tables`;
+        while (true) {
+            
+            const response = await axios.get(url, { headers: authHeaders });
+    
+            if (response?.data?.value) {
+
+                result ??= [];
+                result.push(...response.data.value);
+            }
+
+            // Header names are case-insensitive, so need to try all cases
+            const nextTableHeaderName = Object.keys(response.headers).find(h => h.toLowerCase() === 'x-ms-continuation-nexttablename');
+
+            const nextTableNameHeaderValue = nextTableHeaderName ? response.headers[nextTableHeaderName] : undefined;
+            if (!nextTableNameHeaderValue) {
+                break;
+            }
+
+            url = `${this._tableEndpointUrl}Tables?NextTableName=${nextTableNameHeaderValue}`;
         }
 
-        return this.getTaskHubNamesFromTableNames(response.data.value);
+        if (!!result) {
+            
+            return this.getTaskHubNamesFromTableNames(result);
+        }
     }
 
     private async getTaskHubNamesFromNetheriteStorage(authHeaders: {}): Promise<string[] | undefined> {
