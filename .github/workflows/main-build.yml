@@ -1,0 +1,34 @@
+
+name: main-build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: npm install durablefunctionsmonitor.react
+      run: npm install -legacy-peer-deps
+      working-directory: durablefunctionsmonitor.react
+    - name: npm build durablefunctionsmonitor.react
+      run: npm run build
+      working-directory: durablefunctionsmonitor.react
+
+    - name: copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics
+      run: cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
+
+    - name: copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory
+      run: cp -r durablefunctionsmonitor.dotnetbackend "${{ runner.temp }}/durablefunctionsmonitor.dotnetbackend"
