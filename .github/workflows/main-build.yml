@@ -97,6 +97,7 @@ jobs:
     - name: Generate az-func-as-a-graph diagram of DurableFunctionsMonitor.DotNetBackend
       uses: scale-tone/az-func-as-a-graph@github-action-v1.3
       with:
+        repoName: microsoft/DurableFunctionsMonitor
         projectFolder: durablefunctionsmonitor.dotnetbackend
         outputFile: drop/DurableFunctionsMonitor-DotNetBackend-Diagram.htm
         
