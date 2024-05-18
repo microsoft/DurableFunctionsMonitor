@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import * as React from 'react';
-import { action } from 'mobx'
 import { observer } from 'mobx-react';
 
 import {
