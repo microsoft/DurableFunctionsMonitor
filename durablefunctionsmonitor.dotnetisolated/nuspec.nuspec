@@ -17,7 +17,7 @@
             <dependency id="WindowsAzure.Storage" version="9.3.3" />
             <dependency id="Azure.Identity" version="1.11.3" />
             <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" version="7.5.2" />
-            <dependency id="Fluid.Core" version="2.9.0" />
+            <dependency id="Fluid.Core" version="2.7.0" />
         </dependencies>
 
     </metadata>

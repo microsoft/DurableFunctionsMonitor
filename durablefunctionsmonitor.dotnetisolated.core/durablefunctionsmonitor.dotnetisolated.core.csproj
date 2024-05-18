@@ -16,6 +16,6 @@
     <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
     <PackageReference Include="Azure.Identity" Version="1.11.3" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.5.2" />
-    <PackageReference Include="Fluid.Core" Version="2.9.0" />
+    <PackageReference Include="Fluid.Core" Version="2.7.0" />
   </ItemGroup>
 </Project>
