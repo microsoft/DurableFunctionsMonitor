@@ -32,6 +32,9 @@ jobs:
         rm -rf durablefunctionsmonitor.dotnetbackend/DfmStatics
         cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
 
+    - name: create ArtifactStagingDirectory folder
+      run: mkdir drop
+
     - name: copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory
       run: cp -r durablefunctionsmonitor.dotnetbackend drop/durablefunctionsmonitor.dotnetbackend
 
