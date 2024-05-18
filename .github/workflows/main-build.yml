@@ -33,7 +33,7 @@ jobs:
         cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
 
     - name: copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory
-      run: cp -r durablefunctionsmonitor.dotnetbackend "${{ runner.temp }}/durablefunctionsmonitor.dotnetbackend"
+      run: cp -r durablefunctionsmonitor.dotnetbackend ${{ runner.temp }}/durablefunctionsmonitor.dotnetbackend
 
     - name: copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics
       run: |
@@ -41,7 +41,7 @@ jobs:
         cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetisolated/DfmStatics
 
     - name: copy durablefunctionsmonitor.dotnetisolated to ArtifactStagingDirectory
-      run: cp -r durablefunctionsmonitor.dotnetisolated "${{ runner.temp }}/durablefunctionsmonitor.dotnetisolated"
+      run: cp -r durablefunctionsmonitor.dotnetisolated ${{ runner.temp }}/durablefunctionsmonitor.dotnetisolated
 
     - name: copy custom-backends to ArtifactStagingDirectory
       run: cp -r custom-backends "${{ runner.temp }}/custom-backends"
@@ -65,4 +65,6 @@ jobs:
 
     - name: 'Publish Artifact: drop'
       uses: actions/upload-artifact@v4.1.0
+      with:
+        path: ${{ runner.temp }}
 
