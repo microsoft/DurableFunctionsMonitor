@@ -9,11 +9,10 @@
 
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.11.3" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.13.3" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.4.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.5.2" />
-    <PackageReference Include="Fluid.Core" Version="2.9.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="6.10.2" />
+    <PackageReference Include="Fluid.Core" Version="2.7.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
