@@ -82,9 +82,17 @@ jobs:
     - name: copy VSIX-file to ArtifactStagingDirectory
       run: cp durablefunctionsmonitor-vscodeext/durablefunctionsmonitor*.vsix drop
 
+    - name: copy LICENSE to durablefunctionsmonitor.dotnetbackend/output
+      run: cp LICENSE drop/durablefunctionsmonitor.dotnetbackend/output
+    - name: copy LICENSE.txt to durablefunctionsmonitor.dotnetisolated/output
+      run: cp durablefunctionsmonitor.dotnetisolated/LICENSE.txt drop/durablefunctionsmonitor.dotnetisolated/output
 
-
-
+    - name: Install latest nuget.exe
+      uses: nuget/setup-nuget@v1.2.0
+    - name: package dotnetbackend into a Nuget package
+      run: nuget pack drop/durablefunctionsmonitor.dotnetbackend/output/nuspec.nuspec -OutputDirectory drop
+    - name: package dotnetisolated into a Nuget package
+      run: nuget pack drop/durablefunctionsmonitor.dotnetisolated/output/nuspec.nuspec -OutputDirectory drop
 
 
     - name: publish artifacts
