@@ -94,7 +94,12 @@ jobs:
     - name: package dotnetisolated into a Nuget package
       run: nuget pack drop/durablefunctionsmonitor.dotnetisolated/output/nuspec.nuspec -OutputDirectory drop
 
-
+    - name: Generate az-func-as-a-graph diagram of DurableFunctionsMonitor.DotNetBackend
+      uses: scale-tone/az-func-as-a-graph@github-action-v1.3
+      with:
+        projectFolder: durablefunctionsmonitor.dotnetbackend
+        outputFile: drop/DurableFunctionsMonitor-DotNetBackend-Diagram.htm
+        
     - name: publish artifacts
       uses: actions/upload-artifact@v4.1.0
       with:
