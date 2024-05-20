@@ -16,7 +16,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: ./.github/workflows/build-and-copy-react.yml
+    - uses: ./.github/workflows/build-and-copy-react
 
     - name: create ArtifactStagingDirectory folder
       run: mkdir drop
