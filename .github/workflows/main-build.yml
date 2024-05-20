@@ -16,21 +16,29 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: ./.github/workflows/build-and-copy-react
-
     - name: create ArtifactStagingDirectory folder
       run: mkdir drop
 
+    # Building and copying React
 
-    - name: copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory
-      run: cp -r durablefunctionsmonitor.dotnetbackend drop/durablefunctionsmonitor.dotnetbackend
+    - name: npm install durablefunctionsmonitor.react
+      run: npm install -legacy-peer-deps
+      working-directory: durablefunctionsmonitor.react
+    - name: npm build durablefunctionsmonitor.react
+      run: npm run build
+      working-directory: durablefunctionsmonitor.react
 
-    - name: copy durablefunctionsmonitor.dotnetisolated to ArtifactStagingDirectory
-      run: cp -r durablefunctionsmonitor.dotnetisolated drop/durablefunctionsmonitor.dotnetisolated
+    - name: copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics
+      run: |
+        rm -rf durablefunctionsmonitor.dotnetbackend/DfmStatics
+        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
 
-    - name: copy custom-backends to ArtifactStagingDirectory
-      run: cp -r custom-backends drop/custom-backends
+    - name: copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics
+      run: |
+        rm -rf durablefunctionsmonitor.dotnetisolated/DfmStatics
+        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetisolated/DfmStatics
 
+    # Building and testing .NET
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -42,10 +50,18 @@ jobs:
     - name: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests
       run: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests/*.csproj
 
+    - name: copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory
+      run: cp -r durablefunctionsmonitor.dotnetbackend drop/durablefunctionsmonitor.dotnetbackend
+
+    - name: copy durablefunctionsmonitor.dotnetisolated to ArtifactStagingDirectory
+      run: cp -r durablefunctionsmonitor.dotnetisolated drop/durablefunctionsmonitor.dotnetisolated
+
     - name: dotnet publish durablefunctionsmonitor.dotnetbackend
       run: dotnet publish durablefunctionsmonitor.dotnetbackend --output drop/durablefunctionsmonitor.dotnetbackend/output
     - name: dotnet publish durablefunctionsmonitor.dotnetisolated
       run: dotnet publish durablefunctionsmonitor.dotnetisolated --output drop/durablefunctionsmonitor.dotnetisolated/output
+
+    # Building and testing vscode extension
 
     - name: copy dotnetbackend to durablefunctionsmonitor-vscodeext/backend
       run: cp -r drop/durablefunctionsmonitor.dotnetbackend/output durablefunctionsmonitor-vscodeext/backend
@@ -66,9 +82,10 @@ jobs:
     - name: package durablefunctionsmonitor-vscodeext to VSIX-file
       run: npm run package
       working-directory: durablefunctionsmonitor-vscodeext
-
     - name: copy VSIX-file to ArtifactStagingDirectory
       run: cp durablefunctionsmonitor-vscodeext/durablefunctionsmonitor*.vsix drop
+
+    # Building nuget packages
 
     - name: copy LICENSE to durablefunctionsmonitor.dotnetbackend/output
       run: cp LICENSE drop/durablefunctionsmonitor.dotnetbackend/output
@@ -82,6 +99,7 @@ jobs:
     - name: package dotnetisolated into a Nuget package
       run: nuget pack drop/durablefunctionsmonitor.dotnetisolated/output/nuspec.nuspec -OutputDirectory drop
 
+    # Publish artifacts
         
     - name: publish artifacts
       uses: actions/upload-artifact@v4.1.0
