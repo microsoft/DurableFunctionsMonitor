@@ -1,0 +1,24 @@
+on:
+  workflow_call:
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: npm install durablefunctionsmonitor.react
+      run: npm install -legacy-peer-deps
+      working-directory: durablefunctionsmonitor.react
+    - name: npm build durablefunctionsmonitor.react
+      run: npm run build
+      working-directory: durablefunctionsmonitor.react
+
+    - name: copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics
+      run: |
+        rm -rf durablefunctionsmonitor.dotnetbackend/DfmStatics
+        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
+
+    - name: copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics
+      run: |
+        rm -rf durablefunctionsmonitor.dotnetisolated/DfmStatics
+        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetisolated/DfmStatics

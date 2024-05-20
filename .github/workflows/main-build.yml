@@ -16,40 +16,26 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - uses: ./.github/workflows/build-and-copy-react.yml
+
     - name: create ArtifactStagingDirectory folder
       run: mkdir drop
 
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-        
-    - name: npm install durablefunctionsmonitor.react
-      run: npm install -legacy-peer-deps
-      working-directory: durablefunctionsmonitor.react
-    - name: npm build durablefunctionsmonitor.react
-      run: npm run build
-      working-directory: durablefunctionsmonitor.react
-
-    - name: copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics
-      run: |
-        rm -rf durablefunctionsmonitor.dotnetbackend/DfmStatics
-        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
-
     - name: copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory
       run: cp -r durablefunctionsmonitor.dotnetbackend drop/durablefunctionsmonitor.dotnetbackend
-
-    - name: copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics
-      run: |
-        rm -rf durablefunctionsmonitor.dotnetisolated/DfmStatics
-        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetisolated/DfmStatics
 
     - name: copy durablefunctionsmonitor.dotnetisolated to ArtifactStagingDirectory
       run: cp -r durablefunctionsmonitor.dotnetisolated drop/durablefunctionsmonitor.dotnetisolated
 
     - name: copy custom-backends to ArtifactStagingDirectory
       run: cp -r custom-backends drop/custom-backends
+
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
 
     - name: dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests
       run: dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests/*.csproj
