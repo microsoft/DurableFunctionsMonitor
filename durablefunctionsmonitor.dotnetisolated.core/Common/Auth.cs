@@ -3,8 +3,8 @@
 
 using System.Collections;
 using System.IdentityModel.Tokens.Jwt;
-using System.Reflection;
 using System.Security.Claims;
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.IdentityModel.Protocols;
@@ -117,22 +117,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Then validating anti-forgery token
             ThrowIfXsrfTokenIsInvalid(request.Headers, request.Cookies);
 
-            // Need to convert Identities (of which is supposed to be just one) to ClaimsPrincipal, because the token validation routine returns ClaimsPrincipal type.
-            var principal = new ClaimsPrincipal(request.Identities);
-
-            // Trying with EasyAuth
+            var principal = await GetClaimsPrincipal(request, settings.UserNameClaimName, settings.RolesClaimName);
             var userNameClaim = principal.FindAll(settings.UserNameClaimName).SingleOrDefault();
-            if (userNameClaim == null)
-            {
-                // Validating and parsing the token ourselves
-                request.Headers.TryGetValues("Authorization", out var authHeaderValues);
-                principal = await ValidateToken(authHeaderValues?.SingleOrDefault());
-                userNameClaim = principal.FindFirst(settings.UserNameClaimName);
-            }
 
             if (userNameClaim == null)
             {
-                throw new DfmUnauthorizedException($"'{settings.UserNameClaimName}' claim is missing in the incoming identity. Call is rejected.");
+                throw new DfmUnauthorizedException($"'{settings.UserNameClaimName}' claim is missing or duplicated in the incoming identity. Call is rejected.");
             }
 
             if (settings.AllowedUserNames != null)
@@ -332,6 +322,48 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             {
                 return string.Empty;
             }
+        }
+
+        private static async Task<ClaimsPrincipal> GetClaimsPrincipal(HttpRequestData request, string userNameClaimName, string rolesClaimName)
+        {
+            // First trying the request object
+            var principal = new ClaimsPrincipal(request.Identities);
+
+            if (principal.Identity.IsAuthenticated && principal.HasClaim(c => c.Type == userNameClaimName))
+            {
+                return principal;
+            }
+
+            // Then trying to parse the x-ms-client-principal header
+            if (request.Headers.TryGetValues("x-ms-client-principal", out var clientPrincipalHeaderValues))
+            {
+                string clientPrincipalJson = Encoding.UTF8.GetString(Convert.FromBase64String(clientPrincipalHeaderValues.Single()));
+
+                dynamic clientPrincipal = JObject.Parse(clientPrincipalJson);
+
+                var identity = new ClaimsIdentity((string)clientPrincipal.auth_typ);
+                var claims = (IEnumerable<dynamic>)clientPrincipal.claims;
+
+                var userNameClaim = claims.SingleOrDefault(c => c.typ == userNameClaimName);
+                if (userNameClaim != null)
+                {
+                    string userNameClaimValue = userNameClaim.val;
+
+                    identity.AddClaim(new Claim(userNameClaimName, userNameClaimValue));
+                }
+
+                var roles = claims.Where(c => c.typ == rolesClaimName).Select(c => (string)c.val);
+                identity.AddClaims(roles.Select(r => new Claim(rolesClaimName, r)));
+
+                principal = new ClaimsPrincipal(identity);
+                return principal;
+            }
+
+            // Validating and parsing the token ourselves
+            request.Headers.TryGetValues("Authorization", out var authHeaderValues);
+            principal = await ValidateToken(authHeaderValues?.SingleOrDefault());
+
+            return principal;
         }
 
         internal static JwtSecurityTokenHandler MockedJwtSecurityTokenHandler = null;
