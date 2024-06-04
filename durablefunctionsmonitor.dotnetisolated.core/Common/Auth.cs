@@ -329,7 +329,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // First trying the request object
             var principal = new ClaimsPrincipal(request.Identities);
 
-            if (principal.Identity.IsAuthenticated && principal.HasClaim(c => c.Type == userNameClaimName))
+            if (principal.Identity != null && principal.Identity.IsAuthenticated && principal.HasClaim(c => c.Type == userNameClaimName))
             {
                 return principal;
             }
