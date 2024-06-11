@@ -346,6 +346,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             return await ValidateToken(authHeaderValues?.SingleOrDefault());
         }
 
+        // parsing header directly as per the guidance here: https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=python-v2%2Cisolated-process%2Cnodejs-v4%2Cfunctionsv2&pivots=programming-language-csharp#working-with-client-identities
         private  static ClaimsPrincipal ParseMsClientPrincipalHeader(string headerValue, DfmSettings settings)
         {
             // First need to make sure Easy Auth is in effect. Otherwise we must never trust the x-ms-client-principal header.
