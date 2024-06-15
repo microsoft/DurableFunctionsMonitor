@@ -37,8 +37,39 @@ export class OrchestrationsList extends React.Component<{ state: ResultsListTabS
         return (<>
             
             <FormHelperText className="items-count-label">
-                    
-                {state.orchestrations.length} items shown
+                
+                {!!state.noMorePagesToLoad ?
+                    (<>
+                        {state.orchestrations.length} total items
+                    </>) :
+                    (<>
+                        {state.orchestrations.length} items shown
+
+                        (
+                            <Link
+                                color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
+                                className="unhide-button"
+                                component="button"
+                                variant="inherit"
+                                onClick={() => state.fetchNextPage()}
+                            >
+                                load next page
+                            </Link>
+
+                            ,&nbsp; 
+                        
+                            <Link
+                                color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'} 
+                                className="unhide-button"
+                                component="button"
+                                variant="inherit"
+                                onClick={() => state.fetchAllPages()}
+                            >
+                                load all
+                            </Link>                        
+                        )                        
+
+                    </>)}
             
                 {!!state.hiddenColumns.length && (<>
 
