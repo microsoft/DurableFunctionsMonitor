@@ -36,6 +36,9 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('extension.durableFunctionsMonitorCleanEntityStorage',
             () => monitorTreeDataProvider.createOrActivateMonitorView(false, { id: 'cleanEntityStorage' })),
 
+            vscode.commands.registerCommand('extension.durableFunctionsMonitorBatchOps',
+                () => monitorTreeDataProvider.createOrActivateMonitorView(false, { id: 'batchOps' })),
+            
         vscode.commands.registerCommand('extension.durableFunctionsMonitorGotoInstanceId',
             () => monitorTreeDataProvider.gotoInstanceId(null)),
         
@@ -45,6 +48,9 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.cleanEntityStorage',
             (item) => monitorTreeDataProvider.attachToTaskHub(item, { id: 'cleanEntityStorage' })),
 
+        vscode.commands.registerCommand('durableFunctionsMonitorTreeView.batchOps',
+            (item) => monitorTreeDataProvider.attachToTaskHub(item, { id: 'batchOps' })),
+        
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.startNewInstance',
         (item) => monitorTreeDataProvider.attachToTaskHub(item, { id: 'startNewInstance' })),
         

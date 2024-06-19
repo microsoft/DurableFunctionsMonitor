@@ -19,7 +19,7 @@ export interface IResultsTabState {
 
     load(filterClause: string, cancelToken: CancelToken, isAutoRefresh: boolean): Promise<void>;
 
-    getShownInstances(): { id: string, name: string }[];
+    getShownInstances(): Promise<{ id: string, name: string }[]>;
 }
 
 // Resulting list of orchestrations represented as a plain table
@@ -295,7 +295,7 @@ export class ResultsListTabState implements IResultsTabState {
         cancelToken.inProgress = true;
         this._cancelAutoRefresh();
 
-        this.load(this._getFilterClause(), cancelToken).then(() => { 
+        this._loadPromise = this.load(this._getFilterClause(), cancelToken).then(() => { 
             
         }, err => { 
 
@@ -330,7 +330,7 @@ export class ResultsListTabState implements IResultsTabState {
             });
         };
 
-        keepFetching().then(() => { 
+        this._loadPromise = keepFetching().then(() => { 
             
         }, err => { 
 
@@ -344,9 +344,12 @@ export class ResultsListTabState implements IResultsTabState {
         });
     }
 
-    getShownInstances(): { id: string, name: string }[]{
+    getShownInstances(): Promise<{ id: string, name: string }[]>{
 
-        return this._instances.map(i => { return { id: i.instanceId, name: i.name }; });
+        return this._loadPromise.then(() => {
+            
+            return this._instances.map(i => { return { id: i.instanceId, name: i.name }; });
+        });
     }
 
     @observable
@@ -362,6 +365,8 @@ export class ResultsListTabState implements IResultsTabState {
     @observable
     private _noMorePagesToLoad: boolean = false;
     
+    private _loadPromise: Promise<void> = Promise.resolve();
+
     private readonly _pageSize = 50;
     private _skip = 0;
     private _prevFilterValue = '';

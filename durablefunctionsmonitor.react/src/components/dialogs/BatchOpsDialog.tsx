@@ -24,7 +24,7 @@ export class BatchOpsDialog extends React.Component<{ state: BatchOpsDialogState
 
         const state = this.props.state;
 
-        return (<Dialog fullWidth={true} maxWidth="lg" open={state.dialogOpen} onClose={() => { if (!state.inProgress) state.dialogOpen = false; }}>
+        return (<Dialog fullWidth={true} maxWidth="lg" open={state.dialogOpen} onClose={() => { if ((!state.inProgress) || (!state.instances?.length)) state.dialogOpen = false; }}>
             
             <DialogTitle>Execute {state.operation === `[Select]` ? `a batch`: `'${state.operation}'`} operation for the following {state.instances.length} instances</DialogTitle>
 
