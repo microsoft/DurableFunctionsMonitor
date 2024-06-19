@@ -1,0 +1,38 @@
+/* 
+  Copyright (c) Microsoft Corporation.
+  Licensed under the MIT license.
+*/
+
+.batch-operation-select {
+    width: 250px;
+    margin-left: 15px !important;
+    margin-bottom: 15px !important;
+}
+
+.batch-operation-string-input {
+    width: 270px;
+    margin-left: 30px !important;
+}
+
+.batch-operation-bool-input {
+    margin-left: 30px !important;
+    margin-top: 15px !important;
+}
+
+.batch-operation-json-input {
+    margin-bottom: 5px !important;
+}
+
+.batch-operation-instance-cell {
+    width: 270px;
+    word-break: break-all;
+}
+
+.batch-operation-status-cell-input {
+    font-size: x-small !important;
+    max-height: 48px;
+    overflow: auto;
+    overflow-wrap: break-word;
+    line-height: normal;
+    word-break: break-all;
+}

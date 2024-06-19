@@ -20,7 +20,7 @@ export class ConnectionParamsDialog extends React.Component<{ state: ConnectionP
     render(): JSX.Element {
         const state = this.props.state;
 
-        return (<Dialog open={state.dialogOpen} onClose={() => state.dialogOpen = false}>
+        return (<Dialog open={state.dialogOpen} onClose={() => { if (!state.inProgress) state.dialogOpen = false; }}>
             
             <DialogTitle>View Storage Connection Settings</DialogTitle>
             <DialogContent>

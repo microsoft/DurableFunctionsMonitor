@@ -52,6 +52,7 @@ export class MainMenu extends React.Component<{ state: MainMenuState, doRefresh:
                 <MenuItem onClick={() => state.showConnectionParamsDialog()}>View Storage Connection Settings...</MenuItem>
                 <MenuItem disabled={this.context.readOnlyMode} onClick={() => state.showPurgeHistoryDialog()}>Purge Instance History...</MenuItem>
                 <MenuItem disabled={this.context.readOnlyMode} onClick={() => state.showCleanEntityStorageDialog()}>Clean Entity Storage...</MenuItem>
+                <MenuItem disabled={this.context.readOnlyMode} onClick={() => state.showBatchOpsDialog()}>Execute Batch Operations...</MenuItem>
                 <MenuItem disabled={this.context.readOnlyMode} onClick={() => state.showStartNewInstanceDialog()}>Start New Orchestration Instance...</MenuItem>
             </Menu>
         </>);

@@ -342,7 +342,7 @@ export class OrchestrationsState extends ErrorMessageState {
         }
         cancelToken.inProgress = true;
 
-        this.selectedTabState.load(this.getFilterClause(), cancelToken, isAutoRefresh).then(() => {
+        this._loadPromise = this.selectedTabState.load(this.getFilterClause(), cancelToken, isAutoRefresh).then(() => {
 
             if (!!this._refreshToken) {
                 clearTimeout(this._refreshToken);
@@ -373,6 +373,11 @@ export class OrchestrationsState extends ErrorMessageState {
         }).finally(() => {
             cancelToken.inProgress = false;
         });
+    }
+
+    getShownInstances(): Promise<{ id: string, name: string }[]> {
+        
+        return this._loadPromise.then(() => { return this.selectedTabState.getShownInstances(); });
     }
 
     @observable
@@ -412,6 +417,8 @@ export class OrchestrationsState extends ErrorMessageState {
 
     private _oldTimeFrom: moment.Moment;
     private _oldTimeTill: moment.Moment;
+
+    private _loadPromise: Promise<void> = Promise.resolve();
 
     // turned out computed properties are memoized, so need to implement this as a method (so that current timestamp is properly returned)
     private getTimeFrom(): moment.Moment {

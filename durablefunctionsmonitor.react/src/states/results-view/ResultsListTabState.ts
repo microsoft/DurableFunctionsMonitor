@@ -18,6 +18,8 @@ export interface IResultsTabState {
     reset(): void;
 
     load(filterClause: string, cancelToken: CancelToken, isAutoRefresh: boolean): Promise<void>;
+
+    getShownInstances(): { id: string, name: string }[];
 }
 
 // Resulting list of orchestrations represented as a plain table
@@ -37,7 +39,7 @@ export class ResultsListTabState implements IResultsTabState {
 
     @computed
     get orchestrations(): DurableOrchestrationStatus[] {
-        return this._orchestrations;
+        return this._instances;
     }
 
     @computed
@@ -69,7 +71,7 @@ export class ResultsListTabState implements IResultsTabState {
             this._orderByDirection = 'desc';
         }
 
-        this._refresh();
+        this._reloadOrchestrations();
     }
 
     @computed
@@ -79,9 +81,10 @@ export class ResultsListTabState implements IResultsTabState {
 
     readonly longJsonDialogState: LongJsonDialogState;
 
-    constructor(private _backendClient: IBackendClient,
+    constructor(
+        private _backendClient: IBackendClient,
         private _localStorage: ITypedLocalStorage<ResultsListTabState>,
-        private _refresh: () => void,
+        private _reloadOrchestrations: () => void,
         private _getFilterClause: () => string,
         private _getCancelToken: () => CancelToken,
         private _cancelAutoRefresh: () => void,
@@ -122,7 +125,7 @@ export class ResultsListTabState implements IResultsTabState {
 
         this._localStorage.removeItem('hiddenColumns');
 
-        this._refresh();
+        this._reloadOrchestrations();
     }
 
     resetOrderBy() {
@@ -133,7 +136,7 @@ export class ResultsListTabState implements IResultsTabState {
 
         this._orderBy = '';
         this._orderByDirection = 'asc';
-        this._refresh();
+        this._reloadOrchestrations();
     }
 
     setClientFilteredColumn(name: string) {
@@ -154,7 +157,7 @@ export class ResultsListTabState implements IResultsTabState {
 
         if (this._prevFilterValue !== this.clientFilterValue) {
            
-            this._refresh();
+            this._reloadOrchestrations();
         }
     }
 
@@ -167,12 +170,12 @@ export class ResultsListTabState implements IResultsTabState {
         this.clientFilteredColumn = '';
         this.clientFilterValue = '';
         this._prevFilterValue = '';
-        this._refresh();
+        this._reloadOrchestrations();
     }
 
     reset() {
 
-        this._orchestrations = [];
+        this._instances = [];
         this._noMorePagesToLoad = false;
         this._skip = 0;
     }
@@ -269,9 +272,9 @@ export class ResultsListTabState implements IResultsTabState {
             }
             
             if (!!isAutoRefresh) {
-                this._orchestrations = response;
+                this._instances = response;
             } else {
-                this._orchestrations.push(...response);
+                this._instances.push(...response);
             }
 
             // Making an educated guess whether there're any more pages or not
@@ -312,11 +315,11 @@ export class ResultsListTabState implements IResultsTabState {
         if (!!cancelToken.inProgress) {
             return;            
         }
+
         cancelToken.inProgress = true;
+        this._cancelAutoRefresh();
 
         const keepFetching = () => {
-
-            this._cancelAutoRefresh();
 
             return this.load(this._getFilterClause(), cancelToken).then(() => {
 
@@ -341,8 +344,13 @@ export class ResultsListTabState implements IResultsTabState {
         });
     }
 
+    getShownInstances(): { id: string, name: string }[]{
+
+        return this._instances.map(i => { return { id: i.instanceId, name: i.name }; });
+    }
+
     @observable
-    private _orchestrations: DurableOrchestrationStatus[] = [];
+    private _instances: DurableOrchestrationStatus[] = [];
     @observable
     private _orderByDirection: ('asc' | 'desc') = 'asc';
     @observable
