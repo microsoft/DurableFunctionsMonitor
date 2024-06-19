@@ -31,6 +31,8 @@ export class BatchOpsDialog extends React.Component<{ state: BatchOpsDialogState
             <DialogContent>
 
                 {state.inProgress ? (<LinearProgress />) : (<Box height={4} />)}
+
+                <Box height={5} />
                 
                 <FormControl className="batch-operation-select">
                     <InputLabel variant="standard">Operation to execute</InputLabel>
@@ -131,7 +133,7 @@ export class BatchOpsDialog extends React.Component<{ state: BatchOpsDialogState
                     Execute
                 </Button>
 
-                <Button onClick={() => state.dialogOpen = false} disabled={!!state.inProgress} color={PrimaryButtonColor}>
+                <Button onClick={() => state.dialogOpen = false} disabled={(!!state.inProgress) && (!!state.instances?.length)} color={PrimaryButtonColor}>
                     Close
                 </Button>
 
