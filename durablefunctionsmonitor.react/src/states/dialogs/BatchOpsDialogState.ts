@@ -18,7 +18,7 @@ class BatchOpInstance {
     name: string;
 
     @observable
-    status: 'Pending' | 'Completed' | 'Failed';
+    status: 'Pending' | 'Running' | 'Completed' | 'Failed';
 
     @observable
     statusText: string;
@@ -43,7 +43,10 @@ export class BatchOpsDialogState extends ErrorMessageState {
 
         this._operation = value;
 
-        this.resetStatuses();
+        for (const i of this.instances) {
+            i.status = 'Pending';
+            i.statusText = 'Not Started';
+        }
 
         this.stringInput = '';
         this.jsonInput = '';
@@ -137,7 +140,10 @@ export class BatchOpsDialogState extends ErrorMessageState {
             return;
         }
 
-        this.resetStatuses();
+        for (const i of this.instances) {
+            i.status = 'Running';
+            i.statusText = 'In Progress';
+        }
 
         let inputObject = null;
         if (!!this.jsonInput) {
@@ -225,12 +231,4 @@ export class BatchOpsDialogState extends ErrorMessageState {
 
     @observable
     private _inProgress: boolean = false;
-
-    private resetStatuses() {
-
-        for (const i of this.instances) {
-            i.status = 'Pending';
-            i.statusText = 'Not Started';
-        }
-    }
 }
