@@ -1,12 +1,8 @@
 
-name: main-build
+name: push-to-nuget
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -61,31 +57,6 @@ jobs:
     - name: dotnet publish durablefunctionsmonitor.dotnetisolated
       run: dotnet publish durablefunctionsmonitor.dotnetisolated --output drop/durablefunctionsmonitor.dotnetisolated/output
 
-    # Building and testing vscode extension
-
-    - name: copy dotnetbackend to durablefunctionsmonitor-vscodeext/backend
-      run: cp -r drop/durablefunctionsmonitor.dotnetbackend/output durablefunctionsmonitor-vscodeext/backend
-
-    - name: copy custom-backends to durablefunctionsmonitor-vscodeext/custom-backends
-      run: cp -r custom-backends durablefunctionsmonitor-vscodeext/custom-backends
-
-    - name: npm install durablefunctionsmonitor-vscodeext
-      run: npm install
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: npm install -g azure-functions-core-tools@4
-      run: npm install -g azure-functions-core-tools@4
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: run tests on durablefunctionsmonitor-vscodeext
-      # TODO: vscode test pipeline was broken, need to investigate and fix
-      if: 'false'
-      run: npm run test
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: package durablefunctionsmonitor-vscodeext to VSIX-file
-      run: npm run package
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: copy VSIX-file to ArtifactStagingDirectory
-      run: cp durablefunctionsmonitor-vscodeext/durablefunctionsmonitor*.vsix drop
-
     # Building nuget packages
 
     - name: copy LICENSE to durablefunctionsmonitor.dotnetbackend/output
@@ -100,10 +71,10 @@ jobs:
     - name: package dotnetisolated into a Nuget package
       run: nuget pack drop/durablefunctionsmonitor.dotnetisolated/output/nuspec.nuspec -OutputDirectory drop
 
-    # Publish artifacts
+    # Pushing nuget packages
         
-    - name: publish artifacts
-      uses: actions/upload-artifact@v4.1.0
-      with:
-        path: drop
+    - name: push nuget packages
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}      
+      run: nuget push drop/*.nupkg -ApiKey $(NUGET_API_KEY) -src https://api.nuget.org/v3/index.json
 

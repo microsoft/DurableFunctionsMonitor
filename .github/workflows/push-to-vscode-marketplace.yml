@@ -1,12 +1,8 @@
 
-name: main-build
+name: push-to-vscode-marketplace
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -86,24 +82,12 @@ jobs:
     - name: copy VSIX-file to ArtifactStagingDirectory
       run: cp durablefunctionsmonitor-vscodeext/durablefunctionsmonitor*.vsix drop
 
-    # Building nuget packages
-
-    - name: copy LICENSE to durablefunctionsmonitor.dotnetbackend/output
-      run: cp LICENSE drop/durablefunctionsmonitor.dotnetbackend/output
-    - name: copy LICENSE.txt to durablefunctionsmonitor.dotnetisolated/output
-      run: cp durablefunctionsmonitor.dotnetisolated/LICENSE.txt drop/durablefunctionsmonitor.dotnetisolated/output
-
-    - name: Install latest nuget.exe
-      uses: nuget/setup-nuget@v1.2.0
-    - name: package dotnetbackend into a Nuget package
-      run: nuget pack drop/durablefunctionsmonitor.dotnetbackend/output/nuspec.nuspec -OutputDirectory drop
-    - name: package dotnetisolated into a Nuget package
-      run: nuget pack drop/durablefunctionsmonitor.dotnetisolated/output/nuspec.nuspec -OutputDirectory drop
-
-    # Publish artifacts
+    # Publish VSIX
         
-    - name: publish artifacts
-      uses: actions/upload-artifact@v4.1.0
-      with:
-        path: drop
+    - name: npm install vsce
+      run: npm install -g vsce
 
+    - name: publish vsix
+      env:
+        VSCODE_MARKETPLACE_PAT: ${{ secrets.VSCODE_MARKETPLACE_PAT }}      
+      run: vsce publish --pat $(VSCODE_MARKETPLACE_PAT) --packagePath drop/durablefunctionsmonitor*.vsix
