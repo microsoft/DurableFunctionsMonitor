@@ -3,8 +3,8 @@
 
 using System.Collections;
 using System.IdentityModel.Tokens.Jwt;
-using System.Reflection;
 using System.Security.Claims;
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.IdentityModel.Protocols;
@@ -117,18 +117,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Then validating anti-forgery token
             ThrowIfXsrfTokenIsInvalid(request.Headers, request.Cookies);
 
-            // Need to convert Identities (of which is supposed to be just one) to ClaimsPrincipal, because the token validation routine returns ClaimsPrincipal type.
-            var principal = new ClaimsPrincipal(request.Identities);
-
-            // Trying with EasyAuth
+            var principal = await GetClaimsPrincipal(request, settings);
             var userNameClaim = principal.FindAll(settings.UserNameClaimName).SingleOrDefault();
-            if (userNameClaim == null)
-            {
-                // Validating and parsing the token ourselves
-                request.Headers.TryGetValues("Authorization", out var authHeaderValues);
-                principal = await ValidateToken(authHeaderValues?.SingleOrDefault());
-                userNameClaim = principal.FindFirst(settings.UserNameClaimName);
-            }
 
             if (userNameClaim == null)
             {
@@ -331,6 +321,69 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             catch (Exception)
             {
                 return string.Empty;
+            }
+        }
+
+        private static async Task<ClaimsPrincipal> GetClaimsPrincipal(HttpRequestData request, DfmSettings settings)
+        {
+            // First trying the request object
+            var easyAuthPrincipal = new ClaimsPrincipal(request.Identities);
+
+            if (easyAuthPrincipal.Identity != null && easyAuthPrincipal.Identity.IsAuthenticated && easyAuthPrincipal.HasClaim(c => c.Type == settings.UserNameClaimName))
+            {
+                // Authentication was done by EasyAuth and converted into a ClaimsPrincipal by the Functions runtime. Returning immediately.
+                return easyAuthPrincipal;
+            }
+
+            // Then trying to parse the x-ms-client-principal header
+            if (request.Headers.TryGetValues("x-ms-client-principal", out var clientPrincipalHeaderValues))
+            {
+                return ParseMsClientPrincipalHeader(clientPrincipalHeaderValues.Single(), settings);
+            }
+
+            // Validating and parsing the access token ourselves
+            request.Headers.TryGetValues("Authorization", out var authHeaderValues);
+            return await ValidateToken(authHeaderValues?.SingleOrDefault());
+        }
+
+        // parsing header directly as per the guidance here: https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=python-v2%2Cisolated-process%2Cnodejs-v4%2Cfunctionsv2&pivots=programming-language-csharp#working-with-client-identities
+        private  static ClaimsPrincipal ParseMsClientPrincipalHeader(string headerValue, DfmSettings settings)
+        {
+            // First need to make sure Easy Auth is in effect. Otherwise we must never trust the x-ms-client-principal header.
+            string siteName = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME);
+            string clientId = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID);
+
+            if (string.IsNullOrWhiteSpace(siteName) || string.IsNullOrWhiteSpace(clientId))
+            {
+                throw new DfmUnauthorizedException($"The incoming 'x-ms-client-principal' header is not legitimate. Call is rejected.");
+            }
+
+            // Now parsing the header value
+            try
+            {
+                string clientPrincipalJson = Encoding.UTF8.GetString(Convert.FromBase64String(headerValue));
+
+                dynamic clientPrincipal = JObject.Parse(clientPrincipalJson);
+
+                var identity = new ClaimsIdentity((string)clientPrincipal.auth_typ);
+                var claims = (IEnumerable<dynamic>)clientPrincipal.claims;
+
+                var userNameClaim = claims.SingleOrDefault(c => c.typ == settings.UserNameClaimName);
+                if (userNameClaim != null)
+                {
+                    string userNameClaimValue = userNameClaim.val;
+
+                    identity.AddClaim(new Claim(settings.UserNameClaimName, userNameClaimValue));
+                }
+
+                var roles = claims.Where(c => c.typ == settings.RolesClaimName).Select(c => (string)c.val);
+                identity.AddClaims(roles.Select(r => new Claim(settings.RolesClaimName, r)));
+
+                return new ClaimsPrincipal(identity);
+            }
+            catch(Exception ex)
+            {
+                throw new DfmUnauthorizedException($"Failed to parse the 'x-ms-client-principal' header. {ex.Message}. Call is rejected.");
             }
         }
 

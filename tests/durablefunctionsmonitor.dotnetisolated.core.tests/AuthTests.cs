@@ -243,7 +243,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             request.AddIdentity(new ClaimsIdentity(new Claim[] {
                 new Claim("preferred_username", userName)
-            }));
+            }, "tino-test-auth-type"));
 
             // Act
             var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
@@ -275,7 +275,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             request.AddIdentity(new ClaimsIdentity(new Claim[] {
                 new Claim("preferred_username", userName)
-            }));
+            }, "tino-test-auth-type"));
 
             // Act
 
@@ -311,7 +311,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             request.AddIdentity(new ClaimsIdentity(new Claim[] {
                 new Claim("preferred_username", userName)
-            }));
+            }, "tino-test-auth-type"));
 
             // Act
 
@@ -344,10 +344,12 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, "role1,role2");
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, string.Empty);
 
-            request.AddIdentity(new ClaimsIdentity(new Claim[] {
+            var identity = new ClaimsIdentity(new Claim[] {
                 new Claim("preferred_username", userName),
                 new Claim("roles", "role1")
-            }));
+            }, "tino-test-auth-type");
+
+            request.AddIdentity(identity);
 
             // Act
 
@@ -379,7 +381,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             request.AddIdentity(new ClaimsIdentity(new Claim[] {
                 new Claim("preferred_username", userName),
                 new Claim("roles", "readonly_role1")
-            }));
+            }, "tino-test-auth-type"));
 
             // Act
 
@@ -413,7 +415,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             var principal = new ClaimsPrincipal(new ClaimsIdentity[] { new ClaimsIdentity( new Claim[] {
                 new Claim("preferred_username", userName),
                 new Claim("roles", roleName)
-            })});
+            }, "tino-test-auth-type")});
 
             ICollection<SecurityKey> securityKeys = new SecurityKey[0];
 
