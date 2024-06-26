@@ -84,6 +84,7 @@ export class ResultsFunctionGraphTabState extends FunctionGraphStateBase impleme
         this._diagramSvg = '';
         this._traversalResult = null;
         this._metrics = {};
+        this._instances = [];
         this._numOfInstancesShown = 0;
     }
 
@@ -91,9 +92,72 @@ export class ResultsFunctionGraphTabState extends FunctionGraphStateBase impleme
 
         this.initMermaidWhenNeeded();
 
+        this._instances = [];
         this._numOfInstancesShown = 0;
 
         const clonedMetrics = !isAutoRefresh ? JSON.parse(JSON.stringify(this._metrics)) : {};
+
+        const keepFetching = (pageNumber: number) => {
+
+            const uri = `/orchestrations?$top=${this._pageSize}&$skip=${this._numOfInstancesShown}${filterClause}`;
+    
+            return this._backendClient.call('GET', uri).then((instances: DurableOrchestrationStatus[]) => {
+    
+                if (cancelToken.isCancelled) {
+                    return Promise.resolve(clonedMetrics);
+                }
+    
+                // updating metrics
+                
+                if (!clonedMetrics[this.TotalMetricsName]) {
+                    clonedMetrics[this.TotalMetricsName] = new MetricsItem();
+                }
+    
+                for (const instance of instances) {
+    
+                    const funcName = DurableOrchestrationStatus.getFunctionName(instance);
+    
+                    if (!clonedMetrics[funcName]) {
+                        clonedMetrics[funcName] = new MetricsItem();
+                    }
+    
+                    switch (instance.runtimeStatus) {
+                        case 'Completed':
+                            clonedMetrics[funcName].completed++;
+                            clonedMetrics[this.TotalMetricsName].completed++;
+                            break;
+                        case 'Running':
+                        case 'Pending':
+                        case 'ContinuedAsNew':
+                            clonedMetrics[funcName].running++;
+                            clonedMetrics[this.TotalMetricsName].running++;
+                            break;
+                        case 'Failed':
+                            clonedMetrics[funcName].failed++;
+                            clonedMetrics[this.TotalMetricsName].failed++;
+                            break;
+                        default:
+                            clonedMetrics[funcName].other++;
+                            clonedMetrics[this.TotalMetricsName].other++;
+                            break;
+                    }
+                }
+    
+                this._instances.push(...instances);
+                this._numOfInstancesShown += instances.length;
+    
+                // Making metrics look alive, when not in autorefresh mode
+                if (!isAutoRefresh) {
+                    this._metrics = clonedMetrics;
+                }
+    
+                if (instances.length === this._pageSize) {
+                    return keepFetching(pageNumber + 1);
+                }
+    
+                return clonedMetrics;
+            });
+        };
 
         return this._backendClient.call('GET', '/function-map').then(response => {
             
@@ -101,7 +165,7 @@ export class ResultsFunctionGraphTabState extends FunctionGraphStateBase impleme
         
             return this.render().then(() => {
 
-                return this.loadNextBatch(filterClause, 0, clonedMetrics, isAutoRefresh, cancelToken).then(metrics => {
+                return keepFetching(0).then(metrics => {
 
                     // In autorefresh mode updating this observable property at the end, otherwise updating it on-the-fly
                     this._metrics = metrics;
@@ -110,74 +174,20 @@ export class ResultsFunctionGraphTabState extends FunctionGraphStateBase impleme
         });
     }
 
+    getShownInstances(): Promise<{ id: string, name: string }[]>{
+
+        return Promise.resolve(this._instances.map(i => { return { id: i.instanceId, name: i.name }; }));
+    }
+
     @observable
     private _metrics: MetricsMap = {};
+
+    private _instances: DurableOrchestrationStatus[] = [];
 
     private _numOfInstancesShown: number = 0;
     private readonly _pageSize = 1000;
 
     private _selectedFunctionName: string;
-
-    private loadNextBatch(filterClause: string, pageNumber: number, metrics: MetricsMap, isAutoRefresh: boolean, cancelToken: CancelToken): Promise<MetricsMap> {
-
-        const uri = `/orchestrations?$top=${this._pageSize}&$skip=${this._numOfInstancesShown}${filterClause}`;
-
-        return this._backendClient.call('GET', uri).then((instances: DurableOrchestrationStatus[]) => {
-
-            if (cancelToken.isCancelled) {
-                return Promise.resolve(metrics);
-            }
-
-            // updating metrics
-            
-            if (!metrics[this.TotalMetricsName]) {
-                metrics[this.TotalMetricsName] = new MetricsItem();
-            }
-
-            for (var instance of instances) {
-
-                const funcName = DurableOrchestrationStatus.getFunctionName(instance);
-
-                if (!metrics[funcName]) {
-                    metrics[funcName] = new MetricsItem();
-                }
-
-                switch (instance.runtimeStatus) {
-                    case 'Completed':
-                        metrics[funcName].completed++;
-                        metrics[this.TotalMetricsName].completed++;
-                        break;
-                    case 'Running':
-                    case 'Pending':
-                    case 'ContinuedAsNew':
-                        metrics[funcName].running++;
-                        metrics[this.TotalMetricsName].running++;
-                        break;
-                    case 'Failed':
-                        metrics[funcName].failed++;
-                        metrics[this.TotalMetricsName].failed++;
-                        break;
-                    default:
-                        metrics[funcName].other++;
-                        metrics[this.TotalMetricsName].other++;
-                        break;
-                }
-            }
-
-            this._numOfInstancesShown += instances.length;
-
-            // Making metrics look alive, when not in autorefresh mode
-            if (!isAutoRefresh) {
-                this._metrics = metrics;
-            }
-
-            if (instances.length === this._pageSize) {
-                return this.loadNextBatch(filterClause, pageNumber + 1, metrics, isAutoRefresh, cancelToken);
-            }
-
-            return metrics;
-        });
-    }
 
     private render(): Promise<void> {
 

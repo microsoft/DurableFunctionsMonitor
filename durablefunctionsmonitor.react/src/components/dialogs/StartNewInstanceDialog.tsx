@@ -22,7 +22,7 @@ export class StartNewInstanceDialog extends React.Component<{ state: StartNewIns
     render(): JSX.Element {
         const state = this.props.state;
 
-        return (<Dialog open={state.dialogOpen} onClose={() => state.dialogOpen = false}>
+        return (<Dialog open={state.dialogOpen} onClose={() => { if (!state.inProgress) state.dialogOpen = false; }}>
             
             <DialogTitle>Start New Orchestration Instance</DialogTitle>
 

@@ -20,6 +20,7 @@ import { VsCodeBackendClient } from '../services/VsCodeBackendClient';
 import { VsCodeTypedLocalStorage } from './VsCodeTypedLocalStorage';
 import { dfmContextInstance } from '../DfmContext';
 import { ErrorMessageState } from './ErrorMessageState';
+import { BatchOpsDialogState, BatchOpsDialogState as BatchsOpDialogState } from './dialogs/BatchOpsDialogState';
 
 // This method is provided by VsCode, when running inside a WebView
 declare const acquireVsCodeApi: () => any;
@@ -46,6 +47,7 @@ export class MainState extends ErrorMessageState {
     readonly cleanEntityStorageDialogState: CleanEntityStorageDialogState;
     readonly connectionParamsDialogState: ConnectionParamsDialogState;
     readonly startNewInstanceDialogState: StartNewInstanceDialogState;
+    readonly batchOpsDialogState: BatchsOpDialogState;
 
     @observable
     menuAnchorElement?: Element;
@@ -104,12 +106,15 @@ export class MainState extends ErrorMessageState {
                     backendClient,
                     new VsCodeTypedLocalStorage<OrchestrationsState & ResultsListTabState>('OrchestrationsState', vsCodeApi),
                     funcName => this.startNewInstanceDialogState.showWithFunctionName(funcName));
+                
+                this.batchOpsDialogState = new BatchOpsDialogState(backendClient, () => this.orchestrationsState.getShownInstances());
 
                 // This needs to be done after state instances are created, but it needs to be done anyway
                 backendClient.setCustomHandlers({
                     purgeHistory: () => this.purgeHistoryDialogState.dialogOpen = true,
                     cleanEntityStorage: () => this.cleanEntityStorageDialogState.dialogOpen = true,
                     startNewInstance: () => this.startNewInstanceDialogState.dialogOpen = true,
+                    batchOps: () => this.batchOpsDialogState.dialogOpen = true
                 });
             }
             
@@ -134,12 +139,14 @@ export class MainState extends ErrorMessageState {
                 
             } else {
 
-                this.mainMenuState = new MainMenuState(this.purgeHistoryDialogState, this.cleanEntityStorageDialogState, this.connectionParamsDialogState, this.startNewInstanceDialogState);
+                this.mainMenuState = new MainMenuState(this);
                 
                 this.orchestrationsState = new OrchestrationsState(IsFunctionGraphAvailable,
                     backendClient,
                     new TypedLocalStorage<OrchestrationsState>('OrchestrationsState'),
-                    funcName => this.startNewInstanceDialogState.showWithFunctionName(funcName));                
+                    funcName => this.startNewInstanceDialogState.showWithFunctionName(funcName));
+                
+                this.batchOpsDialogState = new BatchOpsDialogState(backendClient, () => this.orchestrationsState.getShownInstances());
             }
 
             this.loginState.login().then(() => {

@@ -18,6 +18,8 @@ export interface IResultsTabState {
     reset(): void;
 
     load(filterClause: string, cancelToken: CancelToken, isAutoRefresh: boolean): Promise<void>;
+
+    getShownInstances(): Promise<{ id: string, name: string }[]>;
 }
 
 // Resulting list of orchestrations represented as a plain table
@@ -37,7 +39,7 @@ export class ResultsListTabState implements IResultsTabState {
 
     @computed
     get orchestrations(): DurableOrchestrationStatus[] {
-        return this._orchestrations;
+        return this._instances;
     }
 
     @computed
@@ -50,6 +52,10 @@ export class ResultsListTabState implements IResultsTabState {
         return this._orderBy;
     }
     set orderBy(val: string) {
+
+        if (!!this._getCancelToken().inProgress) {
+            return;
+        }
 
         if (this._orderBy !== val) {
 
@@ -65,16 +71,25 @@ export class ResultsListTabState implements IResultsTabState {
             this._orderByDirection = 'desc';
         }
 
-        this._refresh();
+        this._reloadOrchestrations();
     }
+
+    @computed
+    get noMorePagesToLoad(): boolean { return this._noMorePagesToLoad; }
 
     get backendClient(): IBackendClient { return this._backendClient; }
 
     readonly longJsonDialogState: LongJsonDialogState;
 
-    constructor(private _backendClient: IBackendClient,
+    constructor(
+        private _backendClient: IBackendClient,
         private _localStorage: ITypedLocalStorage<ResultsListTabState>,
-        private _refresh: () => void) {
+        private _reloadOrchestrations: () => void,
+        private _getFilterClause: () => string,
+        private _getCancelToken: () => CancelToken,
+        private _cancelAutoRefresh: () => void,
+        private _showError: (msg: string, err: any) => void
+    ) {
 
         this.longJsonDialogState = new LongJsonDialogState(this._backendClient);
 
@@ -101,20 +116,34 @@ export class ResultsListTabState implements IResultsTabState {
     }
 
     unhide() {
+
+        if (!!this._getCancelToken().inProgress) {
+            return;
+        }
+
         this._hiddenColumns = [];
 
         this._localStorage.removeItem('hiddenColumns');
 
-        this._refresh();
+        this._reloadOrchestrations();
     }
 
     resetOrderBy() {
+
+        if (!!this._getCancelToken().inProgress) {
+            return;
+        }
+
         this._orderBy = '';
         this._orderByDirection = 'asc';
-        this._refresh();
+        this._reloadOrchestrations();
     }
 
     setClientFilteredColumn(name: string) {
+
+        if (!!this._getCancelToken().inProgress) {
+            return;
+        }
         
         this.clientFilteredColumn = name;
         this.clientFilterValue = '';
@@ -122,22 +151,31 @@ export class ResultsListTabState implements IResultsTabState {
 
     applyFilter() {
 
+        if (!!this._getCancelToken().inProgress) {
+            return;
+        }
+
         if (this._prevFilterValue !== this.clientFilterValue) {
            
-            this._refresh();
+            this._reloadOrchestrations();
         }
     }
 
     resetFilter() {
+
+        if (!!this._getCancelToken().inProgress) {
+            return;
+        }
+
         this.clientFilteredColumn = '';
         this.clientFilterValue = '';
         this._prevFilterValue = '';
-        this._refresh();
+        this._reloadOrchestrations();
     }
 
     reset() {
 
-        this._orchestrations = [];
+        this._instances = [];
         this._noMorePagesToLoad = false;
         this._skip = 0;
     }
@@ -168,8 +206,64 @@ export class ResultsListTabState implements IResultsTabState {
         const orderByClause = !!this._orderBy ? `&$orderby=${this._orderBy} ${this.orderByDirection}` : '';
         const hiddenColumnsClause = !this._hiddenColumns.length ? '' : `&hidden-columns=${this._hiddenColumns.join('|')}`;
         const uri = `/orchestrations?$top=${this._pageSize}${filterClause}${orderByClause}${hiddenColumnsClause}`;
-        
-        return this.loadFiltered(uri, cancelToken, []).then(response => {
+
+        const result: DurableOrchestrationStatus[] = [];
+        const keepFetching = () => {
+
+            return this._backendClient.call('GET', uri + `&$skip=${this._skip}`).then(response => {
+
+                if (!!cancelToken.isCancelled || !response || !response.length) {
+                    
+                    return Promise.resolve(result);
+                }
+
+                this._skip += response.length;
+
+                if (!!this.clientFilteredColumn && !!this.clientFilterValue) {
+                    
+                    // applying client-side filter
+                    response = response.filter(item => {
+
+                        const itemValue = item[this.clientFilteredColumn];
+                        if (!itemValue) {
+                            return false;
+                        }
+
+                        var itemValueString;
+                        switch (this.clientFilteredColumn) {
+                            case 'createdTime':
+                            case 'lastUpdatedTime':
+                                itemValueString = dfmContextInstance.formatDateTimeString(itemValue);
+                                break;
+                            case 'duration':
+                                itemValueString = DateTimeHelpers.formatDuration(itemValue);
+                                break;
+                            case 'input':
+                            case 'output':
+                            case 'customStatus':
+                                itemValueString = JSON.stringify(itemValue);
+                                break;
+                            default:
+                                itemValueString = itemValue.toString();
+                        }
+
+                        return itemValueString.toLowerCase().includes(this.clientFilterValue.toLowerCase());
+                    });
+                }
+
+                result.push(...response);
+
+                // Keep pulling data until we get at least this._pageSize results
+                if (result.length < this._pageSize) {
+                    
+                    return keepFetching();
+                }
+
+                return Promise.resolve(result);
+            });
+        }
+
+        return keepFetching().then(response => {
 
             this._prevFilterValue = this.clientFilterValue;
 
@@ -178,12 +272,13 @@ export class ResultsListTabState implements IResultsTabState {
             }
             
             if (!!isAutoRefresh) {
-                this._orchestrations = response;
+                this._instances = response;
             } else {
-                this._orchestrations.push(...response);
+                this._instances.push(...response);
             }
 
-            if (!response.length) {
+            // Making an educated guess whether there're any more pages or not
+            if (response.length < this._pageSize) {
 
                 // Stop the infinite scrolling
                 this._noMorePagesToLoad = true;
@@ -191,63 +286,74 @@ export class ResultsListTabState implements IResultsTabState {
         });
     }
 
-    private loadFiltered(uri: string, cancelToken: CancelToken, result: DurableOrchestrationStatus[]): Promise<DurableOrchestrationStatus[]> {
+    fetchNextPage() {
 
-        return this._backendClient.call('GET', uri + `&$skip=${this._skip}`).then(response => {
+        const cancelToken = this._getCancelToken();
+        if (!!cancelToken.inProgress) {
+            return;            
+        }
+        cancelToken.inProgress = true;
+        this._cancelAutoRefresh();
 
-            if (!!cancelToken.isCancelled || !response || !response.length) {
-                
-                return Promise.resolve(result);
+        this._loadPromise = this.load(this._getFilterClause(), cancelToken).then(() => { 
+            
+        }, err => { 
+
+            if (!cancelToken.isCancelled) {
+                this._showError('Load failed', err);
             }
 
-            this._skip += response.length;
+        }).finally(() => { 
 
-            if (!!this.clientFilteredColumn && !!this.clientFilterValue) {
-                
-                // applying client-side filter
-                response = response.filter(item => {
+            cancelToken.inProgress = false;
+        });
+    }
 
-                    const itemValue = item[this.clientFilteredColumn];
-                    if (!itemValue) {
-                        return false;
-                    }
+    fetchAllPages() {
 
-                    var itemValueString;
-                    switch (this.clientFilteredColumn) {
-                        case 'createdTime':
-                        case 'lastUpdatedTime':
-                            itemValueString = dfmContextInstance.formatDateTimeString(itemValue);
-                            break;
-                        case 'duration':
-                            itemValueString = DateTimeHelpers.formatDuration(itemValue);
-                            break;
-                        case 'input':
-                        case 'output':
-                        case 'customStatus':
-                            itemValueString = JSON.stringify(itemValue);
-                            break;
-                        default:
-                            itemValueString = itemValue.toString();
-                    }
+        const cancelToken = this._getCancelToken();
+        if (!!cancelToken.inProgress) {
+            return;            
+        }
 
-                    return itemValueString.toLowerCase().includes(this.clientFilterValue.toLowerCase());
-                });
+        cancelToken.inProgress = true;
+        this._cancelAutoRefresh();
+
+        const keepFetching = () => {
+
+            return this.load(this._getFilterClause(), cancelToken).then(() => {
+
+                if (!cancelToken.isCancelled && !this._noMorePagesToLoad) {
+                    
+                    return keepFetching();
+                }
+            });
+        };
+
+        this._loadPromise = keepFetching().then(() => { 
+            
+        }, err => { 
+
+            if (!cancelToken.isCancelled) {
+                this._showError('Load failed', err);
             }
 
-            result.push(...response);
+        }).finally(() => { 
 
-            // Keep pulling data until we get at least this._pageSize results
-            if (result.length < this._pageSize) {
-                
-                return this.loadFiltered(uri, cancelToken, result);
-            }
+            cancelToken.inProgress = false;
+        });
+    }
 
-            return Promise.resolve(result);
+    getShownInstances(): Promise<{ id: string, name: string }[]>{
+
+        return this._loadPromise.then(() => {
+            
+            return this._instances.map(i => { return { id: i.instanceId, name: i.name }; });
         });
     }
 
     @observable
-    private _orchestrations: DurableOrchestrationStatus[] = [];
+    private _instances: DurableOrchestrationStatus[] = [];
     @observable
     private _orderByDirection: ('asc' | 'desc') = 'asc';
     @observable
@@ -256,7 +362,11 @@ export class ResultsListTabState implements IResultsTabState {
     @observable
     private _hiddenColumns: string[] = [];
 
+    @observable
     private _noMorePagesToLoad: boolean = false;
+    
+    private _loadPromise: Promise<void> = Promise.resolve();
+
     private readonly _pageSize = 50;
     private _skip = 0;
     private _prevFilterValue = '';

@@ -20,6 +20,7 @@ import { PurgeHistoryDialog } from './dialogs/PurgeHistoryDialog';
 import { CleanEntityStorageDialog } from './dialogs/CleanEntityStorageDialog';
 import { ConnectionParamsDialog } from './dialogs/ConnectionParamsDialog';
 import { StartNewInstanceDialog } from './dialogs/StartNewInstanceDialog';
+import { BatchOpsDialog } from './dialogs/BatchOpsDialog';
 
 import { DfmContextType, dfmContextInstance } from '../DfmContext';
 import { ErrorMessage } from './ErrorMessage';
@@ -127,6 +128,7 @@ export class Main extends React.Component<{ state: MainState }> {
                 <PurgeHistoryDialog state={state.purgeHistoryDialogState}/>
                 <CleanEntityStorageDialog state={state.cleanEntityStorageDialogState} />
                 <StartNewInstanceDialog state={state.startNewInstanceDialogState} />
+                <BatchOpsDialog state={state.batchOpsDialogState} />
 
                 {!!state.connectionParamsDialogState && (
                     <ConnectionParamsDialog state={state.connectionParamsDialogState} />

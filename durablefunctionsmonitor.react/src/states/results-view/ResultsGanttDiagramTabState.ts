@@ -85,6 +85,11 @@ export class ResultsGanttDiagramTabState extends MermaidDiagramStateBase impleme
         }
     }
 
+    getShownInstances(): Promise<{ id: string, name: string }[]>{
+
+        return Promise.resolve(this._instances.map(i => { return { id: i.instanceId, name: i.name }; }));
+    }
+
     private _instances: DurableOrchestrationStatus[] = [];
 
     private renderDiagram(instances: DurableOrchestrationStatus[]): string {

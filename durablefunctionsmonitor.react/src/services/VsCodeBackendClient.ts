@@ -9,6 +9,7 @@ export type VsCodeCustomMessageHandlers = {
     purgeHistory: (data: any) => void;
     cleanEntityStorage: (data: any) => void;
     startNewInstance: (data: any) => void;
+    batchOps: (data: any) => void;
 };
 
 // IBackendClient implementation for VsCode extension, forwards HTTP requests to VsCode

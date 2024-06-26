@@ -33,6 +33,7 @@
         "onCommand:extension.durableFunctionsMonitor",
         "onCommand:extension.durableFunctionsMonitorPurgeHistory",
         "onCommand:extension.durableFunctionsMonitorCleanEntityStorage",
+        "onCommand:extension.durableFunctionsMonitorBatchOps",
         "onCommand:durableFunctionsMonitorTreeView.attachToAnotherTaskHub",
         "onCommand:extension.durableFunctionsMonitorGotoInstanceId",
         "onCommand:extension.durableFunctionsMonitorVisualizeAsGraph",
@@ -61,6 +62,10 @@
             {
                 "command": "extension.durableFunctionsMonitorCleanEntityStorage",
                 "title": "Durable Functions Monitor: Clean Entity Storage..."
+            },
+            {
+                "command": "extension.durableFunctionsMonitorBatchOps",
+                "title": "Durable Functions Monitor: Execute Batch Operations..."
             },
             {
                 "command": "extension.durableFunctionsMonitorGotoInstanceId",
@@ -123,6 +128,10 @@
                 "title": "Clean Entity Storage..."
             },
             {
+                "command": "durableFunctionsMonitorTreeView.batchOps",
+                "title": "Execute Batch Operations..."
+            },
+            {
                 "command": "durableFunctionsMonitorTreeView.gotoInstanceId",
                 "title": "Go to instanceId..."
             },
@@ -153,14 +162,19 @@
                     "group": "DurableFunctionMonitorGroup@3"
                 },
                 {
-                    "command": "extension.durableFunctionsMonitorGotoInstanceId",
+                    "command": "extension.durableFunctionsMonitorBatchOps",
                     "when": "resourceFilename == host.json",
                     "group": "DurableFunctionMonitorGroup@4"
                 },
                 {
-                    "command": "extension.durableFunctionsMonitorVisualizeAsGraph",
+                    "command": "extension.durableFunctionsMonitorGotoInstanceId",
                     "when": "resourceFilename == host.json",
                     "group": "DurableFunctionMonitorGroup@5"
+                },
+                {
+                    "command": "extension.durableFunctionsMonitorVisualizeAsGraph",
+                    "when": "resourceFilename == host.json",
+                    "group": "DurableFunctionMonitorGroup@6"
                 }
             ],
             "view/title": [
@@ -183,6 +197,11 @@
             "view/item/context": [
                 {
                     "command": "durableFunctionsMonitorTreeView.gotoInstanceId",
+                    "when": "view == durableFunctionsMonitorTreeView && viewItem == taskHub-attached",
+                    "group": "2_purge_history@4"
+                },
+                {
+                    "command": "durableFunctionsMonitorTreeView.batchOps",
                     "when": "view == durableFunctionsMonitorTreeView && viewItem == taskHub-attached",
                     "group": "2_purge_history@3"
                 },

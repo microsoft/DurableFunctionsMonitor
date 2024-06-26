@@ -192,7 +192,15 @@ export class OrchestrationsState extends ErrorMessageState {
         super();
         
         this._tabStates = [
-            new ResultsListTabState(this._backendClient, this._localStorage, () => this.reloadOrchestrations()),
+            new ResultsListTabState(
+                this._backendClient,
+                this._localStorage,
+                () => this.reloadOrchestrations(),
+                () => this.getFilterClause(),
+                () => this._cancelToken,
+                () => { this._autoRefresh = 0; },
+                (msg, err) => this.showError(msg, err)
+            ),
             new ResultsHistogramTabState(this._backendClient, this),
             new ResultsGanttDiagramTabState(this._backendClient)
         ];
@@ -333,21 +341,8 @@ export class OrchestrationsState extends ErrorMessageState {
             return;            
         }
         cancelToken.inProgress = true;
-        
-        let filterClause = `&$filter=createdTime ge '${this.getTimeFrom().toISOString()}' and createdTime le '${this.getTimeTill().toISOString()}'`;
-        
-        if (!!this._showStatuses) {
 
-            filterClause += ` and runtimeStatus in (${this._showStatuses.map(s => `'${s}'`).join(',')})`;
-        }
-        
-        const columnFilter = toOdataFilterQuery(this._filteredColumn, this._filterOperator, this._filterValue);
-        if (!!columnFilter) {
-            
-            filterClause += ' and ' + columnFilter;
-        }
-
-        this.selectedTabState.load(filterClause, cancelToken, isAutoRefresh).then(() => {
+        this._loadPromise = this.selectedTabState.load(this.getFilterClause(), cancelToken, isAutoRefresh).then(() => {
 
             if (!!this._refreshToken) {
                 clearTimeout(this._refreshToken);
@@ -358,7 +353,10 @@ export class OrchestrationsState extends ErrorMessageState {
 
                 this._refreshToken = setTimeout(() => {
 
-                    this.loadOrchestrations(true);
+                    if (!!this._autoRefresh) {
+
+                        this.loadOrchestrations(true);
+                    }
 
                 }, this._autoRefresh * 1000);
             }
@@ -375,6 +373,11 @@ export class OrchestrationsState extends ErrorMessageState {
         }).finally(() => {
             cancelToken.inProgress = false;
         });
+    }
+
+    getShownInstances(): Promise<{ id: string, name: string }[]> {
+        
+        return this._loadPromise.then(() => { return this.selectedTabState.getShownInstances(); });
     }
 
     @observable
@@ -415,6 +418,8 @@ export class OrchestrationsState extends ErrorMessageState {
     private _oldTimeFrom: moment.Moment;
     private _oldTimeTill: moment.Moment;
 
+    private _loadPromise: Promise<void> = Promise.resolve();
+
     // turned out computed properties are memoized, so need to implement this as a method (so that current timestamp is properly returned)
     private getTimeFrom(): moment.Moment {
         switch (this._timeRange) {
@@ -440,5 +445,23 @@ export class OrchestrationsState extends ErrorMessageState {
     // turned out computed properties are memoized, so need to implement this as a method (so that current timestamp is properly returned)
     private getTimeTill(): moment.Moment {
         return (!!this._timeRange || !this._timeTill) ? moment() : this._timeTill;
+    }
+
+    private getFilterClause(): string {
+
+        let filterClause = `&$filter=createdTime ge '${this.getTimeFrom().toISOString()}' and createdTime le '${this.getTimeTill().toISOString()}'`;
+        
+        if (!!this._showStatuses) {
+
+            filterClause += ` and runtimeStatus in (${this._showStatuses.map(s => `'${s}'`).join(',')})`;
+        }
+        
+        const columnFilter = toOdataFilterQuery(this._filteredColumn, this._filterOperator, this._filterValue);
+        if (!!columnFilter) {
+            
+            filterClause += ' and ' + columnFilter;
+        }
+
+        return filterClause;
     }
 }
