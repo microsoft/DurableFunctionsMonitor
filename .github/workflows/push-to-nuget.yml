@@ -76,5 +76,5 @@ jobs:
     - name: push nuget packages
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}      
-      run: nuget push drop/*.nupkg -ApiKey $(NUGET_API_KEY) -src https://api.nuget.org/v3/index.json
+      run: nuget push drop/*.nupkg -ApiKey $NUGET_API_KEY -src https://api.nuget.org/v3/index.json
 
