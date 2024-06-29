@@ -125,16 +125,27 @@ export class Main extends React.Component<{ state: MainState }> {
                     <FunctionGraph state={state.functionGraphState} />
                 )}
 
-                <PurgeHistoryDialog state={state.purgeHistoryDialogState}/>
-                <CleanEntityStorageDialog state={state.cleanEntityStorageDialogState} />
-                <StartNewInstanceDialog state={state.startNewInstanceDialogState} />
-                <BatchOpsDialog state={state.batchOpsDialogState} />
+                {!!state.purgeHistoryDialogState && (
+                    <PurgeHistoryDialog state={state.purgeHistoryDialogState}/>
+                )}
+
+                {!!state.cleanEntityStorageDialogState && (
+                    <CleanEntityStorageDialog state={state.cleanEntityStorageDialogState} />
+                )}
+            
+                {!!state.startNewInstanceDialogState && (
+                    <StartNewInstanceDialog state={state.startNewInstanceDialogState} />
+                )}
+
+                {!!state.batchOpsDialogState && (
+                    <BatchOpsDialog state={state.batchOpsDialogState} />
+                )}
 
                 {!!state.connectionParamsDialogState && (
                     <ConnectionParamsDialog state={state.connectionParamsDialogState} />
                 )}
 
-                <ErrorMessage state={this.props.state} />
+                <ErrorMessage state={state} />
 
             </DfmContextType.Provider></LocalizationProvider>
         );
