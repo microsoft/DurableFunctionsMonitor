@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata minClientVersion="2.5">
         <id>DurableFunctionsMonitor.DotNetBackend</id>
-        <version>6.5.0-beta3</version>
+        <version>6.5.0-beta4</version>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>DurableFunctionsMonitor.DotNetBackend</description>
         <authors>DurableFunctionsMonitor</authors>
