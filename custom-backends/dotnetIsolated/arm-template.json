@@ -137,7 +137,7 @@
                         },
                         {
                             "name": "Project",
-                            "value": "custom-backends/dotnet7isolated"
+                            "value": "custom-backends/dotnetIsolated"
                         }
                     ]
                 }

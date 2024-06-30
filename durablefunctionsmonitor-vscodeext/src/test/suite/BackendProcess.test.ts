@@ -19,7 +19,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const tempBackendFolder = await copyBackendProjectToTempFolder('dotnet7isolated');
+		const tempBackendFolder = await copyBackendProjectToTempFolder('dotnetIsolated');
 
 		const connSettings = new StorageConnectionSettings('my-invalid-conn-string', 'my-task-hub');
 
