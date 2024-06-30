@@ -90,4 +90,4 @@ jobs:
     - name: publish vsix
       env:
         VSCODE_MARKETPLACE_PAT: ${{ secrets.VSCODE_MARKETPLACE_PAT }}      
-      run: vsce publish --pat $(VSCODE_MARKETPLACE_PAT) --packagePath drop/durablefunctionsmonitor*.vsix
+      run: vsce publish --pat $VSCODE_MARKETPLACE_PAT --packagePath drop/durablefunctionsmonitor*.vsix
