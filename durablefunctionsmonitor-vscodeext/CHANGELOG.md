@@ -1,5 +1,16 @@
 # Change Log
 
+# Version 6.5
+
+- New feature - `Execute Batch Operations...` (https://github.com/microsoft/DurableFunctionsMonitor/issues/169). Prepare a list of instances in the main screen, and then use this context menu to execute operations against all of them:
+
+    <img width="600px" src="https://github.com/microsoft/DurableFunctionsMonitor/assets/5447190/513033e4-a209-4e50-942a-0820d0dc9cbf"/>
+
+- Fixed https://github.com/microsoft/DurableFunctionsMonitor/issues/174 (`FailureDetails not shown, if the orchestration runs in a .NET Isolated project`). Thanks [@epDugas](https://github.com/epDugas) for this contribution!
+
+- Moved to [az-func-as-a-graph](https://github.com/scale-tone/az-func-as-a-graph) v1.3.3.
+
+
 ## Version 6.4.1
 
 - Fix for Task Hubs being partially shown ([#175](https://github.com/microsoft/DurableFunctionsMonitor/issues/175)).
