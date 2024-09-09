@@ -1,6 +1,6 @@
 # DurableFunctionsMonitor.DotNetIsolated.Core
 
-An incarnation of DurableFunctionsMonitor that can be "injected" into your [.NET 7 Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) Azure Function.
+An incarnation of DurableFunctionsMonitor that can be "injected" into your [.NET 8 Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) Azure Function.
 
 ## How to use
 
