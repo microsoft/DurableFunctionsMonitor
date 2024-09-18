@@ -1,5 +1,9 @@
 # Change Log
 
+# Version 6.5.1
+
+- Decoupled from (soon deprecated) [Azure Account extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account). NOTE: you might need to re-authenticate to Azure.
+
 # Version 6.5
 
 - New feature - `Execute Batch Operations...` (https://github.com/microsoft/DurableFunctionsMonitor/issues/169). Prepare a list of instances in the main screen, and then use this context menu to execute operations against all of them:
