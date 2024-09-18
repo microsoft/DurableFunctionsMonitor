@@ -30,13 +30,13 @@
     "license": "MIT",
     "activationEvents": [
         "onView:durableFunctionsMonitorTreeView",
-        "onCommand:extension.durableFunctionsMonitor",
-        "onCommand:extension.durableFunctionsMonitorPurgeHistory",
-        "onCommand:extension.durableFunctionsMonitorCleanEntityStorage",
-        "onCommand:extension.durableFunctionsMonitorBatchOps",
+        "onCommand:durable-functions-monitor.durableFunctionsMonitor",
+        "onCommand:durable-functions-monitor.durableFunctionsMonitorPurgeHistory",
+        "onCommand:durable-functions-monitor.durableFunctionsMonitorCleanEntityStorage",
+        "onCommand:durable-functions-monitor.durableFunctionsMonitorBatchOps",
         "onCommand:durableFunctionsMonitorTreeView.attachToAnotherTaskHub",
-        "onCommand:extension.durableFunctionsMonitorGotoInstanceId",
-        "onCommand:extension.durableFunctionsMonitorVisualizeAsGraph",
+        "onCommand:durable-functions-monitor.durableFunctionsMonitorGotoInstanceId",
+        "onCommand:durable-functions-monitor.durableFunctionsMonitorVisualizeAsGraph",
         "onCommand:durableFunctionsMonitorTreeView.startNewInstance",
         "onDebug"
     ],
@@ -52,27 +52,31 @@
         },
         "commands": [
             {
-                "command": "extension.durableFunctionsMonitor",
+                "command": "durable-functions-monitor.signInToAzure",
+                "title": "Sign in to Azure..."
+            },
+            {
+                "command": "durable-functions-monitor.durableFunctionsMonitor",
                 "title": "Durable Functions Monitor"
             },
             {
-                "command": "extension.durableFunctionsMonitorPurgeHistory",
+                "command": "durable-functions-monitor.durableFunctionsMonitorPurgeHistory",
                 "title": "Durable Functions Monitor: Purge History..."
             },
             {
-                "command": "extension.durableFunctionsMonitorCleanEntityStorage",
+                "command": "durable-functions-monitor.durableFunctionsMonitorCleanEntityStorage",
                 "title": "Durable Functions Monitor: Clean Entity Storage..."
             },
             {
-                "command": "extension.durableFunctionsMonitorBatchOps",
+                "command": "durable-functions-monitor.durableFunctionsMonitorBatchOps",
                 "title": "Durable Functions Monitor: Execute Batch Operations..."
             },
             {
-                "command": "extension.durableFunctionsMonitorGotoInstanceId",
+                "command": "durable-functions-monitor.durableFunctionsMonitorGotoInstanceId",
                 "title": "Durable Functions Monitor: Go to instanceId..."
             },
             {
-                "command": "extension.durableFunctionsMonitorVisualizeAsGraph",
+                "command": "durable-functions-monitor.durableFunctionsMonitorVisualizeAsGraph",
                 "title": "Visualize Functions as a Graph..."
             },
             {
@@ -147,32 +151,32 @@
         "menus": {
             "explorer/context": [
                 {
-                    "command": "extension.durableFunctionsMonitor",
+                    "command": "durable-functions-monitor.durableFunctionsMonitor",
                     "when": "resourceFilename == host.json",
                     "group": "DurableFunctionMonitorGroup@1"
                 },
                 {
-                    "command": "extension.durableFunctionsMonitorPurgeHistory",
+                    "command": "durable-functions-monitor.durableFunctionsMonitorPurgeHistory",
                     "when": "resourceFilename == host.json",
                     "group": "DurableFunctionMonitorGroup@2"
                 },
                 {
-                    "command": "extension.durableFunctionsMonitorCleanEntityStorage",
+                    "command": "durable-functions-monitor.durableFunctionsMonitorCleanEntityStorage",
                     "when": "resourceFilename == host.json",
                     "group": "DurableFunctionMonitorGroup@3"
                 },
                 {
-                    "command": "extension.durableFunctionsMonitorBatchOps",
+                    "command": "durable-functions-monitor.durableFunctionsMonitorBatchOps",
                     "when": "resourceFilename == host.json",
                     "group": "DurableFunctionMonitorGroup@4"
                 },
                 {
-                    "command": "extension.durableFunctionsMonitorGotoInstanceId",
+                    "command": "durable-functions-monitor.durableFunctionsMonitorGotoInstanceId",
                     "when": "resourceFilename == host.json",
                     "group": "DurableFunctionMonitorGroup@5"
                 },
                 {
-                    "command": "extension.durableFunctionsMonitorVisualizeAsGraph",
+                    "command": "durable-functions-monitor.durableFunctionsMonitorVisualizeAsGraph",
                     "when": "resourceFilename == host.json",
                     "group": "DurableFunctionMonitorGroup@6"
                 }
@@ -341,16 +345,18 @@
         "@types/node": "^14.6.4",
         "@types/vscode": "^1.39.0",
         "@vscode/test-electron": "^2.3.5",
+        "@vscode/vsce": "^2.26.1",
         "glob": "^7.1.4",
         "mocha": "^10.0.0",
         "tslint": "^5.12.1",
-        "typescript": "^4.4.4",
-        "@vscode/vsce": "^2.26.1"
+        "typescript": "^4.4.4"
     },
     "dependencies": {
         "@azure/arm-resourcegraph": "^4.2.1",
         "@azure/arm-storage": "^18.1.0",
+        "@azure/identity": "^4.4.1",
         "@azure/ms-rest-nodeauth": "^3.1.0",
+        "@microsoft/vscode-azext-azureauth": "^2.5.0",
         "@types/crypto-js": "^3.1.47",
         "@types/rimraf": "^3.0.0",
         "axios": "1.6.2",
@@ -360,7 +366,5 @@
         "portscanner": "^2.2.0",
         "rimraf": "^3.0.2"
     },
-    "extensionDependencies": [
-        "ms-vscode.azure-account"
-    ]
+    "extensionDependencies": []
 }

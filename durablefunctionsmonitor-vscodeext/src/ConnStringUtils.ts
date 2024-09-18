@@ -4,7 +4,7 @@
 import { StorageAccount } from '@azure/arm-storage';
 import { Settings } from './Settings';
 import { ResourceGraphClient } from '@azure/arm-resourcegraph';
-import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
+import { TokenCredential } from '@azure/identity';
 
 export class ConnStringUtils {
     
@@ -105,7 +105,7 @@ export class ConnStringUtils {
     }
 
     // Queries Azure Resource Manager API for the list of resources of a given type
-    static async getAzureResources(creds: DeviceTokenCredentials, subscriptionId: string, resourceType: string, resourceName?: string): Promise<any[]>{
+    static async getAzureResources(creds: TokenCredential, subscriptionId: string, resourceType: string, resourceName?: string): Promise<any[]>{
 
         const resourceGraphClient = new ResourceGraphClient(creds);
         const response = await resourceGraphClient.resources({
@@ -114,15 +114,5 @@ export class ConnStringUtils {
         });
 
         return response.data ?? [];
-    }
-
-    // Polyfills ADAL's and MSAL's getToken()
-    static async getAccessTokenForAzureResourceManager(creds: any): Promise<string>{
-
-        const tokenWrapper = await creds.getToken();
-        // Depending on whether ADAL or MSAL is used, the field is called either 'accessToken' or 'token'
-        const accessToken = tokenWrapper.accessToken ?? tokenWrapper.token;
-
-        return accessToken;
     }
 }

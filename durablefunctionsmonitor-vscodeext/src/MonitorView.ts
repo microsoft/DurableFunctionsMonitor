@@ -6,7 +6,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
 import * as open from 'open';
-import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
 
 import * as SharedConstants from './SharedConstants';
 
@@ -15,8 +14,7 @@ import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { ConnStringUtils } from './ConnStringUtils';
 import { Settings } from './Settings';
 import { FunctionGraphList } from './FunctionGraphList';
-
-export type AzureConnectionInfo = { credentials: DeviceTokenCredentials, subscriptionId: string, tenantId: string };
+import { AzureSubscription } from '@microsoft/vscode-azext-azureauth';
 
 // Represents the main view, along with all detailed views
 export class MonitorView
@@ -39,7 +37,7 @@ export class MonitorView
         private _backend: BackendProcess,
         private _hubName: string,
         private _functionGraphList: FunctionGraphList,
-        private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureConnectionInfo | undefined>,
+        private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureSubscription | undefined>,
         private _onViewStatusChanged: () => void,
         private _log: (line: string) => void,
         private _functionProjectPath?: string
@@ -562,9 +560,9 @@ export class MonitorView
         }
     }
 
-    private async navigateToStorageBlob(creds: AzureConnectionInfo, storageAccountName: string, blobPath: string): Promise<void> {
+    private async navigateToStorageBlob(subscription: AzureSubscription, storageAccountName: string, blobPath: string): Promise<void> {
 
-        const storageAccounts = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        const storageAccounts = await ConnStringUtils.getAzureResources(subscription.credential, subscription.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
         if (storageAccounts.length !== 1) {
             return;
         }
@@ -574,9 +572,9 @@ export class MonitorView
         await open(portalUrl);
     }
 
-    private async navigateToStorageQueue(creds: AzureConnectionInfo, storageAccountName: string, queueName: string): Promise<void> {
+    private async navigateToStorageQueue(subscription: AzureSubscription, storageAccountName: string, queueName: string): Promise<void> {
 
-        const storageAccounts = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        const storageAccounts = await ConnStringUtils.getAzureResources(subscription.credential, subscription.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
         if (storageAccounts.length !== 1) {
             return;
         }
@@ -586,9 +584,9 @@ export class MonitorView
         await open(portalUrl);
     }
 
-    private async navigateToStorageTable(creds: AzureConnectionInfo, storageAccountName: string, tableName: string): Promise<void> {
+    private async navigateToStorageTable(subscription: AzureSubscription, storageAccountName: string, tableName: string): Promise<void> {
 
-        const storageAccounts = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
+        const storageAccounts = await ConnStringUtils.getAzureResources(subscription.credential, subscription.subscriptionId, 'microsoft.storage/storageaccounts', storageAccountName?.toLowerCase()) as { id: string }[];
         if (storageAccounts.length !== 1) {
             return;
         }
@@ -608,26 +606,26 @@ export class MonitorView
             root: {
                 storageAccountId: storageAccounts[0].id,
                 // This works with older versions of Azure Storage ext
-                subscriptionId: creds.subscriptionId
+                subscriptionId: subscription.subscriptionId
             },
 
             subscription: {
                 // This works with newer versions of Azure Storage ext
-                subscriptionId: creds.subscriptionId
+                subscriptionId: subscription.subscriptionId
             },
 
             tableName
         });
     }
 
-    private async navigateToServiceBusQueueOrTopic(creds: AzureConnectionInfo, queueOrTopicName: string): Promise<void> {
+    private async navigateToServiceBusQueueOrTopic(subscription: AzureSubscription, queueOrTopicName: string): Promise<void> {
 
-        const namespaces = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.servicebus/namespaces') as { id: string, name: string, sku: any, location: string }[];
+        const namespaces = await ConnStringUtils.getAzureResources(subscription.credential, subscription.subscriptionId, 'microsoft.servicebus/namespaces') as { id: string, name: string, sku: any, location: string }[];
         if (!namespaces.length) {
             return;
         }
 
-        const accessToken = await ConnStringUtils.getAccessTokenForAzureResourceManager(creds.credentials);
+        const accessToken = (await subscription.credential.getToken(['https://management.core.windows.net/user_impersonation']))!.token;
 
         const promises = namespaces.map(async ns => {
 
@@ -684,19 +682,19 @@ export class MonitorView
         }
 
         const resourceId = namespace.matchedQueueId ?? namespace.matchedTopicId;
-        const portalUrl = `https://ms.portal.azure.com/#@${creds.tenantId}/resource/${resourceId}`;
+        const portalUrl = `https://ms.portal.azure.com/#@${subscription.tenantId}/resource/${resourceId}`;
 
         await open(portalUrl);
     }
 
-    private async navigateToEventHub(creds: AzureConnectionInfo, hubName: string): Promise<void> {
+    private async navigateToEventHub(subscription: AzureSubscription, hubName: string): Promise<void> {
 
-        const namespaces = await ConnStringUtils.getAzureResources(creds.credentials, creds.subscriptionId, 'microsoft.eventhub/namespaces') as { id: string, name: string, sku: any, location: string }[];
+        const namespaces = await ConnStringUtils.getAzureResources(subscription.credential, subscription.subscriptionId, 'microsoft.eventhub/namespaces') as { id: string, name: string, sku: any, location: string }[];
         if (!namespaces.length) {
             return;
         }
 
-        const accessToken = await ConnStringUtils.getAccessTokenForAzureResourceManager(creds.credentials);
+        const accessToken = await subscription.credential.getToken(['https://management.core.windows.net/user_impersonation']);
 
         const promises = namespaces.map(async ns => {
 
@@ -745,7 +743,7 @@ export class MonitorView
             return;
         }
 
-        const portalUrl = `https://ms.portal.azure.com/#@${creds.tenantId}/resource/${namespace.matchedHubId}`;
+        const portalUrl = `https://ms.portal.azure.com/#@${subscription.tenantId}/resource/${namespace.matchedHubId}`;
 
         await open(portalUrl);
     }

@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 
 import { MonitorTreeDataProvider } from './MonitorTreeDataProvider';
 import { FunctionGraphList } from './FunctionGraphList';
+import { VSCodeAzureSubscriptionProvider } from '@microsoft/vscode-azext-azureauth';
 
 var monitorTreeDataProvider: MonitorTreeDataProvider;
 var functionGraphList: FunctionGraphList;
@@ -18,8 +19,10 @@ export function activate(context: vscode.ExtensionContext) {
     const logChannel = vscode.window.createOutputChannel(OutputChannelName);
     context.subscriptions.push(logChannel);
 
+    const azureProvider = new VSCodeAzureSubscriptionProvider();
+
     functionGraphList = new FunctionGraphList(context, logChannel);
-    monitorTreeDataProvider = new MonitorTreeDataProvider(context, functionGraphList, logChannel);
+    monitorTreeDataProvider = new MonitorTreeDataProvider(azureProvider, context, functionGraphList, logChannel);
 
     context.subscriptions.push(
 
@@ -27,19 +30,25 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.window.registerTreeDataProvider('durableFunctionsMonitorTreeView', monitorTreeDataProvider),
 
-        vscode.commands.registerCommand('extension.durableFunctionsMonitor',
+        vscode.commands.registerCommand('durable-functions-monitor.signInToAzure',
+            async () => { 
+                await azureProvider.signIn();
+                monitorTreeDataProvider.refresh();
+            }),
+
+        vscode.commands.registerCommand('durable-functions-monitor.durableFunctionsMonitor',
             () => monitorTreeDataProvider.createOrActivateMonitorView(false)),
         
-        vscode.commands.registerCommand('extension.durableFunctionsMonitorPurgeHistory',
+        vscode.commands.registerCommand('durable-functions-monitor.durableFunctionsMonitorPurgeHistory',
             () => monitorTreeDataProvider.createOrActivateMonitorView(false, { id: 'purgeHistory' })),
 
-        vscode.commands.registerCommand('extension.durableFunctionsMonitorCleanEntityStorage',
+        vscode.commands.registerCommand('durable-functions-monitor.durableFunctionsMonitorCleanEntityStorage',
             () => monitorTreeDataProvider.createOrActivateMonitorView(false, { id: 'cleanEntityStorage' })),
 
-            vscode.commands.registerCommand('extension.durableFunctionsMonitorBatchOps',
+            vscode.commands.registerCommand('durable-functions-monitor.durableFunctionsMonitorBatchOps',
                 () => monitorTreeDataProvider.createOrActivateMonitorView(false, { id: 'batchOps' })),
             
-        vscode.commands.registerCommand('extension.durableFunctionsMonitorGotoInstanceId',
+        vscode.commands.registerCommand('durable-functions-monitor.durableFunctionsMonitorGotoInstanceId',
             () => monitorTreeDataProvider.gotoInstanceId(null)),
         
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.purgeHistory',
@@ -75,7 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.detachFromAllTaskHubs',
             () => monitorTreeDataProvider.detachFromAllTaskHubs()),
         
-        vscode.commands.registerCommand('extension.durableFunctionsMonitorVisualizeAsGraph',
+        vscode.commands.registerCommand('durable-functions-monitor.durableFunctionsMonitorVisualizeAsGraph',
             (item) => functionGraphList.visualize(item)),
         
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.openInstancesInStorageExplorer',
@@ -86,6 +95,8 @@ export function activate(context: vscode.ExtensionContext) {
         
         vscode.commands.registerCommand('durableFunctionsMonitorTreeView.forgetConnectionString',
             (item) => monitorTreeDataProvider.forgetConnectionString(item)),
+        
+        azureProvider,
     );
 }
 
