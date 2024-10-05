@@ -3,16 +3,16 @@
 
 // A DTO used by DurableOrchestrationStatus.historyEvents
 export class HistoryEvent {
-    Timestamp: string;
-    EventType: string;
-    EventId: number;
-    Name: string;
-    ScheduledTime: string;
-    DurationInMs: number;
-    SubOrchestrationId: string;
-    Input: any;
-    Result: any;
-    Details: any;
+    timestamp: string;
+    eventType: string;
+    eventId: number;
+    name: string;
+    scheduledTime: string;
+    durationInMs: number;
+    subOrchestrationId: string;
+    input: any;
+    result: any;
+    details: any;
 }
 
 // Extends HistoryEvent with history for a suborchestration
