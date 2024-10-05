@@ -174,6 +174,7 @@ export class TaskHubsCollector {
     private async CreateIdentityBasedAuthHeadersForTableStorage(azureSubscription: AzureSubscription): Promise<{}> {
 
         // Looks like azureSubscription.credential.getToken(scopes) does not respect scopes (getting a token with default 'https://management.core.windows.net' audience instead of Storage-specific scope) 
+        // Issue: https://github.com/microsoft/vscode-azuretools/issues/1596
         // So will have to use vscode.authentication directly
 
         const providerId = 'microsoft';
