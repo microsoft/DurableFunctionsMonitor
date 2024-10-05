@@ -7,12 +7,13 @@ import * as path from 'path';
 
 import { ConnStringUtils } from "./ConnStringUtils";
 
-import { AzureConnectionInfo, MonitorView } from "./MonitorView";
+import { MonitorView } from "./MonitorView";
 import { BackendProcess } from './BackendProcess';
 import { StorageConnectionSettings } from "./StorageConnectionSettings";
 import { FunctionGraphList } from './FunctionGraphList';
 import { ConnStringRepository } from './ConnStringRepository';
 import { TaskHubsCollector } from './TaskHubsCollector';
+import { AzureSubscription } from '@microsoft/vscode-azext-azureauth';
 
 type HostJsonInfo = {
     hubName?: string,
@@ -28,7 +29,7 @@ export class MonitorViewList {
     constructor(private _context: vscode.ExtensionContext,
         private _functionGraphList: FunctionGraphList,
         private _connStringRepo: ConnStringRepository,        
-        private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureConnectionInfo | undefined>,
+        private _getTokenCredentialsForGivenConnectionString: (connString: string) => Promise<AzureSubscription | undefined>,
         private _onViewStatusChanged: () => void,
         private _log: (line: string) => void) {
     }

@@ -3,10 +3,9 @@
 
 import * as vscode from 'vscode';
 import axios from 'axios';
-import { ConnStringUtils } from './ConnStringUtils';
+import { AzureSubscription } from '@microsoft/vscode-azext-azureauth';
 
-// Full typings for this can be found here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
-export type AzureSubscription = { session: { credentials2: any }, subscription: { subscriptionId: string, displayName: string } };
+import { ConnStringUtils } from './ConnStringUtils';
 
 export class EventHubPicker {
 
@@ -15,9 +14,8 @@ export class EventHubPicker {
     // Asks user to choose an Event Hub connection string
     async pickEventHubConnectionString(subscription: AzureSubscription): Promise<string | undefined> {
 
-        // Depending on whether ADAL or MSAL is used, this will contain either DeviceTokenCredentials or TokenCredential
-        const creds: any = subscription.session.credentials2;
-        const subscriptionId = subscription.subscription.subscriptionId;
+        const creds = subscription.credential;
+        const subscriptionId = subscription.subscriptionId;
 
         const namespaces = await ConnStringUtils.getAzureResources(
             creds,
@@ -46,7 +44,7 @@ export class EventHubPicker {
             return;
         }
 
-        const accessToken = await ConnStringUtils.getAccessTokenForAzureResourceManager(creds);
+        const accessToken = (await creds.getToken(['https://management.core.windows.net/user_impersonation']))!.token;
 
         let authRule: string | undefined = '';
 

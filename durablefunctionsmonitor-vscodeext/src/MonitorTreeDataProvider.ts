@@ -6,8 +6,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { StorageManagementClient } from '@azure/arm-storage';
 import { StorageAccount, StorageAccountKey } from '@azure/arm-storage/src/models';
+import { VSCodeAzureSubscriptionProvider, AzureSubscription } from '@microsoft/vscode-azext-azureauth';
 
-import { AzureConnectionInfo, MonitorView } from './MonitorView';
+import { MonitorView } from './MonitorView';
 import { MonitorViewList } from './MonitorViewList';
 import { FunctionGraphList } from './FunctionGraphList';
 import { Settings, UpdateSetting } from './Settings';
@@ -15,20 +16,18 @@ import { StorageConnectionSettings } from './StorageConnectionSettings';
 import { ConnStringUtils } from './ConnStringUtils';
 import { ConnStringRepository } from './ConnStringRepository';
 import { StorageType, TaskHubsCollector } from './TaskHubsCollector';
-import { AzureSubscription, EventHubPicker } from './EventHubPicker';
+import { EventHubPicker } from './EventHubPicker';
 
 // Root object in the hierarchy. Also serves data for the TreeView.
 export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> { 
 
-    constructor(private _context: vscode.ExtensionContext, functionGraphList: FunctionGraphList, logChannel?: vscode.OutputChannel) {
+    constructor(
+        private _azureProvider: VSCodeAzureSubscriptionProvider,
+        private _context: vscode.ExtensionContext,
+        functionGraphList: FunctionGraphList,
+        logChannel?: vscode.OutputChannel) {
 
         this._log = !logChannel ? () => { } : (l) => logChannel.append(l);
-
-        // Using Azure Account extension to connect to Azure, get subscriptions etc.
-        const azureAccountExtension = vscode.extensions.getExtension('ms-vscode.azure-account');
-
-        // Typings for azureAccount are here: https://github.com/microsoft/vscode-azure-account/blob/master/src/azure-account.api.d.ts
-        this._azureAccount = !!azureAccountExtension ? azureAccountExtension.exports : undefined;
 
         this._connStringRepo = new ConnStringRepository(this._context);
 
@@ -40,31 +39,6 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             this._log);
 
         this._resourcesFolderPath = this._context.asAbsolutePath('resources');
-        
-        if (!!this._azureAccount) {
-
-            // When user changes their list of filtered subscriptions (or just relogins to Azure)...
-
-            if (!!this._azureAccount.onStatusChanged) {
-                
-                this._context.subscriptions.push(this._azureAccount.onStatusChanged(() => this.refresh()));
-            }
-
-            if (!!this._azureAccount.onFiltersChanged) {
-                
-                this._context.subscriptions.push(this._azureAccount.onFiltersChanged(() => this.refresh()));
-            }
-
-            if (!!this._azureAccount.onSessionsChanged) {
-                
-                this._context.subscriptions.push(this._azureAccount.onSessionsChanged(() => this.refresh()));
-            }
-
-            if (!!this._azureAccount.onSubscriptionsChanged) {
-                
-                this._context.subscriptions.push(this._azureAccount.onSubscriptionsChanged(() => this.refresh()));
-            }
-        }
 
         this._eventHubPicker = new EventHubPicker(this._log);
     }
@@ -132,27 +106,29 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 
                 case 'subscriptions':
 
-                    if (!this._azureAccount  || (!await this._azureAccount.waitForFilters())) {
+                    if (!(await this._azureProvider.isSignedIn())) {
 
                         result.push({
                             label: 'Sign in to Azure...',
                             command: {
                                 title: 'Sign in to Azure...',
-                                command: 'azure-account.login',
+                                command: 'durable-functions-monitor.signInToAzure',
                                 arguments: []
                             }
                         });
 
                     } else {
 
-                        for (const sub of this._azureAccount.filters) {
+                        const subscriptions = await this._azureProvider.getSubscriptions(true);
+
+                        for (const sup of subscriptions) {
 
                             const node: SubscriptionTreeItem = {
                                 contextValue: 'subscription',
-                                label: sub.subscription.displayName,
+                                label: sup.name,
                                 iconPath: path.join(this._resourcesFolderPath, 'azureSubscription.svg'),
                                 collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
-                                azureSubscription: sub,
+                                azureSubscription: sup,
                             };
 
                             result.push(node);
@@ -749,7 +725,6 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
     private readonly _connStringRepo: ConnStringRepository;
 
-    private readonly _azureAccount: any;
     private readonly _resourcesFolderPath: string;
 
     private readonly _eventHubPicker;
@@ -824,14 +799,14 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     private async getStorageAccountsAndTaskHubs(subscription: AzureSubscription): Promise<StorageAccountAndTaskHubs[]> {
 
         // Caching storage accounts, to speed up refresh
-        let result = this._storageAccountMap[subscription.subscription.subscriptionId];
+        let result = this._storageAccountMap[subscription.subscriptionId];
         if (!!result) {
             return result;
         }
 
         result = [];
 
-        const storageManagementClient = new StorageManagementClient(subscription.session.credentials2, subscription!.subscription.subscriptionId);
+        const storageManagementClient = new StorageManagementClient(subscription.credential, subscription.subscriptionId);
                     
         const storageAccounts = await this.fetchAllStorageAccounts(storageManagementClient);
           
@@ -852,7 +827,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             })
         );
 
-        this._storageAccountMap[subscription.subscription.subscriptionId] = result;
+        this._storageAccountMap[subscription.subscriptionId] = result;
 
         return result;
     }
@@ -890,14 +865,15 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
     }
 
     // Tries to map a Storage connection string to some Azure credentials
-    private async getTokenCredentialsForGivenConnectionString(connString: string): Promise<AzureConnectionInfo | undefined> {
+    private async getTokenCredentialsForGivenConnectionString(connString: string): Promise<AzureSubscription | undefined> {
 
         const storageAccountName = ConnStringUtils.GetAccountName(connString);
         if (!storageAccountName) {
             return;
         }
 
-        for (const subscription of this._azureAccount.filters) {
+        const subscriptions = await this._azureProvider.getSubscriptions(true);
+        for (const subscription of subscriptions) {
 
             const storageAccounts = await this.getStorageAccountsAndTaskHubs(subscription);
 
@@ -905,11 +881,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 
                 if (account.account.name?.toLowerCase() === storageAccountName.toLowerCase()) {
                  
-                    return {
-                        credentials: subscription.session.credentials2,
-                        subscriptionId: subscription.subscription.subscriptionId,
-                        tenantId: subscription.session.tenantId
-                    };                                
+                    return subscription;                                
                 }
             }
         }
@@ -945,7 +917,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
                 case 'Do not use Storage keys':
 
                     // Only using token
-                    return await taskHubsCollector.getTaskHubNamesWithUserToken(subscription.session.credentials2);
+                    return await taskHubsCollector.getTaskHubNamesWithUserToken(subscription);
                 
                 case 'Do not use Azure account':
 
@@ -962,7 +934,7 @@ export class MonitorTreeDataProvider implements vscode.TreeDataProvider<vscode.T
             } catch (err) {
 
                 // Falling back to token
-                return await taskHubsCollector.getTaskHubNamesWithUserToken(subscription.session.credentials2);
+                return await taskHubsCollector.getTaskHubNamesWithUserToken(subscription);
             }
             
         } catch (err: any) {

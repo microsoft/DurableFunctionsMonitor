@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as vscode from 'vscode';
 import axios from 'axios';
 
 import * as CryptoJS from 'crypto-js';
-import { Environment } from '@azure/ms-rest-azure-env';
-import { TokenResponse } from 'adal-node';
-import { DeviceTokenCredentials } from '@azure/ms-rest-nodeauth';
+import { TokenCredential } from '@azure/identity';
+import { AzureSubscription } from '@microsoft/vscode-azext-azureauth';
 
 export type StorageType = 'default' | 'netherite';
 
@@ -42,10 +42,10 @@ export class TaskHubsCollector {
         return { hubNames: defaultHubs ?? [], storageType: 'default' };
     }
 
-    async getTaskHubNamesWithUserToken(tokenCredential: any): Promise<{ hubNames: string[], storageType: StorageType }> {
+    async getTaskHubNamesWithUserToken(azureSubscription: AzureSubscription): Promise<{ hubNames: string[], storageType: StorageType }> {
 
-        const netheriteHubsPromise = this.getTaskHubNamesFromNetheriteStorageWithUserToken(tokenCredential);
-        const defaultHubsPromise = this.getTaskHubNamesFromTableStorageWithUserToken(tokenCredential);
+        const netheriteHubsPromise = this.getTaskHubNamesFromNetheriteStorageWithUserToken(azureSubscription);
+        const defaultHubsPromise = this.getTaskHubNamesFromTableStorageWithUserToken(azureSubscription);
 
         const netheriteHubs = await netheriteHubsPromise;
 
@@ -64,9 +64,9 @@ export class TaskHubsCollector {
         return this.getTaskHubNamesFromTableStorage(this.CreateAuthHeadersForTableStorage(this._accountName, accountKey, this._tableEndpointUrl));
     }
 
-    async getTaskHubNamesFromTableStorageWithUserToken(tokenCredential: any): Promise<string[] | undefined> {
+    async getTaskHubNamesFromTableStorageWithUserToken(azureSubscription: AzureSubscription): Promise<string[] | undefined> {
 
-        return this.getTaskHubNamesFromTableStorage(await this.CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential));
+        return this.getTaskHubNamesFromTableStorage(await this.CreateIdentityBasedAuthHeadersForTableStorage(azureSubscription));
     }
 
     async getTaskHubNamesFromNetheriteStorageWithKey(accountKey: string): Promise<string[] | undefined> {
@@ -74,9 +74,9 @@ export class TaskHubsCollector {
         return this.getTaskHubNamesFromNetheriteStorage(this.CreateAuthHeadersForTableStorage(this._accountName, accountKey, this._tableEndpointUrl, `DurableTaskPartitions()`));
     }
 
-    async getTaskHubNamesFromNetheriteStorageWithUserToken(tokenCredential: any): Promise<string[] | undefined> {
+    async getTaskHubNamesFromNetheriteStorageWithUserToken(azureSubscription: AzureSubscription): Promise<string[] | undefined> {
 
-        return this.getTaskHubNamesFromNetheriteStorage(await this.CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential));
+        return this.getTaskHubNamesFromNetheriteStorage(await this.CreateIdentityBasedAuthHeadersForTableStorage(azureSubscription));
     }
 
     private readonly _tableEndpointUrl: string;
@@ -171,47 +171,29 @@ export class TaskHubsCollector {
     }
 
     // Creates a user-specific access token for accessing Storage, also adds other needed headers
-    private async CreateIdentityBasedAuthHeadersForTableStorage(tokenCredential: any): Promise<{}> {
+    private async CreateIdentityBasedAuthHeadersForTableStorage(azureSubscription: AzureSubscription): Promise<{}> {
 
-        let token = '';
+        // Looks like azureSubscription.credential.getToken(scopes) does not respect scopes (getting a token with default 'https://management.core.windows.net' audience instead of Storage-specific scope) 
+        // Issue: https://github.com/microsoft/vscode-azuretools/issues/1596
+        // So will have to use vscode.authentication directly
 
-        if (!tokenCredential.environment && !tokenCredential.clientId && !tokenCredential.username) {
+        const providerId = 'microsoft';
 
-            // It looks like MSAL is being used
+        const scopes = [
+            'https://storage.azure.com/user_impersonation',
+            `VSCODE_TENANT:${azureSubscription.tenantId}`
+        ];
 
-            const scope = 'https://storage.azure.com/user_impersonation';
+        // First trying silent mode
+        let authSession = await vscode.authentication.getSession(providerId, scopes, { silent: true });
+
+        if (!authSession) {
             
-            token = (await tokenCredential.getToken(scope)).token;
-
-        } else {
-
-            // It looks like ADAL is being used
-
-            // The default resourceId ('https://management.core.windows.net/') doesn't work for Storage.
-            // So we need to replace it with the proper one.
-            const storageResourceId = 'https://storage.azure.com';
-
-            const environment = tokenCredential.environment;
-
-            const credentials = new SequentialDeviceTokenCredentials(
-
-                tokenCredential.clientId,
-                tokenCredential.domain,
-                tokenCredential.username,
-                tokenCredential.tokenAudience,
-                new Environment({
-                    name: environment.name,
-                    portalUrl: environment.portalUrl,
-                    managementEndpointUrl: environment.managementEndpointUrl,
-                    resourceManagerEndpointUrl: environment.resourceManagerEndpointUrl,
-                    activeDirectoryEndpointUrl: environment.activeDirectoryEndpointUrl,
-                    activeDirectoryResourceId: storageResourceId
-                }),
-                tokenCredential.tokenCache
-            );
-
-            token = (await credentials.getToken()).accessToken;
+            // Now asking to authenticate, if needed
+            authSession = await vscode.authentication.getSession(providerId, scopes, { createIfNone: true });
         }
+
+        const token = authSession.accessToken;
 
         const dateInUtc = new Date().toUTCString();
         
@@ -221,28 +203,5 @@ export class TaskHubsCollector {
             'x-ms-version': '2020-12-06',
             'Accept': 'application/json;odata=nometadata'
         };
-    }
-}
-
-// Parallel execution of super.getToken() leads to https://github.com/microsoft/vscode-azure-account/issues/53
-// Therefore we need to make sure the super.getToken() is always invoked sequentially, and we're doing that 
-// with this simple Active Object pattern implementation
-export class SequentialDeviceTokenCredentials extends DeviceTokenCredentials {
-
-    public getToken(): Promise<TokenResponse> {
-
-        return SequentialDeviceTokenCredentials.executeSequentially(() => super.getToken());
-    }
-
-    private static _workQueue: Promise<any> = Promise.resolve();
-
-    private static executeSequentially<T>(action: () => Promise<T>): Promise<T> {
-    
-        // What goes to _workQueue should never throw (otherwise that exception will always get re-thrown later).
-        // That's why we wrap it all with a new Promise(). This promise will resolve only _after_ action completes (or fails).
-        return new Promise((resolve, reject) => {
-    
-            this._workQueue = this._workQueue.then(() => action().then(resolve, reject));
-        });
     }
 }
