@@ -7,6 +7,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {
@@ -51,6 +52,22 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Placing settings and extension points into DI container
             builder.Services.AddSingleton(settings);
             builder.Services.AddSingleton(extensionPoints);
+
+            // Checking host.json for a custom dedicated Storage account
+            string hostJsonFileName = Globals.GetHostJsonPath();
+            if (File.Exists(hostJsonFileName))
+            {
+                dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
+
+                string connStringNameFromHostJson = 
+                    hostJson?.extensions?.durableTask?.storageProvider?.azureStorageConnectionStringName ??
+                    hostJson?.extensions?.durableTask?.storageProvider?.connectionStringName;
+
+                if (!string.IsNullOrEmpty(connStringNameFromHostJson))
+                {
+                    Globals.StorageConnStringEnvVarName = connStringNameFromHostJson;
+                }
+            }
 
             // Adding middleware
             builder.UseWhen

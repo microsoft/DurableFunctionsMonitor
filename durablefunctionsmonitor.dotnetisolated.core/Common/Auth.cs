@@ -200,7 +200,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             try
             {
                 var hubNames = new HashSet<string>(
-                    await extensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage),
+                    await extensionPoints.GetTaskHubNamesRoutine(Globals.StorageConnStringEnvVarName),
                     StringComparer.InvariantCultureIgnoreCase
                 );
 
