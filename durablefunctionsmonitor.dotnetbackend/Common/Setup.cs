@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
+using Newtonsoft.Json.Linq;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
@@ -185,6 +186,22 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 _customUserAgent = $"DurableFunctionsMonitor-Injected/{GetVersion()}";
             }
+
+            // Checking host.json for a custom dedicated Storage account
+            string hostJsonFileName = Globals.GetHostJsonPath();
+            if (File.Exists(hostJsonFileName))
+            {
+                dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
+
+                string connStringNameFromHostJson = 
+                    hostJson?.extensions?.durableTask?.storageProvider?.azureStorageConnectionStringName ??
+                    hostJson?.extensions?.durableTask?.storageProvider?.connectionStringName;
+
+                if (!string.IsNullOrEmpty(connStringNameFromHostJson))
+                {
+                    _storageConnStringEnvVarName = connStringNameFromHostJson;
+                }
+            }
         }
 
         internal static DfmSettings Settings 
@@ -220,9 +237,18 @@ namespace DurableFunctionsMonitor.DotNetBackend
             get { return _customUserAgent; }
         }
 
+        /// <summary>
+        /// Provides support for dedicated Storage accounts (different from AzureWebJobsStorage)
+        /// </summary>
+        internal static string StorageConnStringEnvVarName
+        {
+            get { return _storageConnStringEnvVarName; }
+        }
+
         private static DfmSettings _settings = null;
         private static DfmExtensionPoints _extensionPoints = new DfmExtensionPoints();
         private static string _customUserAgent;
+        private static string _storageConnStringEnvVarName = EnvVariableNames.AzureWebJobsStorage;
 
         /// <summary>
         /// Checks whether we should do our internal initialization (Standalone mode)
