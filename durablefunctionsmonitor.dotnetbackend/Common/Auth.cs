@@ -204,7 +204,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
             try
             {
                 var hubNames = new HashSet<string>(
-                    await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage),
+                    await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(DfmEndpoint.StorageConnStringEnvVarName),
                     StringComparer.InvariantCultureIgnoreCase
                 );
 

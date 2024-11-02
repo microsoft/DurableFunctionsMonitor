@@ -100,7 +100,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             if (IsDefaultConnectionStringName(connName))
             {
-                return EnvVariableNames.AzureWebJobsStorage;
+                return DfmEndpoint.StorageConnStringEnvVarName;
             }
             else
             {

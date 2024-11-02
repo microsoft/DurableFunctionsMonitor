@@ -115,7 +115,7 @@ export class MonitorViewList {
         return this._monitorViews[keys[0]];
     }
 
-    // Parses local project files and tries to infer connction settings from them
+    // Parses local project files and tries to infer connection settings from them
     getStorageConnectionSettingsFromCurrentProject(defaultTaskHubName?: string, projectPath?: string): StorageConnectionSettings | null {
 
         const hostJson = this.readHostJson(projectPath);
@@ -158,7 +158,7 @@ export class MonitorViewList {
             return new StorageConnectionSettings(ConnStringUtils.ExpandEmulatorShortcutIfNeeded(storageConnString), hubName, hubsConnString);
         }
 
-        const storageConnString = this.getValueFromLocalSettings('AzureWebJobsStorage', projectPath);
+        const storageConnString = this.getValueFromLocalSettings(hostJson.connectionStringName || 'AzureWebJobsStorage', projectPath);
         if (!storageConnString) {
             return null;
         }
@@ -512,6 +512,8 @@ export class MonitorViewList {
                             result.connectionStringName = durableTask.storageProvider.StorageConnectionName || 'AzureWebJobsStorage';
                             result.otherConnectionStringName = durableTask.storageProvider.EventHubsConnectionName || 'EventHubsConnection';
                         break;
+                        default:
+                            result.connectionStringName = durableTask.storageProvider.connectionStringName;
                     }
                 }
             }

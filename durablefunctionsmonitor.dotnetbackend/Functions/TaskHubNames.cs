@@ -30,7 +30,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 if (!string.IsNullOrEmpty(dfmNonce))
                 {
                     // For VsCode loading Task Hubs directly and without validation
-                    hubNames = await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(EnvVariableNames.AzureWebJobsStorage);
+                    hubNames = await DfmEndpoint.ExtensionPoints.GetTaskHubNamesRoutine(DfmEndpoint.StorageConnStringEnvVarName);
                 }
                 else
                 {

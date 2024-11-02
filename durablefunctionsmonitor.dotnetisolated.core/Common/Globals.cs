@@ -65,6 +65,11 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         public const string DfmModeContextValue = "DfmModeContextValue";
 
+        /// <summary>
+        /// Provides support for dedicated Storage accounts (different from AzureWebJobsStorage)
+        /// </summary>
+        internal static string StorageConnStringEnvVarName = EnvVariableNames.AzureWebJobsStorage;
+
         public static void SplitConnNameAndHubName(string connAndHubName, out string connName, out string hubName)
         {
             int pos = connAndHubName.LastIndexOf("-");
@@ -99,7 +104,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             if (IsDefaultConnectionStringName(connName))
             {
-                return EnvVariableNames.AzureWebJobsStorage;
+                return StorageConnStringEnvVarName;
             }
             else
             {
