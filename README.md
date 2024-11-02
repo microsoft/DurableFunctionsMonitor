@@ -5,7 +5,7 @@ A monitoring/debugging UI tool for Azure Durable Functions
 
 [Azure Durable Functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-overview) provide an easy and elegant way of building cloud-native Reliable Stateful Services in the Serverless world. The only thing that's missing so far is a UI for monitoring, managing and debugging your orchestration instances. This project tries to bridge the gap.
 
-[<img alt="Nuget" src="https://img.shields.io/nuget/v/DurableFunctionsMonitor.DotNetBackend?label=current%20version">](https://www.nuget.org/profiles/durablefunctionsmonitor)  <img src="https://dev.azure.com/kolepes/DurableFunctionsMonitor/_apis/build/status/microsoft.DurableFunctionsMonitor?branchName=main"/>
+[<img alt="Nuget" src="https://img.shields.io/nuget/v/DurableFunctionsMonitor.DotNetBackend?label=current%20version">](https://www.nuget.org/profiles/durablefunctionsmonitor)  [![main-build](https://github.com/microsoft/DurableFunctionsMonitor/actions/workflows/main-build.yml/badge.svg)](https://github.com/microsoft/DurableFunctionsMonitor/actions/workflows/main-build.yml)
 
 
 [<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/microsoft/durablefunctionsmonitor?label=GitHub%20stars">](https://github.com/microsoft/DurableFunctionsMonitor/stargazers) [<img alt="Visual Studio Marketplace Rating" src="https://img.shields.io/visual-studio-marketplace/r/DurableFunctionsMonitor.durablefunctionsmonitor?label=VsCode%20extension%20rating">
