@@ -139,19 +139,25 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
             // Also validating App Roles, but only if any of relevant setting is set
             var allowedAppRoles = DfmEndpoint.Settings.AllowedAppRoles;
+            var allowedFullAccessAppRoles = DfmEndpoint.Settings.AllowedFullAccessAppRoles;
             var allowedReadOnlyAppRoles = DfmEndpoint.Settings.AllowedReadOnlyAppRoles;
 
-            if (allowedAppRoles != null || allowedReadOnlyAppRoles != null)
+            if (allowedAppRoles != null || allowedFullAccessAppRoles != null || allowedReadOnlyAppRoles != null)
             {
                 var roleClaims = principal.FindAll(DfmEndpoint.Settings.RolesClaimName);
 
-                bool userIsInAppRole = roleClaims.Any(claim => allowedAppRoles != null && allowedAppRoles.Contains(claim.Value));
-                bool userIsInReadonlyRole = roleClaims.Any(claim => allowedReadOnlyAppRoles != null && allowedReadOnlyAppRoles.Contains(claim.Value));
+                bool userIsInAppRole = allowedAppRoles != null && roleClaims.Any(claim => allowedAppRoles.Contains(claim.Value));
+                bool userIsInFullAccessRole = allowedFullAccessAppRoles != null && roleClaims.Any(claim => allowedFullAccessAppRoles.Contains(claim.Value));
+                bool userIsInReadonlyRole = allowedReadOnlyAppRoles != null && roleClaims.Any(claim => allowedReadOnlyAppRoles.Contains(claim.Value));
 
                 // If user belongs _neither_ to AllowedAppRoles _nor_ to AllowedReadOnlyAppRoles
-                if (!(userIsInAppRole || userIsInReadonlyRole))
+                if (!(userIsInAppRole || userIsInFullAccessRole || userIsInReadonlyRole))
                 {
-                    throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected");
+                    throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES}, {EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected");
+                }
+
+                if (userIsInFullAccessRole) {
+                    return DfmEndpoint.Settings.Mode;
                 }
 
                 // If current operation modifies any data, then validating that user is _not_ in ReadOnly mode

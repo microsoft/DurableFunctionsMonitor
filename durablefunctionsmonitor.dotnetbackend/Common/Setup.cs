@@ -47,6 +47,13 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public IEnumerable<string> AllowedAppRoles { get; set; }
 
         /// <summary>
+        /// List of App Roles, that are allowed to full access DurableFunctionsMonitor endpoint. Users/Groups then need
+        /// to be assigned one of these roles via AAD Enterprise Applications->[your AAD app]->Users and Groups tab.
+        /// Once set, the incoming access token is expected to contain one of these in its 'roles' claim.
+        /// </summary>
+        public IEnumerable<string> AllowedFullAccessAppRoles { get; set; }
+
+        /// <summary>
         /// List of App Roles, that are allowed read only access to the DurableFunctionsMonitor endpoint. Users/Groups then need 
         /// to be assigned one of these roles via AAD Enterprise Applications->[your AAD app]->Users and Groups tab.
         /// Once set, the incoming access token is expected to contain one of these in its 'roles' claim.
@@ -142,20 +149,20 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 string dfmAllowedUserNames = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES);
                 string dfmAllowedAppRoles = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES);
-                string dfmAllowedreadOnlyAppRoles = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES);
+                string dfmAllowedFullAccessAppRoles = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES);
+                string dfmAllowedReadOnlyAppRoles = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES);
                 string dfmMode = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_MODE);
                 string dfmUserNameClaimName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_USERNAME_CLAIM_NAME);
                 string dfmRolesClaimName = Environment.GetEnvironmentVariable(EnvVariableNames.DFM_ROLES_CLAIM_NAME);
 
                 var allowedAppRoles = dfmAllowedAppRoles == null ? null : dfmAllowedAppRoles.Split(',');
-                var allowedReadOnlyAppRoles = dfmAllowedreadOnlyAppRoles == null ? null : dfmAllowedreadOnlyAppRoles.Split(',');
-                if (allowedAppRoles != null && allowedReadOnlyAppRoles != null)
+                var allowedFullAccessAppRoles = dfmAllowedFullAccessAppRoles == null ? null : dfmAllowedFullAccessAppRoles.Split(',');
+                var allowedReadOnlyAppRoles = dfmAllowedReadOnlyAppRoles == null ? null : dfmAllowedReadOnlyAppRoles.Split(',');
+
+                // Validating that same app role does not appear in multiple settings
+                if (AreAppRoleListsIntersecting(allowedAppRoles, allowedFullAccessAppRoles, allowedReadOnlyAppRoles))
                 {
-                    // Validating that same app role does not appear in both settings
-                    if (allowedAppRoles.Intersect(allowedReadOnlyAppRoles).Any())
-                    {
-                        throw new NotSupportedException($"{EnvVariableNames.DFM_ALLOWED_APP_ROLES} and {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} should not intersect");
-                    }
+                    throw new NotSupportedException($"{EnvVariableNames.DFM_ALLOWED_APP_ROLES}, {EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES} and {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} should not intersect");
                 }
 
                 _settings = new DfmSettings()
@@ -166,6 +173,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     Mode = dfmMode == DfmMode.ReadOnly.ToString() ? DfmMode.ReadOnly : DfmMode.Normal,
                     AllowedUserNames = dfmAllowedUserNames == null ? null : dfmAllowedUserNames.Split(','),
                     AllowedAppRoles = allowedAppRoles,
+                    AllowedFullAccessAppRoles = allowedFullAccessAppRoles,
                     AllowedReadOnlyAppRoles = allowedReadOnlyAppRoles,
                     UserNameClaimName = string.IsNullOrEmpty(dfmUserNameClaimName) ? Auth.PreferredUserNameClaim : dfmUserNameClaimName,
                     RolesClaimName = string.IsNullOrEmpty(dfmRolesClaimName) ? Auth.RolesClaim : dfmRolesClaimName
@@ -274,6 +282,24 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             var version = typeof(DfmEndpoint).Assembly.GetName().Version;
             return $"{version.Major}.{version.Minor}.{version.Build}";
+        }
+
+        private static bool AreAppRoleListsIntersecting(params string[][] appRoleLists)
+        {
+            HashSet<string> distinctAppRoles = new HashSet<string>();
+            int totalNumberOfAppRoles = 0;
+
+            for (int i = 0; i < appRoleLists.Length; i++)
+            {
+                if (appRoleLists[i] != null)
+                {
+                    distinctAppRoles.UnionWith(appRoleLists[i]);
+                    totalNumberOfAppRoles += appRoleLists[i].Length;
+                }
+
+            }
+
+            return distinctAppRoles.Count != totalNumberOfAppRoles;
         }
     }
 }

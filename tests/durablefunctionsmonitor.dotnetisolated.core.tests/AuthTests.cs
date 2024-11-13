@@ -258,7 +258,10 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         }
 
         [TestMethod]
-        public void ReturnsUnauthorizedResultIfUserIsNotInAppRole()
+        [DataRow("role1,role2", "", "", DisplayName = "DFM_ALLOWED_APP_ROLES")]
+        [DataRow("", "role1,role2", "", DisplayName = "DFM_ALLOWED_FULL_ACCESS_APP_ROLES")]
+        [DataRow("", "", "role1,role2", DisplayName = "DFM_ALLOWED_READ_ONLY_APP_ROLES")]
+        public void ReturnsUnauthorizedResultIfUserIsNotInAppRole(string appRoles, string fullAccessAppRoles, string readOnlyAppRoles)
         {
             // Arrange
             var request = new FakeHttpRequestData(new Uri($"http://localhost/a/p/i/--TestHub/about"));
@@ -271,7 +274,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, "role1,role2");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, appRoles);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, fullAccessAppRoles);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, readOnlyAppRoles);
 
             request.AddIdentity(new ClaimsIdentity(new Claim[] {
                 new Claim("preferred_username", userName)
@@ -286,49 +291,16 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             Assert.IsInstanceOfType(task.Exception.InnerException, typeof(DfmUnauthorizedException));
 
             Assert.AreEqual(
-                $"User {userName} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected",
+                $"User {userName} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES}, {EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected",
                 task.Exception.InnerException.Message
             );
         }
 
         [TestMethod]
-        public void ReturnsUnauthorizedResultIfUserIsNotInReadOnlyRole()
-        {
-            // Arrange
-
-            var request = new FakeHttpRequestData(new Uri($"http://localhost/a/p/i/--TestHub/about"));
-
-            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
-            request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
-            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
-
-            string userName = "tino@contoso.com";
-
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, "role1,role2");
-
-            request.AddIdentity(new ClaimsIdentity(new Claim[] {
-                new Claim("preferred_username", userName)
-            }, "tino-test-auth-type"));
-
-            // Act
-
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
-
-            // Assert
-
-            Assert.IsInstanceOfType(task.Exception.InnerException, typeof(DfmUnauthorizedException));
-
-            Assert.AreEqual(
-                $"User {userName} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected",
-                task.Exception.InnerException.Message
-            );
-        }
-
-        [TestMethod]
-        public async Task ReturnsAuthorizedIfUserIsInAppRole()
+        [DataRow("role1,role2", "", "", DfmMode.Normal, DisplayName = "DFM_ALLOWED_APP_ROLES")]
+        [DataRow("", "role1,role2", "", DfmMode.Normal, DisplayName = "DFM_ALLOWED_FULL_ACCESS_APP_ROLES")]
+        [DataRow("", "", "role1,role2", DfmMode.ReadOnly, DisplayName = "DFM_ALLOWED_READ_ONLY_APP_ROLES")]
+        public async Task ReturnsAuthorizedIfUserIsInAppRole(string appRoles, string fullAccessAppRoles, string readOnlyAppRoles, DfmMode expectedMode)
         {
             // Arrange
             var request = new FakeHttpRequestData(new Uri($"http://localhost/a/p/i/--TestHub/about"));
@@ -341,8 +313,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, "role1,role2");
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, appRoles);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, fullAccessAppRoles);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, readOnlyAppRoles);
 
             var identity = new ClaimsIdentity(new Claim[] {
                 new Claim("preferred_username", userName),
@@ -357,39 +330,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Assert
 
-            Assert.AreEqual(DfmMode.Normal, result);
-        }
-
-        [TestMethod]
-        public async Task ReturnsAuthorizedIfUserIsInReadOnlyAppRole()
-        {
-            // Arrange
-
-            var request = new FakeHttpRequestData(new Uri($"http://localhost/a/p/i/--TestHub/about"));
-
-            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
-            request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
-            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
-
-            string userName = "tino@contoso.com";
-
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, "readonly_role1,readonly_role2");
-
-            request.AddIdentity(new ClaimsIdentity(new Claim[] {
-                new Claim("preferred_username", userName),
-                new Claim("roles", "readonly_role1")
-            }, "tino-test-auth-type"));
-
-            // Act
-
-            var result = await Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
-
-            // Assert
-
-            Assert.AreEqual(DfmMode.ReadOnly, result);
+            Assert.AreEqual(expectedMode, result);
         }
 
         // The only way to define a callback for ValidateToken() method
