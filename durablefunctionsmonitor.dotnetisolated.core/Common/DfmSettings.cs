@@ -122,20 +122,15 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
         private static bool AreAppRoleListsIntersecting(params string[][] appRoleLists)
         {
-            HashSet<string> distinctAppRoles = new HashSet<string>();
-            int totalNumberOfAppRoles = 0;
-
-            for (int i = 0; i < appRoleLists.Length; i++)
+            try
             {
-                if (appRoleLists[i] != null)
-                {
-                    distinctAppRoles.UnionWith(appRoleLists[i]);
-                    totalNumberOfAppRoles += appRoleLists[i].Length;
-                }
-
+                appRoleLists.Where(a => a != null).SelectMany(a => a).ToDictionary(a => a);
+                return false;
             }
-
-            return distinctAppRoles.Count != totalNumberOfAppRoles;
+            catch (ArgumentException)
+            {
+                return true;
+            }
         }
     }
 }
