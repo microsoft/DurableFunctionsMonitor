@@ -95,7 +95,7 @@ export class FunctionGraphStateBase extends MermaidDiagramStateBase {
         // Placing icons code into a <defs> block at the top
         svg = svg.replace(`><style>`, `>\n<defs>\n${iconsSvgElement.innerHTML}</defs>\n<style>`);
 
-        svg = svg.replace(/<g transform="translate\([0-9,.-\s]+\)" id="[^"]+" class="node default (\w+).*?<g transform="translate\([0-9,.-\s]+\)" style="" class="label">/g,
+        svg = svg.replace(/<g transform="translate\([0-9,.-\s]+\)" data-id="[^"]+" data-node="true" id="[^"]+" class="node default (\w+).*?<g transform="translate\([0-9,.-\s]+\)" style="" class="label">/g,
             `$&<use href="#az-icon-$1" width="20px" height="20px"/>`);
 
         return svg;
