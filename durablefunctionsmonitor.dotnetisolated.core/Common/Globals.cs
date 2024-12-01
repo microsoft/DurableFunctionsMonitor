@@ -27,6 +27,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         public const string WEBSITE_AUTH_UNAUTHENTICATED_ACTION = "WEBSITE_AUTH_UNAUTHENTICATED_ACTION";
         public const string DFM_ALLOWED_USER_NAMES = "DFM_ALLOWED_USER_NAMES";
         public const string DFM_ALLOWED_APP_ROLES = "DFM_ALLOWED_APP_ROLES";
+        public const string DFM_ALLOWED_FULL_ACCESS_APP_ROLES = "DFM_ALLOWED_FULL_ACCESS_APP_ROLES";
         public const string DFM_ALLOWED_READ_ONLY_APP_ROLES = "DFM_ALLOWED_READ_ONLY_APP_ROLES";
         public const string DFM_HUB_NAME = "DFM_HUB_NAME";
         public const string DFM_NONCE = "DFM_NONCE";
