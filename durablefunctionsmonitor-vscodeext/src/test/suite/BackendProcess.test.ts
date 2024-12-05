@@ -45,7 +45,10 @@ suite('BackendProcess Test Suite', () => {
 				backendWasStarted = true;
 			}
 
-			if (/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s)) {
+			if (
+				/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s) ||
+				/Azure Functions Core Tools/i.test(s)
+			) {
 				backendWasPublished = true;
 			}
 		};
@@ -125,7 +128,10 @@ suite('BackendProcess Test Suite', () => {
 				backendWasStarted = true;
 			}
 
-			if (/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s)) {
+			if (
+				/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s) ||
+				/Azure Functions Core Tools/i.test(s)
+			) {
 				backendWasPublished = true;
 			}
 		};
@@ -208,7 +214,10 @@ suite('BackendProcess Test Suite', () => {
 				backendWasStarted = true;
 			}
 
-			if (/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s)) {
+			if (
+				/(MSBuild|Microsoft \(R\) Build Engine) version /i.test(s) ||
+				/Azure Functions Core Tools/i.test(s)
+			) {
 				backendWasPublished = true;
 			}
 		};
