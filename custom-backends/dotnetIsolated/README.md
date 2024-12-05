@@ -1,6 +1,6 @@
-# Durable Functions Monitor on .Net 7 Isolated
+# Durable Functions Monitor on .Net Isolated
 
-Custom Durable Functions Monitor backend project, configured to run as a .NET 7 Isolated Function.
+Custom Durable Functions Monitor backend project, configured to run as a .NET Isolated Function.
 
 ## How to run locally
 
