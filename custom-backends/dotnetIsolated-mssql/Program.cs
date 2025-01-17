@@ -217,6 +217,7 @@ namespace Dfm.DotNetIsolatedMsSql
                 EventType = reader["EventType"].ToString(),
                 EventId = reader["EventId"] is DBNull ? null : (int?)reader["EventId"],
                 Name = reader["Name"].ToString(),
+                Input = reader["Input"] is DBNull ? null : reader["Input"].ToString(),
                 Result = reader["Result"].ToString(),
                 Details = reader["Details"].ToString(),
                 SubOrchestrationId = reader["SubOrchestrationId"].ToString(),
