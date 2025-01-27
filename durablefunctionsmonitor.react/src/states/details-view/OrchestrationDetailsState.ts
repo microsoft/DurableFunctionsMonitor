@@ -167,7 +167,7 @@ export class OrchestrationDetailsState extends ErrorMessageState {
 
             if (this._history.length > 0) {
                 
-                this._timeFrom = moment(this._history[0].Timestamp);
+                this._timeFrom = moment(this._history[0].timestamp);
 
             } else {
 
