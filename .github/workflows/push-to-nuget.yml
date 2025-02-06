@@ -83,11 +83,13 @@ jobs:
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}      
       run: nuget push drop/DurableFunctionsMonitor.DotNetIsolated.*.nupkg -ApiKey $NUGET_API_KEY -src https://api.nuget.org/v3/index.json
+      if: false
         
     - name: push drop/DurableFunctionsMonitor.DotNetBackend
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}      
       run: nuget push drop/DurableFunctionsMonitor.DotNetBackend.*.nupkg -ApiKey $NUGET_API_KEY -src https://api.nuget.org/v3/index.json
+      if: false
 
     - name: push drop/DurableFunctionsMonitor.DotNetIsolated.MsSql
       env:
