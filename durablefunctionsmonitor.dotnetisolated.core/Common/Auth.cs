@@ -313,7 +313,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         {
             try
             {
-                string hostJsonFileName = Globals.GetHostJsonPath();
+                string hostJsonFileName = ExtensionMethods.GetHostJsonPath();
                 dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
 
                 string hubName = hostJson.extensions.durableTask.hubName;

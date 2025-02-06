@@ -207,24 +207,6 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
         }
 
-        public static string GetHostJsonPath()
-        {
-            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-
-            // First trying current folder
-            string result = Path.Combine(Path.GetDirectoryName(assemblyLocation), "host.json");
-
-            if (File.Exists(result))
-            {
-                return result;
-            }
-
-            // Falling back to parent folder
-            result = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(assemblyLocation)), "host.json");
-
-            return result;
-        }
-
         // Shared JSON serialization settings
         public static JsonSerializerSettings SerializerSettings = GetSerializerSettings();
 

@@ -54,7 +54,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             builder.Services.AddSingleton(extensionPoints);
 
             // Checking host.json for a custom dedicated Storage account
-            string hostJsonFileName = Globals.GetHostJsonPath();
+            string hostJsonFileName = GetHostJsonPath();
             if (File.Exists(hostJsonFileName))
             {
                 dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
@@ -143,6 +143,27 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             {
                 builder.UseDurableFunctionsMonitor(optionsBuilder);
             });
+        }
+
+        /// <summary>
+        /// Tries to locate host.json file and returns path to it
+        /// </summary>
+        public static string GetHostJsonPath()
+        {
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+
+            // First trying current folder
+            string result = Path.Combine(Path.GetDirectoryName(assemblyLocation), "host.json");
+
+            if (File.Exists(result))
+            {
+                return result;
+            }
+
+            // Falling back to parent folder
+            result = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(assemblyLocation)), "host.json");
+
+            return result;
         }
 
         private static OperationKind? TryGetDfmOperationKind(FunctionContext context, ILogger log)

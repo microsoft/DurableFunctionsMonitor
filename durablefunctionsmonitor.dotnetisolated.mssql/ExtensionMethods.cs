@@ -5,6 +5,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Hosting;
 using Microsoft.DurableTask.Client;
 using Microsoft.Data.SqlClient;
+using Newtonsoft.Json.Linq;
 
 namespace DurableFunctionsMonitor.DotNetIsolated.MsSql
 {
@@ -24,13 +25,34 @@ namespace DurableFunctionsMonitor.DotNetIsolated.MsSql
             Action<DfmSettings> optionsBuilder = null
         )
         {
-            ConnString = Environment.GetEnvironmentVariable("DFM_SQL_CONNECTION_STRING")!;
+            // Trying to get custom SQL conn string name from host.json
+            string connStringName = "DFM_SQL_CONNECTION_STRING";
+            
+            string hostJsonFileName = DotNetIsolated.ExtensionMethods.GetHostJsonPath();
+            if (File.Exists(hostJsonFileName))
+            {
+                dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
+
+                string connStringNameFromHostJson = hostJson?.extensions?.durableTask?.storageProvider?.connectionStringName;
+                if (!string.IsNullOrEmpty(connStringNameFromHostJson))
+                {
+                    connStringName = connStringNameFromHostJson;
+                }
+
+                string schemaNameFromHostJson = hostJson?.extensions?.durableTask?.storageProvider?.schemaName;
+                if (!string.IsNullOrEmpty(schemaNameFromHostJson))
+                {
+                    SchemaName = schemaNameFromHostJson;
+                }
+            }
+
+            ConnString = Environment.GetEnvironmentVariable(connStringName)!;
 
             // Getting custom schema name passed to us by VsCode ext
-            string schemaName = Environment.GetEnvironmentVariable("AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName");
-            if (!string.IsNullOrEmpty(schemaName))
+            string schemaNameFromEnvVar = Environment.GetEnvironmentVariable("AzureFunctionsJobHost__extensions__durableTask__storageProvider__schemaName");
+            if (!string.IsNullOrEmpty(schemaNameFromEnvVar))
             {
-                SchemaName = schemaName;
+                SchemaName = schemaNameFromEnvVar;
             }
 
             return builder.UseDurableFunctionsMonitor((settings, extPoints) =>
