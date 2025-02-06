@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="DurableFunctionsMonitor.DotNetIsolated" Version="6.6.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.SqlServer" Version="1.2.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
   </ItemGroup>
 
   <ItemGroup>
