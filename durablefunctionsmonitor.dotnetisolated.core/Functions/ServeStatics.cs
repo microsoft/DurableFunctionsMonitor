@@ -200,7 +200,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 if (result == null)
                 {
                     // Now reading host.json
-                    string hostJsonFileName = ExtensionMethods.GetHostJsonPath();
+                    string hostJsonFileName = Globals.GetHostJsonPath();
                     dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
 
                     result = hostJson.extensions.http.routePrefix;

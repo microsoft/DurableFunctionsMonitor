@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.DurableTask.Client;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json.Linq;
+using System.Reflection;
 
 namespace DurableFunctionsMonitor.DotNetIsolated.MsSql
 {
@@ -28,7 +29,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated.MsSql
             // Trying to get custom SQL conn string name from host.json
             string connStringName = "DFM_SQL_CONNECTION_STRING";
             
-            string hostJsonFileName = DotNetIsolated.ExtensionMethods.GetHostJsonPath();
+            string hostJsonFileName = GetHostJsonPath();
             if (File.Exists(hostJsonFileName))
             {
                 dynamic hostJson = JObject.Parse(File.ReadAllText(hostJsonFileName));
@@ -272,6 +273,24 @@ namespace DurableFunctionsMonitor.DotNetIsolated.MsSql
             }
 
             return evt;
+        }
+
+        private static string GetHostJsonPath()
+        {
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+
+            // First trying current folder
+            string result = Path.Combine(Path.GetDirectoryName(assemblyLocation), "host.json");
+
+            if (File.Exists(result))
+            {
+                return result;
+            }
+
+            // Falling back to parent folder
+            result = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(assemblyLocation)), "host.json");
+
+            return result;
         }
     }
 }

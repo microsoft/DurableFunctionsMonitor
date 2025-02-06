@@ -181,6 +181,24 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             return $"{version.Major}.{version.Minor}.{version.Build}";
         }
 
+        public static string GetHostJsonPath()
+        {
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+
+            // First trying current folder
+            string result = Path.Combine(Path.GetDirectoryName(assemblyLocation), "host.json");
+
+            if (File.Exists(result))
+            {
+                return result;
+            }
+
+            // Falling back to parent folder
+            result = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(assemblyLocation)), "host.json");
+
+            return result;
+        }
+        
         public static async Task<CloudBlobClient> GetCloudBlobClient(string connStringName)
         {
             string connectionString = Environment.GetEnvironmentVariable(connStringName);
