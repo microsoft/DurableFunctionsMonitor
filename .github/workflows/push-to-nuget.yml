@@ -56,6 +56,8 @@ jobs:
       run: dotnet publish durablefunctionsmonitor.dotnetbackend --output drop/durablefunctionsmonitor.dotnetbackend/output
     - name: dotnet publish durablefunctionsmonitor.dotnetisolated
       run: dotnet publish durablefunctionsmonitor.dotnetisolated --output drop/durablefunctionsmonitor.dotnetisolated/output
+    - name: dotnet publish dotnetIsolated-mssql
+      run: dotnet publish custom-backends/dotnetIsolated-mssql --output drop/dotnetIsolated-mssql/output
 
     # Building nuget packages
 
@@ -63,6 +65,8 @@ jobs:
       run: cp LICENSE drop/durablefunctionsmonitor.dotnetbackend/output
     - name: copy LICENSE.txt to durablefunctionsmonitor.dotnetisolated/output
       run: cp durablefunctionsmonitor.dotnetisolated/LICENSE.txt drop/durablefunctionsmonitor.dotnetisolated/output
+    - name: copy LICENSE.txt to dotnetIsolated-mssql/output
+      run: cp durablefunctionsmonitor.dotnetisolated/LICENSE.txt drop/dotnetIsolated-mssql/output
 
     - name: Install latest nuget.exe
       uses: nuget/setup-nuget@v1.2.0
@@ -70,6 +74,8 @@ jobs:
       run: nuget pack drop/durablefunctionsmonitor.dotnetbackend/output/nuspec.nuspec -OutputDirectory drop
     - name: package dotnetisolated into a Nuget package
       run: nuget pack drop/durablefunctionsmonitor.dotnetisolated/output/nuspec.nuspec -OutputDirectory drop
+    - name: package dotnetIsolated-mssql into a Nuget package
+      run: nuget pack drop/dotnetIsolated-mssql/output/nuspec.nuspec -OutputDirectory drop
 
     # Pushing nuget packages
 
@@ -82,3 +88,8 @@ jobs:
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}      
       run: nuget push drop/DurableFunctionsMonitor.DotNetBackend.*.nupkg -ApiKey $NUGET_API_KEY -src https://api.nuget.org/v3/index.json
+
+    - name: push drop/DurableFunctionsMonitor.DotNetIsolated.MsSql
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}      
+      run: nuget push drop/DurableFunctionsMonitor.DotNetIsolated.MsSql.*.nupkg -ApiKey $NUGET_API_KEY -src https://api.nuget.org/v3/index.json
