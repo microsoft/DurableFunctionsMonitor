@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata minClientVersion="2.5">
+        <id>DurableFunctionsMonitor.DotNetIsolated.MsSql</id>
+        <version>6.6.0-beta4</version>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>DurableFunctionsMonitor.DotNetIsolated.MsSql</description>
+        <authors>DurableFunctionsMonitor</authors>
+        <repository type="git" url="https://github.com/microsoft/DurableFunctionsMonitor" />
+        <license type="file">LICENSE.txt</license>
+
+        <dependencies>
+            <dependency id="DurableFunctionsMonitor.DotNetIsolated" version="6.6.0" />
+            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.SqlServer" version="1.2.1" />
+            <dependency id="Microsoft.Data.SqlClient" version="5.2.0" />
+        </dependencies>
+
+    </metadata>
+
+    <files>
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.core.dll" target="lib/netcoreapp2.1" />
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.mssql.dll" target="lib/netcoreapp2.1" />
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.mssql.xml" target="lib/netcoreapp2.1" />
+        <file src="..\..\durablefunctionsmonitor.dotnetisolated\durablefunctionsmonitor.dotnetisolated.targets" target="build" />
+        <file src="..\output\*" target="/" />
+        <file src="..\output\.azurefunctions\**" target="/.azurefunctions" />
+        <file src="..\output\DfmStatics\**" target="/DfmStatics" />
+    </files>
+</package>
