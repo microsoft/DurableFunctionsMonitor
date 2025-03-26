@@ -341,10 +341,10 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
     private renderEventLink(event: HistoryEvent): JSX.Element | string {
 
         const state = this.props.state;
-        const functionName = event.Name;
+        const functionName = event.name;
 
-        if (!!event.SubOrchestrationId) {
-            return (<OrchestrationLink orchestrationId={event.SubOrchestrationId}
+        if (!!event.subOrchestrationId) {
+            return (<OrchestrationLink orchestrationId={event.subOrchestrationId}
                 title={functionName}
                 backendClient={state.backendClient}
             />);
@@ -393,34 +393,34 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                                         color={Theme.palette.mode === 'dark' ? 'inherit' : 'primary'}
                                         onClick={() => {
                                             
-                                            this.props.state.timeFrom = moment(event.Timestamp);
+                                            this.props.state.timeFrom = moment(event.timestamp);
                                             this.props.state.reloadHistory();
                                         }}
                                     >
-                                        {this.context.formatDateTimeString(event.Timestamp)}
+                                        {this.context.formatDateTimeString(event.timestamp)}
                                     </Link>
 
                                 </TableCell>
                                 <TableCell style={cellStyle}>
-                                    {event.EventType}
+                                    {event.eventType}
                                 </TableCell>
                                 <TableCell style={cellStyle}>
-                                    {event.EventId}
+                                    {event.eventId}
                                 </TableCell>
                                 <TableCell className="name-cell" style={cellStyle}>
                                     {this.renderEventLink(event)}
                                 </TableCell>
                                 <TableCell style={cellStyle}>
-                                    {this.context.formatDateTimeString(event.ScheduledTime)}
+                                    {this.context.formatDateTimeString(event.scheduledTime)}
                                 </TableCell>
                                 <TableCell className="long-text-cell" style={cellStyle}>
-                                    {LongJsonDialog.renderJson(event.Input, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[5]}`, event.Input))}
+                                    {LongJsonDialog.renderJson(event.input, '', () => this.props.state.longJsonDialogState.showDialog(`${event.eventType} / ${event.name} / ${HistoryEventFields[5]}`, event.input))}
                                 </TableCell>
                                 <TableCell className="long-text-cell" style={cellStyle}>
-                                    {LongJsonDialog.renderJson(event.Result, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[6]}`, event.Result))}
+                                    {LongJsonDialog.renderJson(event.input, '', () => this.props.state.longJsonDialogState.showDialog(`${event.eventType} / ${event.name} / ${HistoryEventFields[6]}`, event.result))}
                                 </TableCell>
                                 <TableCell className="long-text-cell" style={cellStyle}>
-                                    {LongJsonDialog.renderJson(event.Details, '', () => this.props.state.longJsonDialogState.showDialog(`${event.EventType} / ${event.Name} / ${HistoryEventFields[7]}`, event.Details))}
+                                    {LongJsonDialog.renderJson(event.input, '', () => this.props.state.longJsonDialogState.showDialog(`${event.eventType} / ${event.name} / ${HistoryEventFields[7]}`, event.details))}
                                 </TableCell>
                             </TableRow>
                         );

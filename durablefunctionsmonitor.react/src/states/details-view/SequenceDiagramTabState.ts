@@ -58,12 +58,12 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
         while (i < historyEvents.length) {
             const event = historyEvents[i];
 
-            switch (event.EventType) {
+            switch (event.eventType) {
                 case 'ExecutionStarted':
 
                     nextLine =
                         `${parentOrchestrationName}->>+${orchestrationName}:[ExecutionStarted] \n` +
-                        `Note over ${parentOrchestrationName},${orchestrationName}: ${this.formatTimestamp(event.Timestamp)} \n`;
+                        `Note over ${parentOrchestrationName},${orchestrationName}: ${this.formatTimestamp(event.timestamp)} \n`;
                                         
                     results.push(Promise.resolve(nextLine));
 
@@ -71,12 +71,12 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
                 case 'SubOrchestrationInstanceCompleted':
                 case 'SubOrchestrationInstanceFailed':
 
-                    const subOrchFailed = event.EventType === 'SubOrchestrationInstanceFailed';
+                    const subOrchFailed = event.eventType === 'SubOrchestrationInstanceFailed';
 
-                    if (!!event.SubOrchestrationId) {
+                    if (!!event.subOrchestrationId) {
 
-                        const subOrchestrationId = event.SubOrchestrationId;
-                        const subOrchestrationName = event.Name;
+                        const subOrchestrationId = event.subOrchestrationId;
+                        const subOrchestrationName = event.name;
 
                         results.push(new Promise<string>((resolve, reject) => {
                             this._loadHistory(subOrchestrationId).then(history => {
@@ -97,14 +97,14 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
                     } else if (!!subOrchFailed) {
 
                         nextLine = `rect rgba(255,0,0,0.4) \n` +
-                        `${orchestrationName}-x${event.Name}:[SubOrchestrationInstanceFailed] \n` +
+                        `${orchestrationName}-x${event.name}:[SubOrchestrationInstanceFailed] \n` +
                         'end \n';
 
                         results.push(Promise.resolve(nextLine));
                         
                     } else {
 
-                        nextLine = `${orchestrationName}->>+${event.Name}:[SubOrchestrationInstanceStarted] \n`;
+                        nextLine = `${orchestrationName}->>+${event.name}:[SubOrchestrationInstanceStarted] \n`;
 
                         results.push(Promise.resolve(nextLine));                        
                     }
@@ -114,33 +114,33 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
                 case 'TaskScheduled':
 
                     // Trying to aggregate multiple parallel calls
-                    var maxDurationInMs = event.DurationInMs;
+                    var maxDurationInMs = event.durationInMs;
                     var j = i + 1;
                     for (; j < historyEvents.length &&
-                        historyEvents[j].EventType === event.EventType &&
-                        historyEvents[j].Name === event.Name &&
+                        historyEvents[j].eventType === event.eventType &&
+                        historyEvents[j].name === event.name &&
                         this.getEventScheduledTime(historyEvents[j]).substr(0, 23) === this.getEventScheduledTime(event).substr(0, 23);
                         j++) {
 
-                        if (maxDurationInMs < historyEvents[j].DurationInMs) {
-                            maxDurationInMs = historyEvents[j].DurationInMs;
+                        if (maxDurationInMs < historyEvents[j].durationInMs) {
+                            maxDurationInMs = historyEvents[j].durationInMs;
                         }
                     }
 
-                    const lineType = event.EventType === 'TaskCompleted' ? '->>' : '-->>';
+                    const lineType = event.eventType === 'TaskCompleted' ? '->>' : '-->>';
 
                     if (j === i + 1) {
 
                         const nextLine =
-                            `${orchestrationName}${lineType}${orchestrationName}:${event.Name} \n` +
-                            `Note over ${orchestrationName}: ${this.formatDuration(event.DurationInMs)} \n`;
+                            `${orchestrationName}${lineType}${orchestrationName}:${event.name} \n` +
+                            `Note over ${orchestrationName}: ${this.formatDuration(event.durationInMs)} \n`;
                         results.push(Promise.resolve(nextLine));
                         
                     } else {
 
                         const nextLine =
                             `par ${j - i} calls \n` +
-                            `${orchestrationName}${lineType}${orchestrationName}:${event.Name} \n` +
+                            `${orchestrationName}${lineType}${orchestrationName}:${event.name} \n` +
                             `Note over ${orchestrationName}: ${this.formatDuration(maxDurationInMs)} \n` +
                             `end \n`;
                         results.push(Promise.resolve(nextLine));
@@ -152,7 +152,7 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
                 case 'TaskFailed':
 
                     nextLine = `rect rgba(255,0,0,0.4) \n` +
-                        `${orchestrationName}-x${orchestrationName}:${event.Name} \n` + 
+                        `${orchestrationName}-x${orchestrationName}:${event.name} \n` + 
                         'end \n';
                     
                     results.push(Promise.resolve(nextLine));
@@ -160,8 +160,8 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
                 case 'EventRaised':
 
                     nextLine =
-                        `${externalActor}->>${orchestrationName}:${event.Name} \n` +
-                        `Note over ${externalActor},${orchestrationName}: ${this.formatTimestamp(event.Timestamp)} \n`;
+                        `${externalActor}->>${orchestrationName}:${event.name} \n` +
+                        `Note over ${externalActor},${orchestrationName}: ${this.formatTimestamp(event.timestamp)} \n`;
                     results.push(Promise.resolve(nextLine));
 
                     break;
@@ -169,7 +169,7 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
 
                     nextLine =
                         `${externalActor}->>${orchestrationName}:[TimerFired] \n` +
-                        `Note over ${externalActor},${orchestrationName}: ${this.formatTimestamp(event.Timestamp)} \n`;
+                        `Note over ${externalActor},${orchestrationName}: ${this.formatTimestamp(event.timestamp)} \n`;
                     results.push(Promise.resolve(nextLine));
 
                     break;
@@ -177,7 +177,7 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
 
                     nextLine =
                         `${externalActor}->>${orchestrationName}:[ExecutionTerminated] \n` +
-                        `Note over ${externalActor},${orchestrationName}: ${this.formatTimestamp(event.Timestamp)} \n`;
+                        `Note over ${externalActor},${orchestrationName}: ${this.formatTimestamp(event.timestamp)} \n`;
                     results.push(Promise.resolve(nextLine));
 
                     break;
@@ -185,7 +185,7 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
 
                     nextLine =
                         `${orchestrationName}-->>-${parentOrchestrationName}:[${!!isFailed ? 'ExecutionFailed' : 'ExecutionCompleted'}] \n` +
-                        `Note over ${orchestrationName},${parentOrchestrationName}: ${this.formatDuration(event.DurationInMs)} \n`;
+                        `Note over ${orchestrationName},${parentOrchestrationName}: ${this.formatDuration(event.durationInMs)} \n`;
 
                     if (!!isFailed) {
                     
@@ -217,6 +217,6 @@ export class SequenceDiagramTabState extends MermaidDiagramTabState {
     }
 
     private getEventScheduledTime(evt: HistoryEvent): string {
-        return !!evt.ScheduledTime ? evt.ScheduledTime : evt.Timestamp;
+        return !!evt.scheduledTime ? evt.scheduledTime : evt.timestamp;
     }
 }
