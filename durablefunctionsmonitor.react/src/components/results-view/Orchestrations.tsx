@@ -9,7 +9,7 @@ import {
     InputLabel, LinearProgress, ListItemText, Menu, MenuItem, Select, Tab, Tabs, TextField, Toolbar, Typography
 } from '@mui/material';
 
-import { DateTimePicker } from '@mui/x-date-pickers';
+import { DesktopDateTimePicker } from '@mui/x-date-pickers';
 
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
@@ -135,7 +135,7 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
 
                             ) : (
                                     
-                                <DateTimePicker
+                                <DesktopDateTimePicker
                                     className="from-input"
                                     slotProps={{
                                         textField: {
@@ -170,7 +170,7 @@ export class Orchestrations extends React.Component<{ state: OrchestrationsState
                                 </FormControl>
 
                                 {state.timeTillEnabled ? (
-                                    <DateTimePicker
+                                    <DesktopDateTimePicker
                                         className="till-input"
                                         slotProps={{
                                             textField: {

@@ -10,7 +10,7 @@ import {
     TableCell, TableHead, TableRow, TextField, Toolbar, Typography
 } from '@mui/material';
 
-import { DateTimePicker } from '@mui/x-date-pickers';
+import { DesktopDateTimePicker } from '@mui/x-date-pickers';
 
 import { FilterOperatorEnum } from '../../states/FilterOperatorEnum';
 import { OrchestrationDetailsState } from '../../states/details-view/OrchestrationDetailsState';
@@ -240,7 +240,7 @@ export class OrchestrationFields extends React.Component<{ state: OrchestrationD
                     </FormControl>
 
                     {state.timeFromEnabled ? (
-                        <DateTimePicker
+                        <DesktopDateTimePicker
                             className="history-from-input"
                             ampm={false}
                             slotProps={{
