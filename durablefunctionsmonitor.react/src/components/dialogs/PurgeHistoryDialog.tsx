@@ -9,7 +9,7 @@ import {
     FormControlLabel, FormGroup, FormLabel, LinearProgress, Radio, RadioGroup, Tooltip, Typography
 } from '@mui/material';
 
-import { DateTimePicker } from '@mui/x-date-pickers';
+import { DesktopDateTimePicker } from '@mui/x-date-pickers';
 
 import './PurgeHistoryDialog.css';
 
@@ -74,7 +74,7 @@ export class PurgeHistoryDialog extends React.Component<{ state: PurgeHistoryDia
                             </RadioGroup>
                         </FormControl>
 
-                        <DateTimePicker
+                        <DesktopDateTimePicker
                             className="purge-history-from-input"
                             ampm={false}
                             label={state.entityType === 'DurableEntity' ? `Last Updated From (${this.context.timeZoneName})` : `From (${this.context.timeZoneName})`}
@@ -84,7 +84,7 @@ export class PurgeHistoryDialog extends React.Component<{ state: PurgeHistoryDia
                             onChange={(t) => state.timeFrom = this.context.setMoment(t)}
                         />
 
-                        <DateTimePicker
+                        <DesktopDateTimePicker
                             className="purge-history-till-input"
                             ampm={false}
                             label={state.entityType === 'DurableEntity' ? `Last Updated Till (${this.context.timeZoneName})` : `Till (${this.context.timeZoneName})`}
