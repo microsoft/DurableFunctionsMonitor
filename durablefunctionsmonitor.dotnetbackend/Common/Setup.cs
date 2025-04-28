@@ -203,7 +203,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
                 string connStringNameFromHostJson = 
                     hostJson?.extensions?.durableTask?.storageProvider?.azureStorageConnectionStringName ??
-                    hostJson?.extensions?.durableTask?.storageProvider?.connectionStringName;
+                    hostJson?.extensions?.durableTask?.storageProvider?.connectionStringName ??
+                    hostJson?.extensions?.durableTask?.storageProvider?.connectionName;
 
                 if (!string.IsNullOrEmpty(connStringNameFromHostJson))
                 {
