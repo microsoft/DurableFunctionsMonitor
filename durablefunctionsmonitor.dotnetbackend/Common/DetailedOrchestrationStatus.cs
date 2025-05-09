@@ -83,33 +83,35 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
         internal static async Task<string> GetParentInstanceIdDirectlyFromTable(IDurableClient durableClient, string connEnvVariableName, string hubName, string instanceId)
         {
-            // Checking if instanceId looks like a suborchestration
-            var match = SubOrchestrationIdRegex.Match(instanceId);
-            if (!match.Success)
-            {
-                return null;
-            }
-
-            string parentExecutionId = match.Groups[1].Value;
-
             var tableClient = await TableClient.GetTableClient(connEnvVariableName);
-            string tableName = $"{durableClient.TaskHubName}Instances";
+            IEnumerable<TableEntity> tableResult;
 
-            var executionIdQuery = new TableQuery<TableEntity>().Where
-            (
-                TableQuery.GenerateFilterCondition("ExecutionId", QueryComparisons.Equal, parentExecutionId)
-            );
-
-            var tableResult = await tableClient.GetAllAsync<TableEntity>(tableName, executionIdQuery);
-
-            var parentEntity = tableResult.SingleOrDefault();
-
-            if (parentEntity == null)
+            // Checking if instanceId looks like a suborchestration (old format)
+            var match = SubOrchestrationIdRegex.Match(instanceId);
+            if (match.Success)
             {
-                return null;
+                string parentExecutionId = match.Groups[1].Value;
+
+                var executionIdQuery = new TableQuery<TableEntity>().Where
+                (
+                    TableQuery.GenerateFilterCondition("ExecutionId", QueryComparisons.Equal, parentExecutionId)
+                );
+
+                tableResult = await tableClient.GetAllAsync($"{durableClient.TaskHubName}Instances", executionIdQuery);
+            }
+            else
+            {
+                // Trying history table instead (new format)
+
+                var executionIdQuery = new TableQuery<TableEntity>().Where
+                (
+                    TableQuery.GenerateFilterCondition("InstanceId", QueryComparisons.Equal, instanceId)
+                );
+
+                tableResult = await tableClient.GetAllAsync($"{durableClient.TaskHubName}History", executionIdQuery);
             }
 
-            return parentEntity.PartitionKey;
+            return tableResult.FirstOrDefault()?.PartitionKey;
         }
 
         private static readonly Regex SubOrchestrationIdRegex = new Regex(@"(.+):\d+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);

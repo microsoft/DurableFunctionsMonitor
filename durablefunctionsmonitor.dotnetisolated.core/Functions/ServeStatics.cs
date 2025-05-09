@@ -35,7 +35,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
             string root = Path.Join(Environment.CurrentDirectory, "DfmStatics");
 
-            var contentType = FileMap.FirstOrDefault((kv => path.StartsWith(kv[0])));
+            var contentType = FileMap.FirstOrDefault(kv => path.StartsWith(kv[0]));
             if (contentType != null)
             {
                 string fullPath = Path.Join(root, path);
