@@ -6,8 +6,11 @@ import { observer } from 'mobx-react';
 
 import {
     Box,
-    Button, Dialog, DialogActions, DialogContent, DialogTitle, InputBase, LinearProgress, Link
+    Button, Dialog, DialogActions, DialogContent, DialogTitle, InputBase, LinearProgress, Link, Typography
 } from '@mui/material';
+
+import FileCopyIcon from '@mui/icons-material/FileCopy';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { renderFilteredField } from '../RenderHelpers';
 
@@ -101,11 +104,34 @@ export class LongJsonDialog extends React.Component<{ filterValue?: string, stat
                 </DialogContent>
                 
                 <DialogActions>
-                    <Button onClick={() => state.hideDialog()} color={PrimaryButtonColor} disabled={state.inProgress}>
-                        Close
+
+                    <Button
+                        color={PrimaryButtonColor} 
+                        disabled={state.inProgress}
+                        onClick={() => window.navigator.clipboard.writeText(state.value)}
+                    >
+                        <FileCopyIcon />
+                        <Box width={10} />
+                        <Typography color="inherit">Copy to Clipboard</Typography>
                     </Button>
+
+                    <Button
+                        color={PrimaryButtonColor}
+                        disabled={state.inProgress}
+                        onClick={() => state.hideDialog()}
+                    >
+
+                        <CloseIcon />
+                        <Box width={10} />
+                        <Typography color="inherit">Close</Typography>
+                        
+                    </Button>
+
+                    <Box width={10} />
                 </DialogActions>
 
+                <Box height={10} />
+                
             </Dialog>
        );
     }
