@@ -7,10 +7,10 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -243,6 +243,20 @@ namespace DurableFunctionsMonitor.DotNetBackend
             if (!ValidTaskHubNameRegex.Match(hubName).Success)
             {
                 throw new ArgumentException($"Task Hub name is invalid.");
+            }
+        }
+
+        // Checks that a path does not look malicious
+        public static void ThrowIfPathHasInvalidSymbols(string path)
+        {
+            if (!string.IsNullOrEmpty(path))
+            {
+                string invalidSymbols = "{}()<>:;=";
+
+                if (invalidSymbols.Any(path.Contains) || invalidSymbols.Any(HttpUtility.UrlDecode(path).Contains))
+                {
+                    throw new ArgumentException($"Path contains invalid characters.");
+                }
             }
         }
 

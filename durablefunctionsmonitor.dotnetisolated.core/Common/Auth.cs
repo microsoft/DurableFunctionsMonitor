@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Web;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -241,6 +242,20 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             if (!ValidTaskHubNameRegex.Match(hubName).Success)
             {
                 throw new DfmUnauthorizedException($"Task Hub name is invalid.");
+            }
+        }
+
+        // Checks that a path does not look malicious
+        public static void ThrowIfPathHasInvalidSymbols(string path)
+        {
+            if (!string.IsNullOrEmpty(path))
+            {
+                string invalidSymbols = "{}()<>:;=";
+
+                if (invalidSymbols.Any(path.Contains) || invalidSymbols.Any(HttpUtility.UrlDecode(path).Contains))
+                {
+                    throw new DfmUnauthorizedException($"Path contains invalid characters.");
+                }
             }
         }
 

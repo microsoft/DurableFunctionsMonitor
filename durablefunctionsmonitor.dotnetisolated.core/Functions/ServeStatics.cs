@@ -167,6 +167,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 }
             }
 
+            // Two bugs away. Checking that route prefix does not look malicious.
+            Auth.ThrowIfPathHasInvalidSymbols(routePrefix);
+
             routePrefix = routePrefix?.Trim('/');
 
             // Prepending ingress route prefix, if configured
