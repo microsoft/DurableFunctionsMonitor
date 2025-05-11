@@ -162,6 +162,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     routePrefix = requestPath.Substring(0, pos);
                 }
             }
+            // Two bugs away. Checking that route prefix does not look malicious.
+            Auth.ThrowIfPathHasInvalidSymbols(routePrefix);
 
             routePrefix = routePrefix?.Trim('/');
 
