@@ -3,8 +3,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
 
-    <AssemblyVersion>6.6.0.0</AssemblyVersion>
-    <FileVersion>6.6.0.0</FileVersion>
+    <AssemblyVersion>6.7.0.0</AssemblyVersion>
+    <FileVersion>6.7.0.0</FileVersion>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <ImplicitUsings>enable</ImplicitUsings>

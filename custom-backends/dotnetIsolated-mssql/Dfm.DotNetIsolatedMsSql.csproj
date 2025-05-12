@@ -2,12 +2,15 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
+
+    <AssemblyVersion>6.7.0.0</AssemblyVersion>
+    <FileVersion>6.7.0.0</FileVersion>
+
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DurableFunctionsMonitor.DotNetIsolated" Version="6.6.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.SqlServer" Version="1.2.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
   </ItemGroup>
@@ -15,6 +18,13 @@
   <ItemGroup>
     <ProjectReference Include="..\..\durablefunctionsmonitor.dotnetisolated.mssql\durablefunctionsmonitor.dotnetisolated.mssql.csproj" />
   </ItemGroup>
+
+    <!-- Copying statics -->
+    <ItemGroup >
+        <Content Include="$(MSBuildThisFileDirectory)\..\..\durablefunctionsmonitor.dotnetisolated\DfmStatics\**" LinkBase="DfmStatics\">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 
   <ItemGroup>
     <None Update="host.json">

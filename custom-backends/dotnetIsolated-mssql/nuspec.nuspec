@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata minClientVersion="2.5">
         <id>DurableFunctionsMonitor.DotNetIsolated.MsSql</id>
-        <version>6.6.0-beta4</version>
+        <version>6.7.0-beta1</version>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>DurableFunctionsMonitor.DotNetIsolated.MsSql</description>
         <authors>DurableFunctionsMonitor</authors>
@@ -10,7 +10,6 @@
         <license type="file">LICENSE.txt</license>
 
         <dependencies>
-            <dependency id="DurableFunctionsMonitor.DotNetIsolated" version="6.6.0" />
             <dependency id="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.SqlServer" version="1.2.1" />
             <dependency id="Microsoft.Data.SqlClient" version="5.2.0" />
         </dependencies>
