@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata minClientVersion="2.5">
         <id>DurableFunctionsMonitor.DotNetIsolated.MsSql</id>
-        <version>6.7.0-beta1</version>
+        <version>6.7.0-beta2</version>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>DurableFunctionsMonitor.DotNetIsolated.MsSql</description>
         <authors>DurableFunctionsMonitor</authors>
@@ -23,6 +23,7 @@
         <file src="..\..\durablefunctionsmonitor.dotnetisolated\durablefunctionsmonitor.dotnetisolated.targets" target="build" />
         <file src="..\output\*" target="/" />
         <file src="..\output\.azurefunctions\**" target="/.azurefunctions" />
+        <file src="..\output\runtimes\**" target="/runtimes" />
         <file src="..\output\DfmStatics\**" target="/DfmStatics" />
     </files>
 </package>
