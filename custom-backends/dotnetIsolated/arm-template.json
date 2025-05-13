@@ -93,7 +93,7 @@
                     ],
                     "properties": {
                         "enabled": true,
-                        "netFrameworkVersion": "v7.0",
+                        "netFrameworkVersion": "v8.0",
                         "unauthenticatedClientAction": "RedirectToLoginPage",
                         "tokenStoreEnabled": true,
                         "defaultProvider": "AzureActiveDirectory",

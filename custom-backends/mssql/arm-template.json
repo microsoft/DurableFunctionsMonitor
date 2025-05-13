@@ -111,7 +111,7 @@
             "properties": {
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('functionAppName'))]",
                 "siteConfig": {
-                    "netFrameworkVersion": "v6.0",
+                    "netFrameworkVersion": "v8.0",
                     "appSettings": [
                         {
                             "name": "DFM_SQL_CONNECTION_STRING",
