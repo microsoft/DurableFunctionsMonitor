@@ -1,5 +1,14 @@
 # Change Log
 
+# Version 6.7.0
+
+- host.json's `connectionName` setting is now supported ([#235](https://github.com/microsoft/DurableFunctionsMonitor/issues/235)).
+- parentInstanceId resolution fixed ([#227](https://github.com/microsoft/DurableFunctionsMonitor/issues/227)).
+- Added `Copy to Clipboard` button for payloads ([#233](https://github.com/microsoft/DurableFunctionsMonitor/issues/233)):
+
+     <img width="350px" src="https://github.com/user-attachments/assets/abccf06b-3eff-498f-9860-9e673916e8b4"/>
+
+
 # Version 6.6.0
 
 - Added support for `durableTask/storageProvider/connectionStringName` setting ([#217](https://github.com/microsoft/DurableFunctionsMonitor/issues/217)).
