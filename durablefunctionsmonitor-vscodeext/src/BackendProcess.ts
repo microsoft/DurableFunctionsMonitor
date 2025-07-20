@@ -261,10 +261,22 @@ export class BackendProcess {
                 const funcExePath = await this.getFuncExePath();
                 this._log(`Using Functions host: ${funcExePath}\n`);
 
-                // Starting the backend on a first available port
-                const portNr = await portscanner.findAPortNotInUse(37072, 38000);
+                let portNr;
+                let backendUrl;
+                const backendBaseUrlSetting = Settings().backendBaseUrl;
 
-                const backendUrl = Settings().backendBaseUrl.replace('{portNr}', portNr.toString());
+                const portRangeMatch = /:\[(\d+)-(\d+)\]\//i.exec(backendBaseUrlSetting);
+                if (!!portRangeMatch && portRangeMatch.length > 0) {
+
+                    portNr = await portscanner.findAPortNotInUse(portRangeMatch[1], portRangeMatch[2]);
+                    backendUrl = backendBaseUrlSetting.replace(portRangeMatch[0], `:${portNr}/`);
+                    
+                } else {
+
+                    portNr = await portscanner.findAPortNotInUse(37072, 38000);
+                    backendUrl = backendBaseUrlSetting.replace('{portNr}', portNr.toString());
+                }
+
                 progress.report({ message: backendUrl });
 
                 const binariesFolder = await this.getAndCheckBinariesFolder(funcExePath);
