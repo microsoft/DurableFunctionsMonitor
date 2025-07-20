@@ -274,7 +274,7 @@
                 "durableFunctionsMonitor.backendBaseUrl": {
                     "type": "string",
                     "default": "http://localhost:{portNr}/a/p/i",
-                    "description": "URL the backend(s) to be started on. You might want e.g. to change 'localhost' to '127.0.0.1', if you're observing firewall issues. Also it is possible to lock the port number here, if needed (by default it is automatically chosen from the range 37072-38000)."
+                    "description": "URL the backend(s) to be started on. You might want e.g. to change 'localhost' to '127.0.0.1', if you're observing firewall issues. You can also specify custom port range here, like this: 'http://localhost:[8080-9080]/a/p/i' (default port range is 37072-38000)."
                 },
                 "durableFunctionsMonitor.backendVersionToUse": {
                     "type": "string",
