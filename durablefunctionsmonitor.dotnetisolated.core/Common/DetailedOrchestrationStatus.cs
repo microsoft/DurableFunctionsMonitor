@@ -102,10 +102,33 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             else
             {
                 // Trying history table instead (new format)
+                // Need to narrow the scan operation by timestamp (because history tables grow large)
+
+                var instanceEntity = (await tableClient.ExecuteAsync($"{durableClient.Name}Instances", TableOperation.Retrieve(instanceId, string.Empty)))
+                    .Result as DynamicTableEntity;
+
+                var createdTime = instanceEntity?.Properties["CreatedTime"].DateTimeOffsetValue;
+                if (createdTime == null)
+                {
+                    return null;
+                }
+
+                var notBefore = createdTime.Value - TimeSpan.FromSeconds(5);
+                var notAfter = createdTime.Value + TimeSpan.FromSeconds(5);
 
                 var executionIdQuery = new TableQuery<TableEntity>().Where
                 (
-                    TableQuery.GenerateFilterCondition("InstanceId", QueryComparisons.Equal, instanceId)
+                    TableQuery.CombineFilters
+                    (
+                        TableQuery.CombineFilters
+                        (
+                            TableQuery.GenerateFilterConditionForDate("Timestamp", QueryComparisons.GreaterThan, notBefore),
+                            TableOperators.And,
+                            TableQuery.GenerateFilterConditionForDate("Timestamp", QueryComparisons.LessThan, notAfter)
+                        ),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition("InstanceId", QueryComparisons.Equal, instanceId)
+                    )
                 );
 
                 tableResult = await tableClient.GetAllAsync($"{durableClient.Name}History", executionIdQuery);
