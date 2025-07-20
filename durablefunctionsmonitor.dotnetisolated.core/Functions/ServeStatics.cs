@@ -33,7 +33,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Two bugs away. Making sure none of these segments ever contain any path separators and/or relative paths
             string path = Path.Join(Path.GetFileName(p1), Path.GetFileName(p2), Path.GetFileName(p3));
 
-            string root = Path.Join(Environment.CurrentDirectory, "DfmStatics");
+            string root = Path.Join(AppContext.BaseDirectory, "DfmStatics");
 
             var contentType = FileMap.FirstOrDefault(kv => path.StartsWith(kv[0]));
             if (contentType != null)
