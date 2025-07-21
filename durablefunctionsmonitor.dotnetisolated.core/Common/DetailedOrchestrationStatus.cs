@@ -81,6 +81,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             return result;
         }
 
+        private static int GetParentInstanceIdTimeoutInSeconds = 15;
+
         internal static async Task<string> GetParentInstanceIdDirectlyFromTable(DurableTaskClient durableClient, string connEnvVariableName, string hubName, string instanceId)
         {
             var tableClient = await TableClient.GetTableClient(connEnvVariableName);
@@ -131,7 +133,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     )
                 );
 
-                tableResult = await tableClient.GetAllAsync($"{durableClient.Name}History", executionIdQuery);
+                // This scan can still take long time, so we'll have to hard-limit it to a few seconds. TaskCancelledException will be handled by upper code.
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(GetParentInstanceIdTimeoutInSeconds));
+                tableResult = await tableClient.GetAllAsync($"{durableClient.Name}History", executionIdQuery, cts.Token);
             }
 
             return tableResult.FirstOrDefault()?.PartitionKey;
