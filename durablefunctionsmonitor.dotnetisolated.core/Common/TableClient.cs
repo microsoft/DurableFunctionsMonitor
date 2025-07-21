@@ -19,6 +19,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         // Asynchronously retrieves all results from Azure Table
         Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(string tableName, TableQuery<TEntity> query) where TEntity : TableEntity, new();
         
+        // Asynchronously retrieves all results from Azure Table
+        Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(string tableName, TableQuery<TEntity> query, CancellationToken ct) where TEntity : TableEntity, new();
+
         // Executes a TableOperation
         Task<TableResult> ExecuteAsync(string tableName, TableOperation operation);
     }
@@ -122,7 +125,11 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(string tableName, TableQuery<TEntity> query)
+        public Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(string tableName, TableQuery<TEntity> query)
+            where TEntity : TableEntity, new() => this.GetAllAsync(tableName, query, CancellationToken.None);
+
+        /// <inheritdoc/>
+        public async Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(string tableName, TableQuery<TEntity> query, CancellationToken ct)
             where TEntity : TableEntity, new()
         {
             var table = this._client.GetTableReference(tableName);
@@ -137,7 +144,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             TableContinuationToken token = null;
             do
             {
-                var nextBatch = await table.ExecuteQuerySegmentedAsync(query, token, null, operationContext);
+                ct.ThrowIfCancellationRequested();
+
+                var nextBatch = await table.ExecuteQuerySegmentedAsync(query, token, null, operationContext, ct);
 
                 result.AddRange(nextBatch.Results);
                 token = nextBatch.ContinuationToken;

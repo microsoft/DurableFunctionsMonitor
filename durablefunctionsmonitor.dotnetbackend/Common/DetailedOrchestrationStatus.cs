@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
+using System.Threading;
 
 namespace DurableFunctionsMonitor.DotNetBackend
 {
@@ -81,6 +82,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
             return result;
         }
 
+        private static int GetParentInstanceIdTimeoutInSeconds = 15;
+
         internal static async Task<string> GetParentInstanceIdDirectlyFromTable(IDurableClient durableClient, string connEnvVariableName, string hubName, string instanceId)
         {
             var tableClient = await TableClient.GetTableClient(connEnvVariableName);
@@ -131,7 +134,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     )
                 );
 
-                tableResult = await tableClient.GetAllAsync($"{durableClient.TaskHubName}History", executionIdQuery);
+                // This scan can still take long time, so we'll have to hard-limit it to a few seconds. TaskCancelledException will be handled by upper code.
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(GetParentInstanceIdTimeoutInSeconds));
+                tableResult = await tableClient.GetAllAsync($"{durableClient.TaskHubName}History", executionIdQuery, cts.Token);
             }
 
             return tableResult.FirstOrDefault()?.PartitionKey;
