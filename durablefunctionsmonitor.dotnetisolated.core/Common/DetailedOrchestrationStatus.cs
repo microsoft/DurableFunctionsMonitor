@@ -108,7 +108,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 // Also need to put it under a feature switch, as it still might be a performance issue
 
                 string featureFlags = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsFeatureFlags);
-                bool isDisabled = featureFlags.Contains(Globals.DfMonDisableNewParentIdResolutionAlgorithm);
+                bool isDisabled = featureFlags == null ? false : featureFlags.Contains(Globals.DfMonDisableNewParentIdResolutionAlgorithm);
                 if (isDisabled)
                 {
                     return null;
