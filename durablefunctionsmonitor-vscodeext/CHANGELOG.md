@@ -1,5 +1,9 @@
 # Change Log
 
+# Version 6.7.1
+
+- Bugfix - [#258](https://github.com/microsoft/DurableFunctionsMonitor/issues/258) and [#260](https://github.com/microsoft/DurableFunctionsMonitor/issues/260).
+
 # Version 6.7.0
 
 - host.json's `connectionName` setting is now supported ([#235](https://github.com/microsoft/DurableFunctionsMonitor/issues/235)).
