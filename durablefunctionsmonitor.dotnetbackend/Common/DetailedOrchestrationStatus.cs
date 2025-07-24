@@ -106,6 +106,14 @@ namespace DurableFunctionsMonitor.DotNetBackend
             {
                 // Trying history table instead (new format)
                 // Need to narrow the scan operation by timestamp (because history tables grow large)
+                // Also need to put it under a feature switch, as it still might be a performance issue
+
+                string featureFlags = Environment.GetEnvironmentVariable(EnvVariableNames.AzureWebJobsFeatureFlags);
+                bool isDisabled = featureFlags.Contains(Globals.DfMonDisableNewParentIdResolutionAlgorithm);
+                if (isDisabled)
+                {
+                    return null;
+                }
 
                 var instanceEntity = (await tableClient.ExecuteAsync($"{durableClient.TaskHubName}Instances", TableOperation.Retrieve(instanceId, string.Empty)))
                     .Result as DynamicTableEntity;

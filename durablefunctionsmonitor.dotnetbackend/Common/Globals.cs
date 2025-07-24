@@ -25,6 +25,7 @@ namespace DurableFunctionsMonitor.DotNetBackend
     static class EnvVariableNames
     {
         public const string AzureWebJobsStorage = "AzureWebJobsStorage";
+        public const string AzureWebJobsFeatureFlags = "AzureWebJobsFeatureFlags";
         public const string WEBSITE_SITE_NAME = "WEBSITE_SITE_NAME";
         public const string WEBSITE_AUTH_V2_CONFIG_JSON = "WEBSITE_AUTH_V2_CONFIG_JSON";
         public const string WEBSITE_AUTH_CLIENT_ID = "WEBSITE_AUTH_CLIENT_ID";
@@ -66,6 +67,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
         public const string IdentityBasedConnectionSettingCredentialSuffix = "__credential";
         public const string IdentityBasedConnectionSettingClientIdSuffix = "__clientId";
         public const string IdentityBasedConnectionSettingCredentialValue = "managedidentity";
+
+        public const string DfMonDisableNewParentIdResolutionAlgorithm = "DfMonDisableNewParentIdResolutionAlgorithm";
+
 
         public static void SplitConnNameAndHubName(string connAndHubName, out string connName, out string hubName)
         {
