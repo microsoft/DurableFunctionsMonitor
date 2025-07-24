@@ -20,6 +20,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
     static class EnvVariableNames
     {
         public const string AzureWebJobsStorage = "AzureWebJobsStorage";
+        public const string AzureWebJobsFeatureFlags = "AzureWebJobsFeatureFlags";
         public const string WEBSITE_SITE_NAME = "WEBSITE_SITE_NAME";
         public const string WEBSITE_AUTH_V2_CONFIG_JSON = "WEBSITE_AUTH_V2_CONFIG_JSON";
         public const string WEBSITE_AUTH_CLIENT_ID = "WEBSITE_AUTH_CLIENT_ID";
@@ -65,6 +66,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         public const string IdentityBasedConnectionSettingCredentialValue = "managedidentity";
 
         public const string DfmModeContextValue = "DfmModeContextValue";
+
+        public const string DfMonDisableNewParentIdResolutionAlgorithm = "DfMonDisableNewParentIdResolutionAlgorithm";
 
         /// <summary>
         /// Provides support for dedicated Storage accounts (different from AzureWebJobsStorage)
