@@ -27,7 +27,7 @@ export class LongJsonDialog extends React.Component<{ filterValue?: string, stat
     
     public static convertLongField(value: any): { value: string, isUrl: boolean } {
 
-        if (!value) {
+        if (value === null || value === undefined) {
             return { value: '', isUrl: false };
         }
 
@@ -50,7 +50,7 @@ export class LongJsonDialog extends React.Component<{ filterValue?: string, stat
 
     public static renderJson(jsonObject: any, filterValue: string, onClick: () => void): JSX.Element {
 
-        if (!jsonObject) {
+        if (jsonObject === null || jsonObject === undefined) {
             return null;
         }
 
