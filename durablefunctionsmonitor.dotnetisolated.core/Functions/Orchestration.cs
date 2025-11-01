@@ -201,8 +201,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     break;
                 case "restart":
 
-                    return await req.ReturnStatus(HttpStatusCode.BadRequest, "Restart is not supported in Isolated mode");
+                    bool restartWithNewInstanceId = ((dynamic)JObject.Parse(bodyString)).restartWithNewInstanceId;
+                    await durableClient.RestartAsync(instanceId, restartWithNewInstanceId);
 
+                    break;
                 case "input":
 
                     return await this.DownloadFieldValue(req, durableClient, Globals.GetFullConnectionStringEnvVariableName(connName), instanceId, status => status.SerializedInput);
