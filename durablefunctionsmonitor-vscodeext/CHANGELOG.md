@@ -1,5 +1,10 @@
 # Change Log
 
+# Version 6.7.2
+
+- Bugfix - [#283](https://github.com/microsoft/DurableFunctionsMonitor/issues/283).
+- Support for `Restart` command in Isolated. 
+
 # Version 6.7.1
 
 - Bugfix - [#258](https://github.com/microsoft/DurableFunctionsMonitor/issues/258) and [#260](https://github.com/microsoft/DurableFunctionsMonitor/issues/260).

@@ -2,7 +2,7 @@
     "name": "durablefunctionsmonitor",
     "displayName": "Durable Functions Monitor",
     "description": "Monitoring/debugging UI tool for Azure Durable Functions",
-    "version": "6.7.1",
+    "version": "6.7.2",
     "engines": {
         "vscode": "^1.39.0"
     },
