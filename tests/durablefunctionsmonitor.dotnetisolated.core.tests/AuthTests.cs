@@ -7,9 +7,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DurableFunctionsMonitor.DotNetIsolated;
+using Newtonsoft.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -640,6 +642,245 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             File.Delete("./host.json");
 
             Assert.IsTrue(hubNames.Contains("mYtASKhUB"));
+        }
+
+        [TestMethod]
+        public async Task GetClaimsPrincipal_ReturnsPrincipalFromRequestIdentities()
+        {
+            // Arrange
+            var request = new FakeHttpRequestData(new Uri("http://localhost"));
+            var identity = new ClaimsIdentity(new[] {
+                new Claim("preferred_username", "testuser@example.com")
+            }, "TestAuthType");
+
+            request.AddIdentity(identity);
+            var settings = new DfmSettings();
+
+            // Act
+            var principal = await Auth.GetClaimsPrincipal(request, settings);
+
+            // Assert
+            Assert.IsNotNull(principal);
+            Assert.IsTrue(principal.Identity.IsAuthenticated);
+            Assert.AreEqual("TestAuthType", principal.Identity.AuthenticationType);
+            Assert.IsTrue(principal.HasClaim("preferred_username", "testuser@example.com"));
+        }
+
+        [TestMethod]
+        public async Task GetClaimsPrincipal_IdentityIsNotAuthenticated_ThrowsDfmUnauthorizedException()
+        {
+            // Arrange
+            var request = new FakeHttpRequestData(new Uri("http://localhost"));
+            // Create identity, but don't specify auth type, so it is not authenticated
+            var identity = new ClaimsIdentity(new[] {
+                new Claim("preferred_username", "testuser@example.com")
+            });
+
+            request.AddIdentity(identity);
+            var settings = new DfmSettings();
+
+            // Act & Assert
+            var ex = await Assert.ThrowsExceptionAsync<DfmUnauthorizedException>(() => Auth.GetClaimsPrincipal(request, settings));
+            Assert.AreEqual("No access token provided. Call is rejected.", ex.Message);
+        }
+
+        [TestMethod]
+        public async Task GetClaimsPrincipal_IdentityIsMissingUserNameClaim_ThrowsDfmUnauthorizedException()
+        {
+            // Arrange
+            var request = new FakeHttpRequestData(new Uri("http://localhost"));
+            // Authenticated identity, but without the required claim
+            var identity = new ClaimsIdentity(new[] {
+                new Claim("some_other_claim", "some_value")
+            }, "TestAuthType");
+
+            request.AddIdentity(identity);
+            var settings = new DfmSettings();
+
+            // Act & Assert
+            var ex = await Assert.ThrowsExceptionAsync<DfmUnauthorizedException>(() => Auth.GetClaimsPrincipal(request, settings));
+            Assert.AreEqual("No access token provided. Call is rejected.", ex.Message);
+        }
+
+        [TestMethod]
+        public async Task GetClaimsPrincipal_XMsClientPrincipalHeader_ReturnsPrincipalFromHeader()
+        {
+            string originalSiteName = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME);
+            string originalClientId = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID);
+            try
+            {
+                // Arrange
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME, "test-site");
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, "test-client-id");
+
+                var request = new FakeHttpRequestData(new Uri("http://localhost"));
+
+                var clientPrincipal = new
+                {
+                    auth_typ = "aad",
+                    claims = new[]
+                    {
+                        new { typ = "preferred_username", val = "testuser@example.com" },
+                        new { typ = "roles", val = "somerole" }
+                    }
+                };
+
+                var clientPrincipalJson = JsonConvert.SerializeObject(clientPrincipal);
+                var headerValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(clientPrincipalJson));
+
+                request.Headers.Add("x-ms-client-principal", headerValue);
+
+                var settings = new DfmSettings();
+
+                // Act
+                var principal = await Auth.GetClaimsPrincipal(request, settings);
+
+                // Assert
+                Assert.IsNotNull(principal);
+                Assert.AreEqual("aad", principal.Identity.AuthenticationType);
+                Assert.IsTrue(principal.HasClaim("preferred_username", "testuser@example.com"));
+                Assert.IsTrue(principal.HasClaim("roles", "somerole"));
+            }
+            finally
+            {
+                // Cleanup
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME, originalSiteName);
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, originalClientId);
+            }
+        }
+
+        [TestMethod]
+        public async Task GetClaimsPrincipal_XMsClientPrincipalHeaderNotValid_ThrowsDfmUnauthorizedException()
+        {
+            string originalSiteName = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME);
+            string originalClientId = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID);
+            try
+            {
+                // Arrange
+                // Ensure env vars are not set
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME, null);
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, null);
+
+                var request = new FakeHttpRequestData(new Uri("http://localhost"));
+
+                request.Headers.Add("x-ms-client-principal", "not-empty");
+
+                var settings = new DfmSettings();
+
+                // Act & Assert
+                var ex = await Assert.ThrowsExceptionAsync<DfmUnauthorizedException>(() => Auth.GetClaimsPrincipal(request, settings));
+                Assert.AreEqual("The incoming 'x-ms-client-principal' header is not legitimate. Call is rejected.", ex.Message);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME, originalSiteName);
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, originalClientId);
+            }
+        }
+
+        [TestMethod]
+        public async Task GetClaimsPrincipal_XMsClientPrincipalHeaderMalformed_ThrowsDfmUnauthorizedException()
+        {
+            string originalSiteName = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME);
+            string originalClientId = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID);
+            try
+            {
+                // Arrange
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME, "test-site");
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, "test-client-id");
+
+                var request = new FakeHttpRequestData(new Uri("http://localhost"));
+
+                request.Headers.Add("x-ms-client-principal", "this-is-not-base64");
+
+                var settings = new DfmSettings();
+
+                // Act & Assert
+                var ex = await Assert.ThrowsExceptionAsync<DfmUnauthorizedException>(() => Auth.GetClaimsPrincipal(request, settings));
+                Assert.IsTrue(ex.Message.StartsWith("Failed to parse the 'x-ms-client-principal' header."));
+            }
+            finally
+            {
+                // Cleanup
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_SITE_NAME, originalSiteName);
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, originalClientId);
+            }
+        }
+
+        [TestMethod]
+        public async Task GetClaimsPrincipal_AuthorizationHeader_ReturnsPrincipalFromToken()
+        {
+            var originalJwtHandler = Auth.MockedJwtSecurityTokenHandler;
+            var originalSigningKeysTask = Auth.GetSigningKeysTask;
+            string originalClientId = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID);
+            string originalIssuer = Environment.GetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER);
+            try
+            {
+                // Arrange
+                var request = new FakeHttpRequestData(new Uri("http://localhost"));
+
+                string userName = "tino@contoso.com";
+                string roleName = "my-app-role";
+                string audience = "my-audience";
+                string issuer = "my-issuer";
+                string token = "blah-blah";
+
+                var principal = new ClaimsPrincipal(new ClaimsIdentity(new[] {
+                new Claim("preferred_username", userName),
+                new Claim("roles", roleName)
+            }, "TestAuthType"));
+
+                ICollection<SecurityKey> securityKeys = new SecurityKey[0];
+                ValidateTokenDelegate validateTokenDelegate = (string t, TokenValidationParameters p, out SecurityToken st) =>
+                {
+                    st = null;
+                    Assert.AreEqual(token, t);
+                };
+
+                SecurityToken st = null;
+                var jwtHandlerMoq = new Mock<JwtSecurityTokenHandler>();
+                jwtHandlerMoq.Setup(h => h.ValidateToken(It.IsAny<string>(), It.IsAny<TokenValidationParameters>(), out st))
+                    .Callback(validateTokenDelegate)
+                    .Returns(principal);
+
+                Auth.MockedJwtSecurityTokenHandler = jwtHandlerMoq.Object;
+                Auth.GetSigningKeysTask = Task.FromResult(securityKeys);
+
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, audience);
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, issuer);
+
+                request.Headers.Add("Authorization", "Bearer " + token);
+                var settings = new DfmSettings();
+
+                // Act
+                var resultPrincipal = await Auth.GetClaimsPrincipal(request, settings);
+
+                // Assert
+                Assert.IsNotNull(resultPrincipal);
+                Assert.AreSame(principal, resultPrincipal);
+                Assert.IsTrue(resultPrincipal.HasClaim("preferred_username", userName));
+                Assert.IsTrue(resultPrincipal.HasClaim("roles", roleName));
+            }
+            finally
+            {
+                // Cleanup
+                Auth.MockedJwtSecurityTokenHandler = originalJwtHandler;
+                Auth.GetSigningKeysTask = originalSigningKeysTask;
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, originalClientId);
+                Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, originalIssuer);
+            }
+        }
+
+        [TestMethod]
+        public async Task GetClaimsPrincipal_ThrowsWhenNoAuthInfoProvided()
+        {
+            // Arrange
+            var request = new FakeHttpRequestData(new Uri("http://localhost"));
+            var settings = new DfmSettings();
+
+            // Act & Assert
+            var ex = await Assert.ThrowsExceptionAsync<DfmUnauthorizedException>(() => Auth.GetClaimsPrincipal(request, settings));
+            Assert.AreEqual("No access token provided. Call is rejected.", ex.Message);
         }
     }
 }
