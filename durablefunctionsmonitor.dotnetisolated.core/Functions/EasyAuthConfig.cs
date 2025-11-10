@@ -53,7 +53,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             {
                 // Assuming it is the server-directed login flow to be used
                 // and returning just the user name (to speed up login process)
-                var userNameClaim = req.Identities?.SingleOrDefault()?.FindAll(this.Settings.UserNameClaimName).SingleOrDefault();
+                var claimsPrincipal = await Auth.GetClaimsPrincipal(req, this.Settings);
+                var userNameClaim = claimsPrincipal?.Identities?.SingleOrDefault()?.FindAll(this.Settings.UserNameClaimName).SingleOrDefault();
                 return await req.ReturnJson(new { userName = userNameClaim?.Value });
             }
 

@@ -345,7 +345,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
         }
 
-        private static async Task<ClaimsPrincipal> GetClaimsPrincipal(HttpRequestData request, DfmSettings settings)
+        public static async Task<ClaimsPrincipal> GetClaimsPrincipal(HttpRequestData request, DfmSettings settings)
         {
             // First trying the request object
             var easyAuthPrincipal = new ClaimsPrincipal(request.Identities);
