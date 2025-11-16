@@ -1,5 +1,9 @@
 # Change Log
 
+# Version 6.7.3
+
+- Bugfix - [#273](https://github.com/microsoft/DurableFunctionsMonitor/issues/273).
+
 # Version 6.7.2
 
 - Bugfix - [#283](https://github.com/microsoft/DurableFunctionsMonitor/issues/283).
