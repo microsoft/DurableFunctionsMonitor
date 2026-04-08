@@ -100,15 +100,10 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 throw new AccessViolationException("Endpoint is in ReadOnly mode");
             }
 
-            // Validating Task Hub name, if it was specified
-            if (!string.IsNullOrEmpty(taskHubName))
-            {
-                await ThrowIfTaskHubNameIsInvalid(taskHubName);
-            }
-
             // Starting with nonce (used when running as a VsCode extension)
             if (IsNonceSetAndValid(headers))
             {
+                await ThrowIfTaskHubNameIsInvalid(taskHubName);
                 return DfmEndpoint.Settings.Mode;
             }
 
@@ -129,12 +124,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
                 throw new UnauthorizedAccessException($"'{DfmEndpoint.Settings.UserNameClaimName}' claim is missing in the incoming identity. Call is rejected.");
             }
 
-            if (DfmEndpoint.Settings.AllowedUserNames != null)
+            if (DfmEndpoint.Settings.AllowedUserNames?.Contains(userNameClaim.Value) == false)
             {
-                if (!DfmEndpoint.Settings.AllowedUserNames.Contains(userNameClaim.Value))
-                {
-                    throw new UnauthorizedAccessException($"User {userNameClaim.Value} is not mentioned in {EnvVariableNames.DFM_ALLOWED_USER_NAMES} config setting. Call is rejected");
-                }
+                throw new UnauthorizedAccessException($"User {userNameClaim.Value} is not mentioned in {EnvVariableNames.DFM_ALLOWED_USER_NAMES} config setting. Call is rejected");
             }
 
             // Also validating App Roles, but only if any of relevant setting is set
@@ -156,7 +148,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     throw new UnauthorizedAccessException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES}, {EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected");
                 }
 
-                if (userIsInFullAccessRole) {
+                if (userIsInFullAccessRole)
+                {
+                    await ThrowIfTaskHubNameIsInvalid(taskHubName);
                     return DfmEndpoint.Settings.Mode;
                 }
 
@@ -166,8 +160,12 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     throw new AccessViolationException($"User {userNameClaim.Value} is in read-only mode");
                 }
 
+                await ThrowIfTaskHubNameIsInvalid(taskHubName);
+
                 return userIsInReadonlyRole ? DfmMode.ReadOnly : DfmEndpoint.Settings.Mode;
             }
+
+            await ThrowIfTaskHubNameIsInvalid(taskHubName);
 
             return DfmEndpoint.Settings.Mode;
         }
@@ -263,6 +261,10 @@ namespace DurableFunctionsMonitor.DotNetBackend
         // Checks that a Task Hub name is valid for this instace
         public static async Task ThrowIfTaskHubNameIsInvalid(string hubName)
         {
+            if (string.IsNullOrEmpty(hubName))
+            {
+                return;
+            }
             // Two bugs away. Validating that the incoming Task Hub name looks like a Task Hub name
             ThrowIfTaskHubNameHasInvalidSymbols(hubName);
 

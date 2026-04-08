@@ -143,6 +143,14 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             // Arrange
             var request = new FakeHttpRequestData(new Uri("http://localhost/a/p/i/--InvalidHubName/about"));
 
+            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
+            request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+
+            request.AddIdentity(new ClaimsIdentity(new Claim[] {
+                new Claim("preferred_username", "tino@contoso.com")
+            }, "tino-test-auth-type"));
+
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, "Hub1,Hub2,Hub3");
 
             // Act
@@ -160,6 +168,14 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         {
             // Arrange
             var request = new FakeHttpRequestData(new Uri("http://localhost/a/p/i/--bad'hub|name/about"));
+
+            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
+            request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+
+            request.AddIdentity(new ClaimsIdentity(new Claim[] {
+                new Claim("preferred_username", "tino@contoso.com")
+            }, "tino-test-auth-type"));
 
             // Act
             var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
@@ -399,7 +415,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         }
 
         [TestMethod]
-        public void LoadsListOfTablesFromTableStorage()
+        public async Task LoadsListOfTablesFromTableStorage()
         {
             // Arrange
 
@@ -411,7 +427,15 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
             request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
 
+            var appRole = "my-app-role";
+
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, appRole);
+
+            request.AddIdentity(new ClaimsIdentity(new Claim[] {
+                new Claim("preferred_username", "tino@contoso.com"),
+                new Claim("roles", appRole)
+            }, "tino-test-auth-type"));
 
             var tableClientMoq = new Mock<ITableClient>();
 
@@ -423,20 +447,13 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
-
-            Assert.IsInstanceOfType(task.Exception.InnerException, typeof(DfmUnauthorizedException));
-
-            // If TableClient throws, task hub validation should be skipped, and we should get 'No access token provided'.
-            Assert.AreEqual(
-                "No access token provided. Call is rejected.",
-                task.Exception.InnerException.Message
-            );
+            // If TableClient throws, task hub validation should be skipped
+            await Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
 
             // Now initializing TableClient
             TableClient.MockedTableClient = tableClientMoq.Object;
 
-            task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
             Thread.Sleep(100);
             task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
 
