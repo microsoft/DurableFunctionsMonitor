@@ -154,7 +154,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     await durableClient.PurgeInstanceAsync(instanceId);
                     break;
                 case "rewind":
-                    return await req.ReturnStatus(HttpStatusCode.BadRequest, "Rewind is not supported in Isolated mode");
+                    await durableClient.RewindInstanceAsync(instanceId, bodyString);
+                    break;
                 case "terminate":
                     await durableClient.TerminateInstanceAsync(instanceId, bodyString);
                     break;
