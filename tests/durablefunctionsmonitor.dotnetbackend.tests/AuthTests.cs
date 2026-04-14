@@ -486,7 +486,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
 
             var logMoq = new Mock<ILogger>();
-            
+
             bool tableClientInitialized = false;
             string hubName = "InvalidHubName";
 
