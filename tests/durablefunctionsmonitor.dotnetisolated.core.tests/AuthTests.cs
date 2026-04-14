@@ -151,14 +151,6 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             // Arrange
             var request = new FakeHttpRequestData(new Uri("http://localhost/a/p/i/--InvalidHubName/about"));
 
-            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
-            request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
-            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
-
-            request.AddIdentity(new ClaimsIdentity(new Claim[] {
-                new Claim("preferred_username", "tino@contoso.com")
-            }, "tino-test-auth-type"));
-
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, "Hub1,Hub2,Hub3");
 
             // Act
@@ -176,14 +168,6 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         {
             // Arrange
             var request = new FakeHttpRequestData(new Uri("http://localhost/a/p/i/--bad'hub|name/about"));
-
-            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
-            request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
-            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
-
-            request.AddIdentity(new ClaimsIdentity(new Claim[] {
-                new Claim("preferred_username", "tino@contoso.com")
-            }, "tino-test-auth-type"));
 
             // Act
             var task = Auth.ThrowIfUriTaskHubNameIsInvalid(request.Url.ToString(), new DfmExtensionPoints());
@@ -435,15 +419,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
             request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
 
-            var appRole = "my-app-role";
-
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, appRole);
-
-            request.AddIdentity(new ClaimsIdentity(new Claim[] {
-                new Claim("preferred_username", "tino@contoso.com"),
-                new Claim("roles", appRole)
-            }, "tino-test-auth-type"));
 
             var tableClientMoq = new Mock<ITableClient>();
 
