@@ -486,7 +486,8 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
 
             var logMoq = new Mock<ILogger>();
-
+            
+            bool tableClientInitialized = false;
             string hubName = "InvalidHubName";
 
             logMoq.Setup(log => log.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()))
@@ -494,7 +495,15 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                 {
                     // Ensuring the correct type of exception was raised internally
                     Assert.IsInstanceOfType(ex, typeof(UnauthorizedAccessException));
-                    Assert.AreEqual($"Task Hub '{hubName}' is not allowed.", ex.Message);
+
+                    // If TableClient throws, task hub validation should be skipped, and we should get 'No access token provided'.
+                    // Next time, when MockedTableClient is set, we should get 'Task Hub is not allowed'.
+                    // This also validates that queries against table storage are properly retried.
+                    Assert.AreEqual(
+                        tableClientInitialized ?
+                        $"Task Hub '{hubName}' is not allowed." :
+                        "No access token provided. Call is rejected.",
+                        ex.Message);
                 });
 
 
@@ -524,13 +533,12 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            // If TableClient throws, task hub validation should be skipped
             var result = await About.DfmAboutFunction(request, "-", hubName, logMoq.Object);
 
             TableClient.MockedTableClient = tableClientMoq.Object;
 
-            // Now when MockedTableClient is set, we should get 'Task Hub is not allowed'.
-            // This also validates that queries against table storage are properly retried.
+            tableClientInitialized = true;
+
             result = await About.DfmAboutFunction(request, "-", hubName, logMoq.Object);
             result = await About.DfmAboutFunction(request, "-", hubName, logMoq.Object);
 
