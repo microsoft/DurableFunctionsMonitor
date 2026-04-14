@@ -532,11 +532,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                 }));
 
             // Act
-
             var result = await About.DfmAboutFunction(request, "-", hubName, logMoq.Object);
 
             TableClient.MockedTableClient = tableClientMoq.Object;
-
             tableClientInitialized = true;
 
             result = await About.DfmAboutFunction(request, "-", hubName, logMoq.Object);
