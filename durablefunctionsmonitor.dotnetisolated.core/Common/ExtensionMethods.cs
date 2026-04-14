@@ -99,6 +99,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                         {
                             // If so, invoking DfMon's auth logic
                             var dfmMode = await Auth.ValidateIdentityAsync(request, operationKind.Value, settings, extensionPoints);
+                            await Auth.ThrowIfUriTaskHubNameIsInvalid(request.Url.AbsolutePath, extensionPoints);
 
                             // Propagating DfmMode to Functions
                             context.Items.Add(Globals.DfmModeContextValue, dfmMode);

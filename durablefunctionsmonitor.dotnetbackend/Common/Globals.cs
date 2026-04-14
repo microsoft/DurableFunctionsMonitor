@@ -118,7 +118,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             return await HandleErrors(req, log, async () =>
             {
-                var mode = await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, CombineConnNameAndHubName(connName, hubName), kind);
+                var taskHubName = CombineConnNameAndHubName(connName, hubName);
+                var mode = await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, taskHubName, kind);
+                await Auth.ThrowIfTaskHubNameIsInvalid(taskHubName);
 
                 return await todo(mode);
             });

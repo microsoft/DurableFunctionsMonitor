@@ -27,6 +27,14 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         {
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, string.Empty);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, null);
+            Auth.MockedJwtSecurityTokenHandler = null;
+            Auth.AlternativeConnectionStringNames = Array.Empty<string>();
         }
 
         [TestMethod]
@@ -155,7 +163,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ThrowIfUriTaskHubNameIsInvalid(request.Url.ToString(), new DfmExtensionPoints());
 
             // Assert
 
@@ -178,7 +186,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             }, "tino-test-auth-type"));
 
             // Act
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ThrowIfUriTaskHubNameIsInvalid(request.Url.ToString(), new DfmExtensionPoints());
 
             // Assert
             Assert.IsInstanceOfType(task.Exception.InnerException, typeof(DfmUnauthorizedException));
@@ -447,15 +455,12 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            // If TableClient throws, task hub validation should be skipped
-            await Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
-
             // Now initializing TableClient
             TableClient.MockedTableClient = tableClientMoq.Object;
 
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ThrowIfUriTaskHubNameIsInvalid(request.Url.ToString(), new DfmExtensionPoints());
             Thread.Sleep(100);
-            task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            task = Auth.ThrowIfUriTaskHubNameIsInvalid(request.Url.ToString(), new DfmExtensionPoints());
 
             TableClient.MockedTableClient = null;
 

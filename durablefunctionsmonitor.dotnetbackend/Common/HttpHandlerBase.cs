@@ -29,7 +29,9 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             return await Globals.HandleErrors(req, log, async () => { 
 
-                await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, Globals.CombineConnNameAndHubName(connName, hubName), kind);
+                var taskHubName = Globals.CombineConnNameAndHubName(connName, hubName);
+                await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, taskHubName, kind);
+                await Auth.ThrowIfTaskHubNameIsInvalid(taskHubName);
 
                 // For default storage connections using default durableClient, injected normally, as a parameter.
                 // Only using IDurableClientFactory for custom connections, just in case.

@@ -103,7 +103,6 @@ namespace DurableFunctionsMonitor.DotNetBackend
             // Starting with nonce (used when running as a VsCode extension)
             if (IsNonceSetAndValid(headers))
             {
-                await ThrowIfTaskHubNameIsInvalid(taskHubName);
                 return DfmEndpoint.Settings.Mode;
             }
 
@@ -150,7 +149,6 @@ namespace DurableFunctionsMonitor.DotNetBackend
 
                 if (userIsInFullAccessRole)
                 {
-                    await ThrowIfTaskHubNameIsInvalid(taskHubName);
                     return DfmEndpoint.Settings.Mode;
                 }
 
@@ -160,12 +158,8 @@ namespace DurableFunctionsMonitor.DotNetBackend
                     throw new AccessViolationException($"User {userNameClaim.Value} is in read-only mode");
                 }
 
-                await ThrowIfTaskHubNameIsInvalid(taskHubName);
-
                 return userIsInReadonlyRole ? DfmMode.ReadOnly : DfmEndpoint.Settings.Mode;
             }
-
-            await ThrowIfTaskHubNameIsInvalid(taskHubName);
 
             return DfmEndpoint.Settings.Mode;
         }

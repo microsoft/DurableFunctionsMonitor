@@ -102,7 +102,6 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             // Starting with nonce (used when running as a VsCode extension)
             if (IsNonceSetAndValid(settings, request.Headers))
             {
-                await ThrowIfUriTaskHubNameIsInvalid(request.Url.AbsolutePath, extensionPoints);
                 return settings.Mode;
             }
 
@@ -143,7 +142,6 @@ namespace DurableFunctionsMonitor.DotNetIsolated
 
                 if (userIsInFullAccessRole)
                 {
-                    await ThrowIfUriTaskHubNameIsInvalid(request.Url.AbsolutePath, extensionPoints);
                     return settings.Mode;
                 }
 
@@ -153,12 +151,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     throw new DfmAccessViolationException($"User {userNameClaim.Value} is in read-only mode");
                 }
 
-                await ThrowIfUriTaskHubNameIsInvalid(request.Url.AbsolutePath, extensionPoints);
-
                 return userIsInReadonlyRole ? DfmMode.ReadOnly : settings.Mode;
             }
-
-            await ThrowIfUriTaskHubNameIsInvalid(request.Url.AbsolutePath, extensionPoints);
 
             return settings.Mode;
         }

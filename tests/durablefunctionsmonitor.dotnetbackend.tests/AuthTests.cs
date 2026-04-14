@@ -32,6 +32,16 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         public void TestInit()
         {
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, null);
+            Auth.MockedJwtSecurityTokenHandler = null;
+            Auth.AlternativeConnectionStringNames = Array.Empty<string>();
+            DfmEndpoint.Setup();
         }
 
         [TestMethod]
