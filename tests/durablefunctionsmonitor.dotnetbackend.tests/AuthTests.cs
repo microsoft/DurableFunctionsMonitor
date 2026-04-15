@@ -32,6 +32,16 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         public void TestInit()
         {
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, null);
+            Auth.MockedJwtSecurityTokenHandler = null;
+            Auth.AlternativeConnectionStringNames = Array.Empty<string>();
+            DfmEndpoint.Setup();
         }
 
         [TestMethod]
@@ -133,6 +143,10 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             // Arrange
             var request = new DefaultHttpContext().Request;
 
+            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
+            request.Headers.Add("Cookie", new CookieHeaderValue(Globals.XsrfTokenCookieAndHeaderName, xsrfToken).ToString());
+            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+
             var logMoq = new Mock<ILogger>();
 
             logMoq.Setup(log => log.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()))
@@ -144,6 +158,14 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                 });
 
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, "Hub1,Hub2,Hub3");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
+
+            // Need to reset DfmEndpoint.Settings
+            DfmEndpoint.Setup();
+
+            request.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity[] { new ClaimsIdentity( new Claim[] {
+                new Claim("preferred_username", "tino@contoso.com")})
+            });
 
             // Act
             var result = await About.DfmAboutFunction(request, "-", "InvalidHubName", logMoq.Object);
@@ -158,6 +180,10 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             // Arrange
             var request = new DefaultHttpContext().Request;
 
+            string xsrfToken = $"xsrf-token-{DateTime.Now.Ticks}";
+            request.Headers.Add("Cookie", new CookieHeaderValue(Globals.XsrfTokenCookieAndHeaderName, xsrfToken).ToString());
+            request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
+
             var logMoq = new Mock<ILogger>();
 
             logMoq.Setup(log => log.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()))
@@ -167,6 +193,21 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                     Assert.IsInstanceOfType(ex, typeof(ArgumentException));
                     Assert.AreEqual("Task Hub name is invalid.", ex.Message);
                 });
+
+            var appRole = "my-app-role";
+
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, appRole);
+
+            // Need to reset DfmEndpoint.Settings
+            DfmEndpoint.Setup();
+
+            request.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity[] { new ClaimsIdentity( new Claim[] {
+                    new Claim("preferred_username", "tino@contoso.com"),
+                    new Claim("roles", appRole)
+                })
+            });
 
             // Act
             var result = await About.DfmAboutFunction(request, "-", "bad//hub\\name", logMoq.Object);
@@ -465,7 +506,22 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
                         ex.Message);
                 });
 
+
+            var appRole = "my-app-role";
+
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, appRole);
+
+            // Need to reset DfmEndpoint.Settings
+            DfmEndpoint.Setup();
+
+            request.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity[] { new ClaimsIdentity( 
+                new Claim[] {
+                    new Claim("preferred_username", "tino@contoso.com"),
+                    new Claim("roles", appRole)
+                })
+            });
 
             var tableClientMoq = new Mock<ITableClient>();
 

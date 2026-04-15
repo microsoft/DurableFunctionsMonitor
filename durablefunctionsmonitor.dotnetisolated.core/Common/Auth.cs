@@ -99,16 +99,6 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 throw new DfmAccessViolationException("Endpoint is in ReadOnly mode");
             }
 
-            // Validating Task Hub name, if it can be found in the URL
-            var connNameAndHubNameMatch = ConnNameAndHubNameRegex.Match(request.Url.AbsolutePath);
-            if (connNameAndHubNameMatch.Success)
-            {
-                string connName = connNameAndHubNameMatch.Groups[1].Value;
-                string hubName = connNameAndHubNameMatch.Groups[2].Value;
-
-                await ThrowIfTaskHubNameIsInvalid(Globals.CombineConnNameAndHubName(connName, hubName), extensionPoints);
-            }
-
             // Starting with nonce (used when running as a VsCode extension)
             if (IsNonceSetAndValid(settings, request.Headers))
             {
@@ -126,12 +116,9 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                 throw new DfmUnauthorizedException($"'{settings.UserNameClaimName}' claim is missing in the incoming identity. Call is rejected.");
             }
 
-            if (settings.AllowedUserNames != null)
+            if (settings.AllowedUserNames?.Contains(userNameClaim.Value) == false)
             {
-                if (!settings.AllowedUserNames.Contains(userNameClaim.Value))
-                {
-                    throw new DfmUnauthorizedException($"User {userNameClaim.Value} is not mentioned in {EnvVariableNames.DFM_ALLOWED_USER_NAMES} config setting. Call is rejected");
-                }
+                throw new DfmUnauthorizedException($"User {userNameClaim.Value} is not mentioned in {EnvVariableNames.DFM_ALLOWED_USER_NAMES} config setting. Call is rejected");
             }
 
             // Also validating App Roles, but only if any of relevant setting is set
@@ -153,7 +140,8 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                     throw new DfmUnauthorizedException($"User {userNameClaim.Value} doesn't have any of roles mentioned in {EnvVariableNames.DFM_ALLOWED_APP_ROLES}, {EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES} or {EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES} config setting. Call is rejected");
                 }
 
-                if (userIsInFullAccessRole) {
+                if (userIsInFullAccessRole)
+                {
                     return settings.Mode;
                 }
 
@@ -259,9 +247,17 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             }
         }
 
-        // Checks that a Task Hub name is valid for this instace
-        public static async Task ThrowIfTaskHubNameIsInvalid(string hubName, DfmExtensionPoints extensionPoints)
+        // Checks that a Task Hub name is valid for this instance if it can be found in the URI.
+        public static async Task ThrowIfUriTaskHubNameIsInvalid(string uri, DfmExtensionPoints extensionPoints)
         {
+            var connNameAndHubNameMatch = ConnNameAndHubNameRegex.Match(uri);
+            if (!connNameAndHubNameMatch.Success)
+            {
+                return;
+            }
+
+            var hubName = Globals.CombineConnNameAndHubName(connNameAndHubNameMatch.Groups[1].Value, connNameAndHubNameMatch.Groups[2].Value);
+
             // Two bugs away. Validating that the incoming Task Hub name looks like a Task Hub name
             ThrowIfTaskHubNameHasInvalidSymbols(hubName);
 
