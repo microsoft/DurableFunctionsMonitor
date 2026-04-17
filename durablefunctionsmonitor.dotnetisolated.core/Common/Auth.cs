@@ -91,7 +91,7 @@ namespace DurableFunctionsMonitor.DotNetIsolated
         /// <returns><see cref="DfmMode"/> value for current request (so that it can be returned to the calling code) </returns>
         /// <exception cref="DfmAccessViolationException"></exception>
         /// <exception cref="DfmUnauthorizedException"></exception>
-        public static async Task<DfmMode> ValidateIdentityAsync(HttpRequestData request, OperationKind operationKind, DfmSettings settings, DfmExtensionPoints extensionPoints)
+        public static async Task<DfmMode> ValidateIdentityAsync(HttpRequestData request, OperationKind operationKind, DfmSettings settings)
         {
             // Checking if the endpoint is in ReadOnly mode
             if (operationKind != OperationKind.Read && settings.Mode == DfmMode.ReadOnly)

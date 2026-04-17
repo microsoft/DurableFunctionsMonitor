@@ -189,7 +189,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             await File.WriteAllTextAsync("../host.json", $"{{\"extensions\":{{\"durableTask\": {{\"hubName\": \"{hubName}\"}}}}}}");
 
             // Act
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings());
 
             // Assert
 
@@ -222,7 +222,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings());
 
             // Assert
 
@@ -256,7 +256,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             }, "tino-test-auth-type"));
 
             // Act
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings());
 
             // Assert
             Assert.IsInstanceOfType(task.Exception.InnerException, typeof(DfmUnauthorizedException));
@@ -294,7 +294,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings());
 
             // Assert
 
@@ -336,7 +336,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            var result = await Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var result = await Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings());
 
             // Assert
 
@@ -400,7 +400,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             request.Headers.Add("Authorization", "Bearer " + token);
 
             // Act
-            var result = await Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var result = await Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings());
 
             // Assert
             Assert.AreEqual(DfmMode.Normal, result);
@@ -480,7 +480,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Act
 
-            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings(), new DfmExtensionPoints());
+            var task = Auth.ValidateIdentityAsync(request, OperationKind.Read, new DfmSettings());
 
             // Assert
 

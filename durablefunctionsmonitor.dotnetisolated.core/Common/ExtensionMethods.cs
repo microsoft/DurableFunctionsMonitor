@@ -98,7 +98,10 @@ namespace DurableFunctionsMonitor.DotNetIsolated
                         if (operationKind.HasValue)
                         {
                             // If so, invoking DfMon's auth logic
-                            var dfmMode = await Auth.ValidateIdentityAsync(request, operationKind.Value, settings, extensionPoints);
+                            var dfmMode = await Auth.ValidateIdentityAsync(request, operationKind.Value, settings);
+
+                            // Also validating task hub name (if it is a part of the request).
+                            // But only after validating user identity (because validating task hub name involves querying the Storage).
                             await Auth.ThrowIfUriTaskHubNameIsInvalid(request.Url.AbsolutePath, extensionPoints);
 
                             // Propagating DfmMode to Functions

@@ -118,9 +118,11 @@ namespace DurableFunctionsMonitor.DotNetBackend
         {
             return await HandleErrors(req, log, async () =>
             {
-                var taskHubName = CombineConnNameAndHubName(connName, hubName);
-                var mode = await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, taskHubName, kind);
-                await Auth.ThrowIfTaskHubNameIsInvalid(taskHubName);
+                var mode = await Auth.ValidateIdentityAsync(req.HttpContext.User, req.Headers, req.Cookies, kind);
+
+                // Also validating task hub name (if it is a part of the request).
+                // But only after validating user identity (because validating task hub name involves querying the Storage).
+                await Auth.ThrowIfTaskHubNameIsInvalid(CombineConnNameAndHubName(connName, hubName));
 
                 return await todo(mode);
             });
