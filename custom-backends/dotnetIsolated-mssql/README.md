@@ -1,6 +1,6 @@
-# Durable Functions Monitor .Net 7 Isolated for MSSQL
+# Durable Functions Monitor .Net Isolated for MSSQL
 
-Custom Durable Functions Monitor .NET 7 Isolated backend project to be used with [Durable Task SQL Provider](https://microsoft.github.io/durabletask-mssql/#/).
+Custom Durable Functions Monitor .NET Isolated backend project to be used with [Durable Task SQL Provider](https://microsoft.github.io/durabletask-mssql/#/).
 
 ## How to run locally
 
