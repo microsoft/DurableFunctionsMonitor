@@ -26,6 +26,12 @@ namespace DurableFunctionsMonitor.DotNetIsolated
             string p3
         )
         {
+            // Rejecting /.well-known requests
+            if (".well-known".Equals(p1, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return req.CreateResponse(HttpStatusCode.NotFound);
+            }
+
             // Checking nonce, if it was set as an env variable.
             // Don't care about return value of this method here.
             Auth.IsNonceSetAndValid(this.Settings, req.Headers);
