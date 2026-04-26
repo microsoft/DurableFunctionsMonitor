@@ -1,5 +1,10 @@
 # Change Log
 
+# Version 6.8.1
+
+- Improved handling of unauthorized requests to backend API ([#313](https://github.com/microsoft/DurableFunctionsMonitor/issues/313)). Thanks [@EvanSchallerer](https://github.com/EvanSchallerer) for this contribution!
+
+
 # Version 6.7.3
 
 - Bugfix - [#273](https://github.com/microsoft/DurableFunctionsMonitor/issues/273).
