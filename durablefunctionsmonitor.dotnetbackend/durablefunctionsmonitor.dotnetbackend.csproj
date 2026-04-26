@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-    <AssemblyVersion>6.8.1.0/AssemblyVersion>
+    <AssemblyVersion>6.8.1.0</AssemblyVersion>
     <FileVersion>6.8.1.0</FileVersion>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
