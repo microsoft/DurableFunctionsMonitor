@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
-import * as open from 'open';
+import open = require('open');
 
 import * as SharedConstants from './SharedConstants';
 
