@@ -108,12 +108,12 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
 
         for (var event of history) {
 
-            const subFuncName = event.Name;
+            const subFuncName = event.name;
 
-            switch (event.EventType) {
+            switch (event.eventType) {
                 case 'SubOrchestrationInstanceCreated':
 
-                    if (!!event.SubOrchestrationId && !!event.history) {
+                    if (!!event.subOrchestrationId && !!event.history) {
 
                         this.updateMetricsForInstance(metrics, subFuncName, "Running", 0, event.history, cancelToken);
                     }
@@ -121,9 +121,9 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
                     break;
                 case 'SubOrchestrationInstanceCompleted':
 
-                    if (!!event.SubOrchestrationId && !!event.history) {
+                    if (!!event.subOrchestrationId && !!event.history) {
 
-                        const durationInMs = new Date(event.Timestamp).getTime() - new Date(event.ScheduledTime).getTime();
+                        const durationInMs = new Date(event.timestamp).getTime() - new Date(event.scheduledTime).getTime();
 
                         this.updateMetricsForInstance(metrics, subFuncName, "Completed", durationInMs, event.history, cancelToken);
                     }
@@ -131,9 +131,9 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
                     break;
                 case 'SubOrchestrationInstanceFailed':
 
-                    if (!!event.SubOrchestrationId && !!event.history) {
+                    if (!!event.subOrchestrationId && !!event.history) {
 
-                        const durationInMs = new Date(event.Timestamp).getTime() - new Date(event.ScheduledTime).getTime();
+                        const durationInMs = new Date(event.timestamp).getTime() - new Date(event.scheduledTime).getTime();
 
                         this.updateMetricsForInstance(metrics, subFuncName, "Failed", durationInMs, event.history, cancelToken);
                     }
@@ -147,8 +147,8 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
 
                     metrics[subFuncName].completed++;
 
-                    if (metrics[subFuncName].duration < event.DurationInMs) {
-                        metrics[subFuncName].duration = event.DurationInMs;
+                    if (metrics[subFuncName].duration < event.durationInMs) {
+                        metrics[subFuncName].duration = event.durationInMs;
                     }
                     
                     break;
@@ -160,8 +160,8 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
 
                     metrics[subFuncName].failed++;
 
-                    if (metrics[subFuncName].duration < event.DurationInMs) {
-                        metrics[subFuncName].duration = event.DurationInMs;
+                    if (metrics[subFuncName].duration < event.durationInMs) {
+                        metrics[subFuncName].duration = event.durationInMs;
                     }
                     
                     break;
@@ -224,14 +224,14 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
 
         for (const event of history) {
 
-            switch (event.EventType) {
+            switch (event.eventType) {
                 case "SubOrchestrationInstanceCompleted":
                 case "SubOrchestrationInstanceFailed":
 
                     promises.push(
 
-                        this._loadHistory(event.SubOrchestrationId)
-                            .then(subHistory => this.loadSubOrchestrations(event.Name, subHistory as any))
+                        this._loadHistory(event.subOrchestrationId)
+                            .then(subHistory => this.loadSubOrchestrations(event.name, subHistory as any))
                             .then(subHistory => {
     
                                 event.history = subHistory;
@@ -239,7 +239,7 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
                             })
                             .catch(err => {
     
-                                console.log(`Failed to load ${event.SubOrchestrationId}. ${err.message}`);
+                                console.log(`Failed to load ${event.subOrchestrationId}. ${err.message}`);
                             })
                     );
                         
@@ -253,7 +253,7 @@ export class FunctionGraphTabState extends FunctionGraphStateBase implements ICu
                     
                     if (!!this._traversalResult && !!this._traversalResult.functions) {
                         
-                        const func = this._traversalResult.functions[event.Name];
+                        const func = this._traversalResult.functions[event.name];
                         if (!!func) {
 
                             if (!func.isCalledBy) {
