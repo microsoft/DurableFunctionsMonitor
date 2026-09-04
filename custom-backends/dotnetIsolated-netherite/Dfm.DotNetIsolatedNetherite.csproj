@@ -5,17 +5,15 @@
 
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\durablefunctionsmonitor.dotnetisolated.mssql\durablefunctionsmonitor.dotnetisolated.mssql.csproj" />
+    <ProjectReference Include="..\..\durablefunctionsmonitor.dotnetisolated.netherite\durablefunctionsmonitor.dotnetisolated.netherite.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.7" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.SqlServer" Version="1.2.1" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.Netherite" Version="1.5.4" />
   </ItemGroup>
 
   <!-- Copying statics -->
@@ -36,8 +34,5 @@
     <None Update="nuspec.nuspec">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
   </ItemGroup>
 </Project>

@@ -102,7 +102,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const tempBackendFolder = await copyBackendProjectToTempFolder('mssql');
+		const tempBackendFolder = await copyBackendProjectToTempFolder('dotnetIsolated-mssql');
 
 		const connSettings = new StorageConnectionSettings('Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;', 'my-task-hub');
 
@@ -188,7 +188,7 @@ suite('BackendProcess Test Suite', () => {
 
 		// Arrange
 
-		const tempBackendFolder = await copyBackendProjectToTempFolder('mssql');
+		const tempBackendFolder = await copyBackendProjectToTempFolder('dotnetIsolated-mssql');
 
 		const connSettings = new StorageConnectionSettings('Data Source=my-server;Initial Catalog=my-db;Integrated Security=True;', 'my-task-hub');
 
@@ -383,11 +383,12 @@ suite('BackendProcess Test Suite', () => {
 
 		const extensionPath = path.join(__dirname, '..', '..', '..');
 
-		const connSettings = new StorageConnectionSettings(`AccountName=mystorageaccount1;AccountKey=12345;DefaultEndpointsProtocol=http;`, 'my-task-hub');
+		const connSettings = new StorageConnectionSettings(`Server=(localdb)\\MSSQLLocalDB;Database=durabledb;`, 'dt/my-task-hub');
 
 		const backendProcess = new BackendProcess(extensionPath, connSettings, () => { }, () => Promise.resolve(), () => { });
 
-		await UpdateSetting('backendVersionToUse', '.Net Core 3.1');
+		// Pretending a recent enough Functions host is installed, so that the version gate lets us through
+		(BackendProcess as any)._funcVersion = '4.0.5000';
 
 		// Act
 
@@ -397,11 +398,11 @@ suite('BackendProcess Test Suite', () => {
 
 			// Assert
 
-			assert.strictEqual(binariesFolder, path.join(extensionPath, 'custom-backends', 'netcore31'));
+			assert.strictEqual(binariesFolder, path.join(extensionPath, 'custom-backends', 'dotnetIsolated-mssql'));
 
 		} finally {
 
-			await UpdateSetting('backendVersionToUse', undefined);
+			(BackendProcess as any)._funcVersion = '';
 		}
 	});
 
@@ -427,7 +428,7 @@ suite('BackendProcess Test Suite', () => {
 
 			// Assert
 
-			assert.strictEqual(err.message.startsWith(`Default backend now requires at least Azure Functions Core Tools v4.0.4629`), true);
+			assert.strictEqual(err.message.startsWith(`DfMon's backends require at least Azure Functions Core Tools v4.0.4629`), true);
 		}
 	});
 });

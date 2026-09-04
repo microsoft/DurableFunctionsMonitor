@@ -11,7 +11,6 @@ export function Settings(): ISettings {
     // Better to have default values hardcoded here (not only in package.json) as well
     return {
         backendBaseUrl: config.get<string>('backendBaseUrl', 'http://localhost:{portNr}/a/p/i'),
-        backendVersionToUse: config.get<'Default' | '.Net Core 3.1' | '.Net Core 2.1'>('backendVersionToUse', 'Default'),
         customPathToBackendBinaries: config.get<string>('customPathToBackendBinaries', ''),
         customPathToAzureFunctionsHost: config.get<string>('customPathToAzureFunctionsHost', ''),
         backendTimeoutInSeconds: config.get<number>('backendTimeoutInSeconds', 60),
@@ -32,7 +31,6 @@ export function UpdateSetting(name: string, val: any): Thenable<void> {
 interface ISettings
 {
     backendBaseUrl: string;
-    backendVersionToUse: 'Default' | '.Net Core 3.1' | '.Net Core 2.1';
     customPathToBackendBinaries: string;
     customPathToAzureFunctionsHost: string;
     backendTimeoutInSeconds: number;

@@ -5,7 +5,7 @@ React+MobX+TypeScript+Material UI.
 
 ## How to compile and run locally
 
-* [Run the backend locally](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend#how-to-run-locally) and make sure it runs under http://localhost:7072 (by opening it with your browser).
+* [Run the backend locally](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetisolated#how-to-run-locally) and make sure it runs under http://localhost:7072 (by opening it with your browser).
 * Create a `.env.development.local` file with the following line in it:
   ```
   REACT_APP_BACKEND_BASE_URI=http://localhost:7072
@@ -15,4 +15,4 @@ React+MobX+TypeScript+Material UI.
 
 ## How to build
 
-A custom build command is included - `npm run build-and-copy`. This command will build the project and then copy the resulting artifacts into [durablefunctionsmonitor.dotnetbackend\DfmStatics](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend/DfmStatics) folder.
+A custom build command is included - `npm run build-and-copy`. This command will build the project and then copy the resulting artifacts into [durablefunctionsmonitor.dotnetisolated\DfmStatics](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetisolated/DfmStatics) folder.

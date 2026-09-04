@@ -17,5 +17,4 @@ function copyBuildArtifacts(outputFolder) {
     ncp(`${buildFolder}/index.html`, `${outputFolder}/index.html`);
 }
 
-copyBuildArtifacts('../durablefunctionsmonitor.dotnetbackend/DfmStatics');
 copyBuildArtifacts('../durablefunctionsmonitor.dotnetisolated/DfmStatics');

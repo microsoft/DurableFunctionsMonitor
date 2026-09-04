@@ -12,7 +12,7 @@ using Microsoft.DurableTask.Client;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace durablefunctionsmonitor.dotnetbackend.tests
+namespace durablefunctionsmonitor.dotnetisolated.core.tests
 {
     public static class Shared
     {

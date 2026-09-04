@@ -17,7 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace durablefunctionsmonitor.dotnetbackend.tests
+namespace durablefunctionsmonitor.dotnetisolated.core.tests
 {
     [TestClass]
     public class AuthTests

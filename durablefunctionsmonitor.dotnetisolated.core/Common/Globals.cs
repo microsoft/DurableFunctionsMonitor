@@ -14,6 +14,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
 [assembly: InternalsVisibleToAttribute("durablefunctionsmonitor.dotnetisolated.core.tests")]
+[assembly: InternalsVisibleToAttribute("durablefunctionsmonitor.dotnetisolated.netherite")]
 
 namespace DurableFunctionsMonitor.DotNetIsolated
 {

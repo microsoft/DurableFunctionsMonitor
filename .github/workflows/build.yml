@@ -1,0 +1,138 @@
+name: build
+
+# Reusable build. Produces the NuGet packages and the VSIX, but never publishes anything.
+# Called by pr-build.yml, main-build.yml and publish-nuget.yml.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Full package version to stamp (e.g. 6.9.0 or 6.9.0-preview.42)'
+        required: true
+        type: string
+      package-id-prefix:
+        description: 'Prefix applied to every package id, including the trailing dot. Empty = upstream ids.'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: create ArtifactStagingDirectory folder
+      run: mkdir drop
+
+    # Building and copying React
+
+    - name: npm install durablefunctionsmonitor.react
+      run: npm install -legacy-peer-deps
+      working-directory: durablefunctionsmonitor.react
+    - name: npm build durablefunctionsmonitor.react
+      run: npm run build
+      working-directory: durablefunctionsmonitor.react
+
+    - name: copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics
+      run: |
+        rm -rf durablefunctionsmonitor.dotnetisolated/DfmStatics
+        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetisolated/DfmStatics
+
+    # Building and testing .NET
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests
+      run: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests/*.csproj -c Release
+
+    - name: copy durablefunctionsmonitor.dotnetisolated to ArtifactStagingDirectory
+      run: cp -r durablefunctionsmonitor.dotnetisolated drop/durablefunctionsmonitor.dotnetisolated
+
+    - name: dotnet publish durablefunctionsmonitor.dotnetisolated
+      run: dotnet publish durablefunctionsmonitor.dotnetisolated -c Release -p:Version=${{ inputs.version }} --output drop/durablefunctionsmonitor.dotnetisolated/output
+    - name: dotnet publish dotnetIsolated-mssql
+      run: dotnet publish custom-backends/dotnetIsolated-mssql -c Release -p:Version=${{ inputs.version }} --output drop/dotnetIsolated-mssql/output
+    - name: dotnet publish dotnetIsolated-netherite
+      run: dotnet publish custom-backends/dotnetIsolated-netherite -c Release -p:Version=${{ inputs.version }} --output drop/dotnetIsolated-netherite/output
+
+    # Building nuget packages
+
+    - name: copy LICENSE.txt into each publish output
+      run: |
+        for d in durablefunctionsmonitor.dotnetisolated dotnetIsolated-mssql dotnetIsolated-netherite; do
+          cp durablefunctionsmonitor.dotnetisolated/LICENSE.txt drop/$d/output/
+        done
+
+    - name: Install latest nuget.exe
+      uses: nuget/setup-nuget@v4
+
+    - name: pack nuget packages
+      env:
+        VERSION: ${{ inputs.version }}
+        PREFIX: ${{ inputs.package-id-prefix }}
+      run: |
+        set -euo pipefail
+        pack () {
+          local dir="$1" base_id="$2"
+          local id="${PREFIX}${base_id}"
+          echo "::group::pack $id $VERSION"
+          nuget pack "drop/$dir/output/nuspec.nuspec" \
+            -Properties "id=$id;version=$VERSION" \
+            -OutputDirectory drop/packages
+          echo "::endgroup::"
+        }
+        pack durablefunctionsmonitor.dotnetisolated DurableFunctionsMonitor.DotNetIsolated
+        pack dotnetIsolated-mssql               DurableFunctionsMonitor.DotNetIsolated.MsSql
+        pack dotnetIsolated-netherite           DurableFunctionsMonitor.DotNetIsolated.Netherite
+        ls -la drop/packages
+
+    # Building the vscode extension.
+    # Custom backends ship as published binaries, because they reference
+    # durablefunctionsmonitor.dotnetisolated.* by project and cannot be built from the VSIX itself.
+
+    - name: copy dotnetisolated to durablefunctionsmonitor-vscodeext/backend
+      run: cp -r drop/durablefunctionsmonitor.dotnetisolated/output durablefunctionsmonitor-vscodeext/backend
+
+    - name: copy custom backends to durablefunctionsmonitor-vscodeext/custom-backends
+      run: |
+        mkdir -p durablefunctionsmonitor-vscodeext/custom-backends
+        cp -r drop/dotnetIsolated-mssql/output     durablefunctionsmonitor-vscodeext/custom-backends/dotnetIsolated-mssql
+        cp -r drop/dotnetIsolated-netherite/output durablefunctionsmonitor-vscodeext/custom-backends/dotnetIsolated-netherite
+
+    - name: npm install durablefunctionsmonitor-vscodeext
+      run: npm install
+      working-directory: durablefunctionsmonitor-vscodeext
+    - name: npm install -g azure-functions-core-tools@4
+      run: npm install -g azure-functions-core-tools@4
+      working-directory: durablefunctionsmonitor-vscodeext
+    - name: run tests on durablefunctionsmonitor-vscodeext
+      # TODO: vscode test pipeline was broken, need to investigate and fix
+      if: 'false'
+      run: npm run test
+      working-directory: durablefunctionsmonitor-vscodeext
+    - name: package durablefunctionsmonitor-vscodeext to VSIX-file
+      run: npm run package
+      working-directory: durablefunctionsmonitor-vscodeext
+    - name: copy VSIX-file to ArtifactStagingDirectory
+      run: cp durablefunctionsmonitor-vscodeext/durablefunctionsmonitor*.vsix drop
+
+    # Publish artifacts
+
+    - name: upload nuget packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: packages
+        path: drop/packages/*.nupkg
+        if-no-files-found: error
+
+    - name: upload vsix
+      uses: actions/upload-artifact@v4
+      with:
+        name: vsix
+        path: drop/*.vsix
+        if-no-files-found: error

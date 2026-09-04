@@ -37,7 +37,7 @@ suite('MonitorView Test Suite', () => {
 
 			storageConnectionStrings: Settings().storageEmulatorConnectionString,
 
-			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend')
+			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated')
 		};
 
 		const functionGraphList: any = {};
@@ -231,7 +231,7 @@ suite('MonitorView Test Suite', () => {
 
 			storageConnectionStrings: Settings().storageEmulatorConnectionString,
 
-			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend')
+			binariesFolder: path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated')
 		};
 		
 		const functionGraphList: any = {
@@ -336,7 +336,7 @@ suite('MonitorView Test Suite', () => {
 			url: 'my-func-1'
 		};
 
-		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 
 		const monitorView = new MonitorView(context, backend, 'my-hub', functionGraphList, () => Promise.resolve(undefined), () => { }, () => { }, backendFolder);
 
@@ -381,7 +381,7 @@ suite('MonitorView Test Suite', () => {
 			data: 0
 		};
 
-		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 
 		const errorMessageToThrow = 'TestErrorMessageToCheckGotoBinding';
 		let errorMessageThrown: string = '';
@@ -449,7 +449,7 @@ suite('MonitorView Test Suite', () => {
 			}
 		};
 
-		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 
 		const functionGraphList: any = {
 

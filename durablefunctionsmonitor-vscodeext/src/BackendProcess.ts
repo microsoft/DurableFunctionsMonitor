@@ -114,7 +114,7 @@ export class BackendProcess {
         env['AzureWebJobsSecretStorageType'] = 'files';
 
         // Need to explicitly set this, to make sure it is not overshadowed by some global setting
-        env['FUNCTIONS_WORKER_RUNTIME'] = 'dotnet';
+        env['FUNCTIONS_WORKER_RUNTIME'] = 'dotnet-isolated';
 
         // To make sure we do not interfere with user's dev setup
         delete env['AzureWebJobsStorage'];
@@ -181,7 +181,10 @@ export class BackendProcess {
 
         return new Promise<void>((resolve, reject) => {
 
-            this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString(), '--csharp'], {
+            // NOTE: no language flag here on purpose. FUNCTIONS_WORKER_RUNTIME is set to 'dotnet-isolated'
+            // in getEnvVariables(), and passing e.g. '--csharp' would contradict it by selecting the
+            // (now removed) in-process worker.
+            this._funcProcess = cp.spawn(funcExePath, ['start', '--port', portNr.toString()], {
                 cwd: this._eventualBinariesFolder,
                 env: this.getEnvVariables()
             });
@@ -372,37 +375,31 @@ export class BackendProcess {
         }
 
         var customBinariesFolder = Settings().customPathToBackendBinaries;
-        
+
         if (!!customBinariesFolder) {
 
-            return customBinariesFolder;    
-
-        } else if (!!this._storageConnectionSettings.isMsSql) {
-            
-            return path.join(this._extensionRootFolder, 'custom-backends', 'mssql');
-
-        } else if (!!this._storageConnectionSettings.isNetherite) {
-            
-            return path.join(this._extensionRootFolder, 'custom-backends', 'netherite');
-
-        } else if (Settings().backendVersionToUse === '.Net Core 2.1') {
-
-            return path.join(this._extensionRootFolder, 'custom-backends', 'netcore21');
-
-        } else if (Settings().backendVersionToUse === '.Net Core 3.1') {
-
-            return path.join(this._extensionRootFolder, 'custom-backends', 'netcore31');
+            return customBinariesFolder;
         }
 
-        // Default backend now expects at least Functions V4. Checking that it is installed
+        // All bundled backends are .NET Isolated now, and those all expect at least Functions V4.
+        // Checking that it is installed
         if (!this.isFuncVersionUpToDate()) {
-            
-            const msg = `Default backend now requires at least Azure Functions Core Tools v${MinimumFuncVersion.major}.${MinimumFuncVersion.minor}.${MinimumFuncVersion.patch} (currently discovered is v${BackendProcess._funcVersion}). Install latest Azure Functions Core Tools or, alternatively, select a custom backend in extension's settings.`;
+
+            const msg = `DfMon's backends require at least Azure Functions Core Tools v${MinimumFuncVersion.major}.${MinimumFuncVersion.minor}.${MinimumFuncVersion.patch} (currently discovered is v${BackendProcess._funcVersion}). Install latest Azure Functions Core Tools or, alternatively, point 'Custom Path to Backend Binaries' setting to your own backend.`;
 
             // Making sure the version is re-validated next time
             BackendProcess._funcVersion = '';
 
             throw new Error(msg);
+        }
+
+        if (!!this._storageConnectionSettings.isMsSql) {
+
+            return path.join(this._extensionRootFolder, 'custom-backends', 'dotnetIsolated-mssql');
+
+        } else if (!!this._storageConnectionSettings.isNetherite) {
+
+            return path.join(this._extensionRootFolder, 'custom-backends', 'dotnetIsolated-netherite');
         }
 
         return path.join(this._extensionRootFolder, 'backend');

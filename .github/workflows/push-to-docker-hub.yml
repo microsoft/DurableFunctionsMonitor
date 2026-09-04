@@ -7,7 +7,7 @@ on:
       imageTag:
         description: Docker image tag to be applied
         required: true
-        
+
 jobs:
   build:
 
@@ -25,11 +25,6 @@ jobs:
       run: npm run build
       working-directory: durablefunctionsmonitor.react
 
-    - name: copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics
-      run: |
-        rm -rf durablefunctionsmonitor.dotnetbackend/DfmStatics
-        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
-
     - name: copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics
       run: |
         rm -rf durablefunctionsmonitor.dotnetisolated/DfmStatics
@@ -42,8 +37,6 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests
-      run: dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests/*.csproj
     - name: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests
       run: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests/*.csproj
 
@@ -53,23 +46,29 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: build and push durablefunctionsmonitor.dotnetbackend
+    # NOTE: build context is the repo root for all images, because the projects
+    # reference durablefunctionsmonitor.dotnetisolated.core by project reference
+
+    - name: build and push durablefunctionsmonitor.dotnetisolated
       uses: docker/build-push-action@v6
       with:
-        context: ./durablefunctionsmonitor.dotnetbackend
+        context: .
+        file: ./durablefunctionsmonitor.dotnetisolated/Dockerfile
         push: true
         tags: scaletone/durablefunctionsmonitor:${{ github.event.inputs.imageTag }}
 
-    - name: build and push custom-backends/mssql
+    - name: build and push custom-backends/dotnetIsolated-mssql
       uses: docker/build-push-action@v6
       with:
-        context: ./custom-backends/mssql
+        context: .
+        file: ./custom-backends/dotnetIsolated-mssql/Dockerfile
         push: true
         tags: scaletone/durablefunctionsmonitor.mssql:${{ github.event.inputs.imageTag }}
 
-    - name: build and push custom-backends/netherite
+    - name: build and push custom-backends/dotnetIsolated-netherite
       uses: docker/build-push-action@v6
       with:
-        context: ./custom-backends/netherite
+        context: .
+        file: ./custom-backends/dotnetIsolated-netherite/Dockerfile
         push: true
         tags: scaletone/durablefunctionsmonitor.netherite:${{ github.event.inputs.imageTag }}

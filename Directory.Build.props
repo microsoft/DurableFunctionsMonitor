@@ -1,0 +1,31 @@
+<Project>
+
+  <!--
+    Single source of truth for the version of every .NET project in this repo.
+
+    To cut a release:
+      1. Bump VersionPrefix below
+      2. Commit
+      3. Tag the commit "v<VersionPrefix>" and push the tag.
+         .github/workflows/publish-nuget.yml verifies the tag matches this value,
+         then packs and pushes to nuget.org.
+
+    CI builds off main publish <VersionPrefix>-preview.<run number> to GitHub Packages.
+  -->
+  <PropertyGroup>
+    <VersionPrefix>6.9.0</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Version>$(VersionPrefix)</Version>
+    <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
+    <FileVersion>$(VersionPrefix).0</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>DurableFunctionsMonitor</Authors>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/ViswanathBalusu/DurableFunctionsMonitor</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>

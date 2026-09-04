@@ -22,7 +22,7 @@ suite('FunctionGraphView Test Suite', () => {
 			extensionPath: path.join(__dirname, '..', '..', '..')
 		};
 
-		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 		
 		const functionGraphList: any = {};
 
@@ -89,7 +89,7 @@ suite('FunctionGraphView Test Suite', () => {
 			extensionPath: path.join(__dirname, '..', '..', '..')
 		};
 
-		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 
 		const functionGraphList: any = {
 			traverseFunctions: () => Promise.resolve({
@@ -175,7 +175,7 @@ suite('FunctionGraphView Test Suite', () => {
 			}
 		};
 
-		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 
 		const functionGraphList: any = {
 
@@ -229,7 +229,7 @@ suite('FunctionGraphView Test Suite', () => {
 			url: 'my-func-1'
 		};
 
-		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const backendFolder = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 
 		const functionGraphView = new FunctionGraphView(context, backendFolder, functionGraphList);
 

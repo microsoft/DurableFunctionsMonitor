@@ -1,0 +1,22 @@
+name: pr-build
+
+# Validates every PR: builds React, runs the .NET tests, packs the NuGet packages
+# and builds the VSIX. Publishes nothing.
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      # PR packages are never pushed, so the exact version only has to be valid and unique-ish
+      version: 0.0.0-pr${{ github.event.pull_request.number }}.${{ github.run_number }}

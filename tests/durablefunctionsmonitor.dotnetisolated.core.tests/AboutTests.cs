@@ -8,7 +8,7 @@ using System;
 using Newtonsoft.Json;
 using System.IO;
 
-namespace durablefunctionsmonitor.dotnetbackend.tests
+namespace durablefunctionsmonitor.dotnetisolated.core.tests
 {
     [TestClass]
     public class AboutTests

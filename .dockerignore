@@ -1,0 +1,20 @@
+# Docker build context is the repo root (projects reference each other via ProjectReference),
+# so keep the context small and free of local build artifacts.
+
+**/node_modules
+**/bin
+**/obj
+**/publish
+**/.vs
+**/.vscode-test
+**/*.vsix
+**/local.settings.json
+
+durablefunctionsmonitor-vscodeext/backend
+durablefunctionsmonitor-vscodeext/custom-backends
+durablefunctionsmonitor-vscodeext/out
+durablefunctionsmonitor.react/node_modules
+
+.git
+.github
+readme

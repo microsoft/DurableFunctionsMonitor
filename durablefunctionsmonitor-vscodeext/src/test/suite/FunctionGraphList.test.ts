@@ -21,7 +21,7 @@ suite('FunctionGraphList Test Suite', () => {
 
 		const funcGraphList = new FunctionGraphList(context);
 
-		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 
 		Object.defineProperty(vscode.workspace, 'workspaceFolders', { get: () => [{ uri: vscode.Uri.file(functionProjectPath) }] });
 
@@ -36,12 +36,13 @@ suite('FunctionGraphList Test Suite', () => {
 		assert.strictEqual(traversalResult1.proxies, traversalResult2.proxies);
 
 		assert.strictEqual(Object.keys(traversalResult1.functions).length > 14, true);
-		assert.strictEqual(Object.keys(traversalResult1.proxies).length > 0, true);
+		// .NET Isolated projects have no proxies.json (proxies are not supported on Functions V4)
+		assert.strictEqual(Object.keys(traversalResult1.proxies).length, 0);
 
 		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.filePath, path.join(functionProjectPath, 'Functions', 'About.cs'));
 		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.lineNr! > 1, true);
 		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.pos! > 1, true);
-		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.bindings.length, 2);
+		assert.strictEqual(traversalResult1.functions.DfmAboutFunction.bindings.length, 1);
 
 		assert.deepStrictEqual(traversalResult1.functions.DfmAboutFunction.bindings[0], {
 			"type": "httpTrigger",
@@ -68,7 +69,7 @@ suite('FunctionGraphList Test Suite', () => {
 
 		const funcGraphList = new FunctionGraphList(context);
 
-		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetbackend');
+		const functionProjectPath = path.join(__dirname, '..', '..', '..', '..', 'durablefunctionsmonitor.dotnetisolated.core');
 
 		Object.defineProperty(vscode.workspace, 'rootPath', { get: () => functionProjectPath });
 

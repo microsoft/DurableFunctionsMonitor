@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "dotnetisolated": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7183",
+      "launchBrowser": false
+    }
+  }
+}

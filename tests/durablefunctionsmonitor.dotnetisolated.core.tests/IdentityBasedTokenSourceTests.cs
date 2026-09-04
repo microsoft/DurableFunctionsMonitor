@@ -8,7 +8,7 @@ using System;
 using System.Threading;
 using Azure.Core;
 
-namespace durablefunctionsmonitor.dotnetbackend.tests
+namespace durablefunctionsmonitor.dotnetisolated.core.tests
 {
 
     class MockedTokenCredential : TokenCredential

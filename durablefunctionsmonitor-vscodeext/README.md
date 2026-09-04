@@ -101,9 +101,13 @@ and follow the flow.
 ## How to compile and run this project locally
 
 This project is a typical [VsCode extension](https://code.visualstudio.com/api/get-started/your-first-extension), so to run/debug it locally you just open these sources in your VsCode and press F5. 
-But before that you'll need to get the [backend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) binaries compiled and copied:
-* Go to [durablefunctionsmonitor.dotnetbackend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetbackend) folder.
+But before that you'll need to get the [backend](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetisolated) binaries compiled and copied:
+* Go to [durablefunctionsmonitor.dotnetisolated](https://github.com/microsoft/DurableFunctionsMonitor/tree/main/durablefunctionsmonitor.dotnetisolated) folder.
 * Execute `dotnet publish -o ../durablefunctionsmonitor-vscodeext/backend` there with your command line. This will compile the backend and place its binaries into the newly created **durablefunctionsmonitor-vscodeext/backend** subfolder.
+
+The custom backends (used for MSSQL and Netherite storage providers) are shipped as *published binaries* too, because they reference **durablefunctionsmonitor.dotnetisolated.\*** by project reference. From the repo root:
+* `dotnet publish custom-backends/dotnetIsolated-mssql -o durablefunctionsmonitor-vscodeext/custom-backends/dotnetIsolated-mssql`
+* `dotnet publish custom-backends/dotnetIsolated-netherite -o durablefunctionsmonitor-vscodeext/custom-backends/dotnetIsolated-netherite`
 
 Now you'll also need to do `npm install` in **durablefunctionsmonitor-vscodeext** folder. 
 

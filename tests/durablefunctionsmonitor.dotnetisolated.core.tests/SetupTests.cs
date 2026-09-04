@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Moq;
 using System;
 
-namespace durablefunctionsmonitor.dotnetbackend.tests
+namespace durablefunctionsmonitor.dotnetisolated.core.tests
 {
     [TestClass]
     public class SetupTests

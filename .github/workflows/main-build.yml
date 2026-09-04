@@ -1,109 +1,62 @@
-
 name: main-build
+
+# Every push to main builds everything and publishes a prerelease of each package
+# to GitHub Packages, so the custom backends can be consumed via PackageReference
+# before a version is cut to nuget.org.
 
 on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-build
+  cancel-in-progress: false
 
 jobs:
-  build:
-
+  version:
     runs-on: ubuntu-22.04
-
+    outputs:
+      version: ${{ steps.v.outputs.version }}
     steps:
     - uses: actions/checkout@v4
-
-    - name: create ArtifactStagingDirectory folder
-      run: mkdir drop
-
-    # Building and copying React
-
-    - name: npm install durablefunctionsmonitor.react
-      run: npm install -legacy-peer-deps
-      working-directory: durablefunctionsmonitor.react
-    - name: npm build durablefunctionsmonitor.react
-      run: npm run build
-      working-directory: durablefunctionsmonitor.react
-
-    - name: copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics
+    - name: derive prerelease version from Directory.Build.props
+      id: v
       run: |
-        rm -rf durablefunctionsmonitor.dotnetbackend/DfmStatics
-        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
+        set -euo pipefail
+        PREFIX=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+        if [ -z "$PREFIX" ]; then echo "::error::VersionPrefix not found in Directory.Build.props"; exit 1; fi
+        echo "version=${PREFIX}-preview.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
-    - name: copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics
-      run: |
-        rm -rf durablefunctionsmonitor.dotnetisolated/DfmStatics
-        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetisolated/DfmStatics
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
 
-    # Building and testing .NET
+  publish-github-packages:
+    needs: [ version, build ]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: packages
+        path: packages
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
-    - name: dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests
-      run: dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests/*.csproj
-    - name: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests
-      run: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests/*.csproj
-
-    - name: copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory
-      run: cp -r durablefunctionsmonitor.dotnetbackend drop/durablefunctionsmonitor.dotnetbackend
-
-    - name: copy durablefunctionsmonitor.dotnetisolated to ArtifactStagingDirectory
-      run: cp -r durablefunctionsmonitor.dotnetisolated drop/durablefunctionsmonitor.dotnetisolated
-
-    - name: dotnet publish durablefunctionsmonitor.dotnetbackend
-      run: dotnet publish durablefunctionsmonitor.dotnetbackend --output drop/durablefunctionsmonitor.dotnetbackend/output
-    - name: dotnet publish durablefunctionsmonitor.dotnetisolated
-      run: dotnet publish durablefunctionsmonitor.dotnetisolated --output drop/durablefunctionsmonitor.dotnetisolated/output
-
-    # Building and testing vscode extension
-
-    - name: copy dotnetbackend to durablefunctionsmonitor-vscodeext/backend
-      run: cp -r drop/durablefunctionsmonitor.dotnetbackend/output durablefunctionsmonitor-vscodeext/backend
-
-    - name: copy custom-backends to durablefunctionsmonitor-vscodeext/custom-backends
-      run: cp -r custom-backends durablefunctionsmonitor-vscodeext/custom-backends
-
-    - name: npm install durablefunctionsmonitor-vscodeext
-      run: npm install
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: npm install -g azure-functions-core-tools@4
-      run: npm install -g azure-functions-core-tools@4
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: run tests on durablefunctionsmonitor-vscodeext
-      # TODO: vscode test pipeline was broken, need to investigate and fix
-      if: 'false'
-      run: npm run test
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: package durablefunctionsmonitor-vscodeext to VSIX-file
-      run: npm run package
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: copy VSIX-file to ArtifactStagingDirectory
-      run: cp durablefunctionsmonitor-vscodeext/durablefunctionsmonitor*.vsix drop
-
-    # Building nuget packages
-
-    - name: copy LICENSE to durablefunctionsmonitor.dotnetbackend/output
-      run: cp LICENSE drop/durablefunctionsmonitor.dotnetbackend/output
-    - name: copy LICENSE.txt to durablefunctionsmonitor.dotnetisolated/output
-      run: cp durablefunctionsmonitor.dotnetisolated/LICENSE.txt drop/durablefunctionsmonitor.dotnetisolated/output
-
-    - name: Install latest nuget.exe
-      uses: nuget/setup-nuget@v1.2.0
-    - name: package dotnetbackend into a Nuget package
-      run: nuget pack drop/durablefunctionsmonitor.dotnetbackend/output/nuspec.nuspec -OutputDirectory drop
-    - name: package dotnetisolated into a Nuget package
-      run: nuget pack drop/durablefunctionsmonitor.dotnetisolated/output/nuspec.nuspec -OutputDirectory drop
-
-    # Publish artifacts
-        
-    - name: publish artifacts
-      uses: actions/upload-artifact@v4.1.0
-      with:
-        path: drop
-
+    - name: push to GitHub Packages
+      run: |
+        dotnet nuget push "packages/*.nupkg" \
+          --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+          --api-key "${{ secrets.GITHUB_TOKEN }}" \
+          --skip-duplicate

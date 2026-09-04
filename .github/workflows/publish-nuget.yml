@@ -1,0 +1,92 @@
+name: publish-nuget
+
+# Cuts a public release to nuget.org, triggered by a version tag:
+#
+#   git tag v6.9.0 && git push origin main --tags
+#
+# Auth is NuGet Trusted Publishing (OIDC) - there is no API key secret.
+# The nuget.org policy is bound to THIS filename (publish-nuget.yml) and to the
+# 'release' environment used below; renaming either breaks the policy.
+#
+# Requires repository variable PACKAGE_ID_PREFIX (Settings > Secrets and variables >
+# Actions > Variables) and environment secret NUGET_USER on the 'release' environment.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: tag must match Directory.Build.props
+      id: v
+      run: |
+        set -euo pipefail
+        TAG_VERSION="${GITHUB_REF_NAME#v}"
+        PREFIX=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+        if [ "$TAG_VERSION" != "$PREFIX" ]; then
+          echo "::error::Tag $GITHUB_REF_NAME implies version '$TAG_VERSION', but Directory.Build.props says '$PREFIX'. Bump VersionPrefix and re-tag."
+          exit 1
+        fi
+        echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+
+    - name: package id prefix must be set
+      env:
+        PACKAGE_ID_PREFIX: ${{ vars.PACKAGE_ID_PREFIX }}
+      run: |
+        if [ -z "${PACKAGE_ID_PREFIX}" ]; then
+          echo "::error::Repository variable PACKAGE_ID_PREFIX is not set."
+          echo "::error::DurableFunctionsMonitor.DotNetIsolated and .MsSql already exist on nuget.org under different"
+          echo "::error::owners (durablefunctionsmonitor, kolepes), so pushing them from this repo will be rejected."
+          echo "::error::Set PACKAGE_ID_PREFIX to a prefix you own, including the trailing dot - e.g. 'Balusu.'"
+          echo "::error::Only remove this check once you hold co-ownership of the upstream package ids."
+          exit 1
+        fi
+        echo "Publishing with package id prefix '${PACKAGE_ID_PREFIX}'"
+
+  build:
+    needs: preflight
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.preflight.outputs.version }}
+      package-id-prefix: ${{ vars.PACKAGE_ID_PREFIX }}
+
+  publish:
+    needs: [ preflight, build ]
+    runs-on: ubuntu-22.04
+    environment: release
+    permissions:
+      id-token: write     # required for the OIDC token that NuGet/login exchanges
+      contents: read
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: packages
+        path: packages
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: NuGet login (OIDC)
+      id: login
+      uses: NuGet/login@v1
+      with:
+        user: ${{ secrets.NUGET_USER }}   # nuget.org profile name, NOT the email address
+
+    - name: push to nuget.org
+      run: |
+        dotnet nuget push "packages/*.nupkg" \
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate

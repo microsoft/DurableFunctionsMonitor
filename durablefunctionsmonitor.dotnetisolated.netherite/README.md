@@ -1,19 +1,19 @@
-# DurableFunctionsMonitor.DotNetIsolated.Core
+# DurableFunctionsMonitor.DotNetIsolated.Netherite
 
-An incarnation of DurableFunctionsMonitor that can be "injected" into your [.NET 8 Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) Azure Function.
+An incarnation of DurableFunctionsMonitor that can be "injected" into your [.NET Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) Azure Function, that uses [Netherite Provider](https://microsoft.github.io/durabletask-netherite/#/).
 
 ## How to use
 
 * Install from NuGet:
    ```
-   dotnet add package DurableFunctionsMonitor.DotNetIsolated
+   dotnet add package DurableFunctionsMonitor.DotNetIsolated.Netherite
    ```
-* Initialize by calling **.UseDurableFunctionMonitor()** extension method during your Function's startup, like this:
+* Initialize by calling **.UseDurableFunctionsMonitorWithNetheriteDurability()** extension method during your Function's startup, like this:
    ```
   var host = new HostBuilder()
       .ConfigureFunctionsWorkerDefaults((hostBuilderContext, workerAppBuilder) => {
 
-          workerAppBuilder.UseDurableFunctionsMonitor();
+          workerAppBuilder.UseDurableFunctionsMonitorWithNetheriteDurability();
 
       })
       .Build();
@@ -25,7 +25,7 @@ An incarnation of DurableFunctionsMonitor that can be "injected" into your [.NET
    var host = new HostBuilder()
        .ConfigureFunctionsWorkerDefaults((hostBuilderContext, workerAppBuilder) => {
    
-           workerAppBuilder.UseDurableFunctionsMonitor((settings, extensionPoints) => 
+           workerAppBuilder.UseDurableFunctionsMonitorWithNetheriteDurability((settings) => 
            {
                // Override DfMon's settings here, e.g.
                settings.Mode = DfmMode.ReadOnly;
@@ -61,8 +61,6 @@ An incarnation of DurableFunctionsMonitor that can be "injected" into your [.NET
    }
    ```
 
-## Limitations
+## Notes on Task Hub discovery
 
-* Multiple Storage connection strings are not supported, only the default one (`AzureWebJobsStorage`).
-* For non-default durability providers you'll need to provide custom routines for retrieving instance history etc. This should be done via **extensionPoints** parameter of **.UseDurableFunctionsMonitor()** configuration method. Code for MSSQL storage provider can be directly copied [from here](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetisolated.mssql/ExtensionMethods.cs), and for Netherite [from here](https://github.com/microsoft/DurableFunctionsMonitor/blob/main/durablefunctionsmonitor.dotnetisolated.netherite/ExtensionMethods.cs).
-
+Netherite does not maintain the `XXXInstances`/`XXXHistory` tables that DfMon's default Task Hub discovery routine looks for. This package therefore replaces `DfmExtensionPoints.GetTaskHubNamesRoutine` with one that reads distinct partition keys from Netherite's own `DurableTaskPartitions` table. Both connection-string and identity-based (`AzureWebJobsStorage__accountName`) Storage connections are supported.

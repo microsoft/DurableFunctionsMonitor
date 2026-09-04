@@ -9,7 +9,7 @@ using Moq;
 using System;
 using System.Net.Http.Headers;
 
-namespace durablefunctionsmonitor.dotnetbackend.tests
+namespace durablefunctionsmonitor.dotnetisolated.core.tests
 {
     [TestClass]
     public class GlobalsTest

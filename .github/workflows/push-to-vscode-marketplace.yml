@@ -1,93 +1,48 @@
-
 name: push-to-vscode-marketplace
+
+# Publishes the VSIX produced by the shared build to the VsCode Marketplace.
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  version:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
     steps:
     - uses: actions/checkout@v4
-
-    - name: create ArtifactStagingDirectory folder
-      run: mkdir drop
-
-    # Building and copying React
-
-    - name: npm install durablefunctionsmonitor.react
-      run: npm install -legacy-peer-deps
-      working-directory: durablefunctionsmonitor.react
-    - name: npm build durablefunctionsmonitor.react
-      run: npm run build
-      working-directory: durablefunctionsmonitor.react
-
-    - name: copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics
+    - name: read version from Directory.Build.props
+      id: v
       run: |
-        rm -rf durablefunctionsmonitor.dotnetbackend/DfmStatics
-        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetbackend/DfmStatics
+        set -euo pipefail
+        PREFIX=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+        if [ -z "$PREFIX" ]; then echo "::error::VersionPrefix not found in Directory.Build.props"; exit 1; fi
+        echo "version=$PREFIX" >> "$GITHUB_OUTPUT"
 
-    - name: copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics
-      run: |
-        rm -rf durablefunctionsmonitor.dotnetisolated/DfmStatics
-        cp -r durablefunctionsmonitor.react/build durablefunctionsmonitor.dotnetisolated/DfmStatics
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
 
-    # Building and testing .NET
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+  publish:
+    needs: build
+    runs-on: ubuntu-22.04
+    environment: release
+    steps:
+    - uses: actions/download-artifact@v4
       with:
-        dotnet-version: 8.0.x
+        name: vsix
+        path: drop
 
-    - name: dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests
-      run: dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests/*.csproj
-    - name: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests
-      run: dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests/*.csproj
-
-    - name: copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory
-      run: cp -r durablefunctionsmonitor.dotnetbackend drop/durablefunctionsmonitor.dotnetbackend
-
-    - name: copy durablefunctionsmonitor.dotnetisolated to ArtifactStagingDirectory
-      run: cp -r durablefunctionsmonitor.dotnetisolated drop/durablefunctionsmonitor.dotnetisolated
-
-    - name: dotnet publish durablefunctionsmonitor.dotnetbackend
-      run: dotnet publish durablefunctionsmonitor.dotnetbackend --output drop/durablefunctionsmonitor.dotnetbackend/output
-    - name: dotnet publish durablefunctionsmonitor.dotnetisolated
-      run: dotnet publish durablefunctionsmonitor.dotnetisolated --output drop/durablefunctionsmonitor.dotnetisolated/output
-
-    # Building and testing vscode extension
-
-    - name: copy dotnetbackend to durablefunctionsmonitor-vscodeext/backend
-      run: cp -r drop/durablefunctionsmonitor.dotnetbackend/output durablefunctionsmonitor-vscodeext/backend
-
-    - name: copy custom-backends to durablefunctionsmonitor-vscodeext/custom-backends
-      run: cp -r custom-backends durablefunctionsmonitor-vscodeext/custom-backends
-
-    - name: npm install durablefunctionsmonitor-vscodeext
-      run: npm install
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: npm install -g azure-functions-core-tools@4
-      run: npm install -g azure-functions-core-tools@4
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: run tests on durablefunctionsmonitor-vscodeext
-      # TODO: vscode test pipeline was broken, need to investigate and fix
-      if: 'false'
-      run: npm run test
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: package durablefunctionsmonitor-vscodeext to VSIX-file
-      run: npm run package
-      working-directory: durablefunctionsmonitor-vscodeext
-    - name: copy VSIX-file to ArtifactStagingDirectory
-      run: cp durablefunctionsmonitor-vscodeext/durablefunctionsmonitor*.vsix drop
-
-    # Publish VSIX
-        
     - name: npm install vsce
-      run: npm install -g vsce
+      run: npm install -g @vscode/vsce
 
     - name: publish vsix
       env:
-        VSCODE_MARKETPLACE_PAT: ${{ secrets.VSCODE_MARKETPLACE_PAT }}      
-      run: vsce publish --pat $VSCODE_MARKETPLACE_PAT --packagePath drop/durablefunctionsmonitor*.vsix
+        VSCODE_MARKETPLACE_PAT: ${{ secrets.VSCODE_MARKETPLACE_PAT }}
+      run: vsce publish --pat "$VSCODE_MARKETPLACE_PAT" --packagePath drop/durablefunctionsmonitor*.vsix

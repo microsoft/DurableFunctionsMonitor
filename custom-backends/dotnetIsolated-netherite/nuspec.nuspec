@@ -4,30 +4,26 @@
         <id>$id$</id>
         <version>$version$</version>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>DurableFunctionsMonitor.DotNetIsolated</description>
+        <description>DurableFunctionsMonitor.DotNetIsolated.Netherite</description>
         <authors>DurableFunctionsMonitor</authors>
         <repository type="git" url="https://github.com/ViswanathBalusu/DurableFunctionsMonitor" />
         <license type="file">LICENSE.txt</license>
 
         <dependencies>
-            <dependency id="Microsoft.Azure.Functions.Worker" version="2.51.0" />
-            <dependency id="Microsoft.Azure.Functions.Worker.Sdk" version="2.0.7" />
-            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" version="1.16.3" />
-            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.Http" version="3.1.0" />
+            <dependency id="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.Netherite" version="1.5.4" />
             <dependency id="WindowsAzure.Storage" version="9.3.3" />
-            <dependency id="Azure.Identity" version="1.11.4" />
-            <dependency id="Microsoft.IdentityModel.Protocols.OpenIdConnect" version="7.5.2" />
-            <dependency id="Fluid.Core" version="2.7.0" />
         </dependencies>
 
     </metadata>
 
     <files>
         <file src="..\output\durablefunctionsmonitor.dotnetisolated.core.dll" target="lib/netcoreapp2.1" />
-        <file src="..\output\durablefunctionsmonitor.dotnetisolated.core.xml" target="lib/netcoreapp2.1" />
-        <file src="..\output\durablefunctionsmonitor.dotnetisolated.targets" target="build/$id$.targets" />
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.netherite.dll" target="lib/netcoreapp2.1" />
+        <file src="..\output\durablefunctionsmonitor.dotnetisolated.netherite.xml" target="lib/netcoreapp2.1" />
+        <file src="..\..\durablefunctionsmonitor.dotnetisolated\durablefunctionsmonitor.dotnetisolated.targets" target="build/$id$.targets" />
         <file src="..\output\*" target="/" />
         <file src="..\output\.azurefunctions\**" target="/.azurefunctions" />
+        <file src="..\output\runtimes\**" target="/runtimes" />
         <file src="..\output\DfmStatics\**" target="/DfmStatics" />
     </files>
 </package>

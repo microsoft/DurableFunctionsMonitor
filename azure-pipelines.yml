@@ -24,7 +24,7 @@ steps:
     customCommand: 'run build'
 
 - task: CopyFiles@2
-  displayName: 'copy statics to durablefunctionsmonitor.dotnetbackend/DfmStatics'
+  displayName: 'copy statics to durablefunctionsmonitor.dotnetisolated/DfmStatics'
   inputs:
     SourceFolder: durablefunctionsmonitor.react/build
     Contents: |
@@ -34,44 +34,28 @@ steps:
      logo.svg
      service-worker.js
      manifest.json
-    TargetFolder: durablefunctionsmonitor.dotnetbackend/DfmStatics
+    TargetFolder: durablefunctionsmonitor.dotnetisolated/DfmStatics
     CleanTargetFolder: true
 
 - task: CopyFiles@2
-  displayName: 'copy durablefunctionsmonitor.dotnetbackend to ArtifactStagingDirectory'
+  displayName: 'copy durablefunctionsmonitor.dotnetisolated to ArtifactStagingDirectory'
   inputs:
-    SourceFolder: durablefunctionsmonitor.dotnetbackend
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend'
+    SourceFolder: durablefunctionsmonitor.dotnetisolated
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetisolated'
     OverWrite: true
 
 - task: CopyFiles@2
   displayName: 'copy custom-backends to ArtifactStagingDirectory'
   inputs:
     SourceFolder: custom-backends
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/custom-backends'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/custom-backends-src'
     OverWrite: true
-
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet test tests/durablefunctionsmonitor.dotnetbackend.tests'
-  inputs:
-    command: 'test'
-    projects: 'tests/durablefunctionsmonitor.dotnetbackend.tests/*.csproj'
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test tests/durablefunctionsmonitor.dotnetisolated.core.tests'
   inputs:
     command: 'test'
     projects: 'tests/durablefunctionsmonitor.dotnetisolated.core.tests/*.csproj'
-
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet publish durablefunctionsmonitor.dotnetbackend'
-  inputs:
-    command: publish
-    publishWebProjects: false
-    projects: durablefunctionsmonitor.dotnetbackend
-    arguments: '--output $(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend/output'
-    zipAfterPublish: false
-    modifyOutputPath: false
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet publish durablefunctionsmonitor.dotnetisolated'
@@ -83,10 +67,33 @@ steps:
     zipAfterPublish: false
     modifyOutputPath: false
 
-- task: CopyFiles@2
-  displayName: 'copy dotnetbackend to durablefunctionsmonitor-vscodeext/backend'
+# Custom backends are shipped inside the VSIX as published binaries, because they reference
+# durablefunctionsmonitor.dotnetisolated.* by project and so cannot be built from the VSIX itself
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish custom-backends/dotnetIsolated-mssql'
   inputs:
-    SourceFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend/output'
+    command: publish
+    publishWebProjects: false
+    projects: custom-backends/dotnetIsolated-mssql
+    arguments: '--output $(Build.ArtifactStagingDirectory)/custom-backends/dotnetIsolated-mssql'
+    zipAfterPublish: false
+    modifyOutputPath: false
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish custom-backends/dotnetIsolated-netherite'
+  inputs:
+    command: publish
+    publishWebProjects: false
+    projects: custom-backends/dotnetIsolated-netherite
+    arguments: '--output $(Build.ArtifactStagingDirectory)/custom-backends/dotnetIsolated-netherite'
+    zipAfterPublish: false
+    modifyOutputPath: false
+
+- task: CopyFiles@2
+  displayName: 'copy dotnetisolated to durablefunctionsmonitor-vscodeext/backend'
+  inputs:
+    SourceFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetisolated/output'
     Contents: |
      **
      !logo.svg
@@ -96,7 +103,7 @@ steps:
 - task: CopyFiles@2
   displayName: 'copy custom-backends to durablefunctionsmonitor-vscodeext/custom-backends'
   inputs:
-    SourceFolder: 'custom-backends'
+    SourceFolder: '$(Build.ArtifactStagingDirectory)/custom-backends'
     Contents: |
      **
      !*.md
@@ -143,14 +150,6 @@ steps:
     OverWrite: true
 
 - task: CopyFiles@2
-  displayName: 'copy LICENSE to durablefunctionsmonitor.dotnetbackend/output'
-  inputs:
-    Contents: |
-     LICENSE
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend/output'
-    OverWrite: true
-
-- task: CopyFiles@2
   displayName: 'copy LICENSE.txt to durablefunctionsmonitor.dotnetisolated/output'
   inputs:
     SourceFolder: 'durablefunctionsmonitor.dotnetisolated'
@@ -161,15 +160,7 @@ steps:
 - task: NuGetToolInstaller@1
   displayName: 'Install latest nuget.exe'
   inputs:
-    versionSpec:  
-
-- task: NuGetCommand@2
-  displayName: 'package dotnetbackend into a Nuget package'
-  inputs:
-    command: 'pack'
-    packagesToPack: '$(Build.ArtifactStagingDirectory)/durablefunctionsmonitor.dotnetbackend/output/nuspec.nuspec'
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: 'off'
+    versionSpec:
 
 - task: NuGetCommand@2
   displayName: 'package dotnetisolated into a Nuget package'
@@ -180,10 +171,10 @@ steps:
     versioningScheme: 'off'
 
 - task: az-func-as-a-graph@1
-  displayName: 'Generate az-func-as-a-graph diagram of DurableFunctionsMonitor.DotNetBackend'
+  displayName: 'Generate az-func-as-a-graph diagram of DurableFunctionsMonitor.DotNetIsolated'
   inputs:
-    projectFolder: '$(System.DefaultWorkingDirectory)/durablefunctionsmonitor.dotnetbackend'
-    outputFile: '$(Build.ArtifactStagingDirectory)/DurableFunctionsMonitor-DotNetBackend-Diagram.htm'
+    projectFolder: '$(System.DefaultWorkingDirectory)/durablefunctionsmonitor.dotnetisolated.core'
+    outputFile: '$(Build.ArtifactStagingDirectory)/DurableFunctionsMonitor-DotNetIsolated-Diagram.htm'
     repoUri: '$(Build.Repository.Uri)'
     repoName: '$(Build.Repository.Name)'
     branchName: '$(Build.SourceBranchName)'
