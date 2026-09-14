@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
     - name: create ArtifactStagingDirectory folder
       run: mkdir drop
@@ -41,7 +41,7 @@ jobs:
     # Building and testing .NET
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
       with:
         dotnet-version: 8.0.x
 
@@ -94,7 +94,7 @@ jobs:
       run: cp durablefunctionsmonitor.dotnetisolated/LICENSE.txt drop/durablefunctionsmonitor.dotnetisolated/output
 
     - name: Install latest nuget.exe
-      uses: nuget/setup-nuget@v1.2.0
+      uses: nuget/setup-nuget@296fd3ccf8528660c91106efefe2364482f86d6f # v1.2.0
     - name: package dotnetbackend into a Nuget package
       run: nuget pack drop/durablefunctionsmonitor.dotnetbackend/output/nuspec.nuspec -OutputDirectory drop
     - name: package dotnetisolated into a Nuget package
@@ -103,7 +103,7 @@ jobs:
     # Publish artifacts
         
     - name: publish artifacts
-      uses: actions/upload-artifact@v4.1.0
+      uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595 # v4.1.0
       with:
         path: drop
 
