@@ -355,7 +355,6 @@
         "@azure/arm-resourcegraph": "^4.2.1",
         "@azure/arm-storage": "^18.1.0",
         "@azure/identity": "^4.4.1",
-        "@azure/ms-rest-nodeauth": "^3.1.0",
         "@microsoft/vscode-azext-azureauth": "^2.5.0",
         "@types/crypto-js": "^3.1.47",
         "@types/rimraf": "^3.0.0",
