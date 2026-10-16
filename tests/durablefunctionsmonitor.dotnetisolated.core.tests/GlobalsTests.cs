@@ -17,9 +17,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         [TestInitialize]
         public void TestInit()
         {
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, null);
         }
 
         [TestMethod]

@@ -1,5 +1,7 @@
 # Durable Functions Monitor .Net Isolated for MSSQL
 
+> **Breaking change: .NET 10.** Starting with this release the package targets .NET 10. If you deployed DfMon from the NuGet package (e.g. via the *Deploy to Azure* button) on a Function App configured for .NET 8, set the app's .NET version to 10 (`az functionapp config set --net-framework-version v10.0 -g <resource-group> -n <app-name>`) before or right after upgrading, otherwise the app will fail to start.
+
 Custom Durable Functions Monitor .NET Isolated backend project to be used with [Durable Task SQL Provider](https://microsoft.github.io/durabletask-mssql/#/).
 
 ## How to run locally

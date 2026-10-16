@@ -17,11 +17,11 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         public void ThrowErrorIfAppRolesOverlapInConfiguration()
         {
             // Arrange
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, null);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, "role1,role2");
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, "role2");
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, null);
 
             // Act & Assert
             Assert.ThrowsException<System.NotSupportedException>(() => {

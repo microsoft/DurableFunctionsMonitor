@@ -16,7 +16,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         [TestInitialize]
         public void TestInit()
         {
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
             TableClient.MockedTableClient = null;
         }
 

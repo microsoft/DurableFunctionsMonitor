@@ -19,7 +19,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         [TestInitialize]
         public void TestInit()
         {
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, null);
 
             Shared.CopyFolder(Path.Join("..", "..", "..", "..", "..", "durablefunctionsmonitor.dotnetisolated", "DfmStatics"), "DfmStatics");
         }

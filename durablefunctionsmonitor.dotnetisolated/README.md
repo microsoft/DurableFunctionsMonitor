@@ -1,5 +1,7 @@
 # DurableFunctionsMonitor.DotNetIsolated
 
+> **Breaking change: .NET 10.** Starting with this release the package targets .NET 10. If you deployed DfMon from the NuGet package (e.g. via the *Deploy to Azure* button) on a Function App configured for .NET 8, set the app's .NET version to 10 (`az functionapp config set --net-framework-version v10.0 -g <resource-group> -n <app-name>`) before or right after upgrading, otherwise the app will fail to start.
+
 "Standalone" [.NET 7 Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) version of DurableFunctionsMonitor backend.
 
 ## How to deploy to Azure
