@@ -25,8 +25,8 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         [TestInitialize]
         public void TestInit()
         {
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_NONCE, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, null);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, null);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, null);
@@ -218,7 +218,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             Environment.SetEnvironmentVariable(hubNameVariable, hubName);
 
             Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, $"SomeClientId{DateTime.Now}");
-            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, null);
 
             // Act
 
@@ -248,7 +248,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             string userName = "tino@contoso.com";
 
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "user1@contoso.com,user2@contoso.com");
 
             request.AddIdentity(new ClaimsIdentity(new Claim[] {
@@ -268,9 +268,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         }
 
         [TestMethod]
-        [DataRow("role1,role2", "", "", DisplayName = "DFM_ALLOWED_APP_ROLES")]
-        [DataRow("", "role1,role2", "", DisplayName = "DFM_ALLOWED_FULL_ACCESS_APP_ROLES")]
-        [DataRow("", "", "role1,role2", DisplayName = "DFM_ALLOWED_READ_ONLY_APP_ROLES")]
+        [DataRow("role1,role2", null, null, DisplayName = "DFM_ALLOWED_APP_ROLES")]
+        [DataRow(null, "role1,role2", null, DisplayName = "DFM_ALLOWED_FULL_ACCESS_APP_ROLES")]
+        [DataRow(null, null, "role1,role2", DisplayName = "DFM_ALLOWED_READ_ONLY_APP_ROLES")]
         public void ReturnsUnauthorizedResultIfUserIsNotInAppRole(string appRoles, string fullAccessAppRoles, string readOnlyAppRoles)
         {
             // Arrange
@@ -282,8 +282,8 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             string userName = "tino@contoso.com";
 
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, "");
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, null);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, appRoles);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, fullAccessAppRoles);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, readOnlyAppRoles);
@@ -307,9 +307,9 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
         }
 
         [TestMethod]
-        [DataRow("role1,role2", "", "", DfmMode.Normal, DisplayName = "DFM_ALLOWED_APP_ROLES")]
-        [DataRow("", "role1,role2", "", DfmMode.Normal, DisplayName = "DFM_ALLOWED_FULL_ACCESS_APP_ROLES")]
-        [DataRow("", "", "role1,role2", DfmMode.ReadOnly, DisplayName = "DFM_ALLOWED_READ_ONLY_APP_ROLES")]
+        [DataRow("role1,role2", null, null, DfmMode.Normal, DisplayName = "DFM_ALLOWED_APP_ROLES")]
+        [DataRow(null, "role1,role2", null, DfmMode.Normal, DisplayName = "DFM_ALLOWED_FULL_ACCESS_APP_ROLES")]
+        [DataRow(null, null, "role1,role2", DfmMode.ReadOnly, DisplayName = "DFM_ALLOWED_READ_ONLY_APP_ROLES")]
         public async Task ReturnsAuthorizedIfUserIsInAppRole(string appRoles, string fullAccessAppRoles, string readOnlyAppRoles, DfmMode expectedMode)
         {
             // Arrange
@@ -321,8 +321,8 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             string userName = "tino@contoso.com";
 
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_USER_NAMES, null);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_APP_ROLES, appRoles);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_FULL_ACCESS_APP_ROLES, fullAccessAppRoles);
             Environment.SetEnvironmentVariable(EnvVariableNames.DFM_ALLOWED_READ_ONLY_APP_ROLES, readOnlyAppRoles);
@@ -389,7 +389,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             Auth.MockedJwtSecurityTokenHandler = jwtHandlerMoq.Object;
             Auth.GetSigningKeysTask = Task.FromResult(securityKeys);
 
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
             Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_CLIENT_ID, audience);
             Environment.SetEnvironmentVariable(EnvVariableNames.WEBSITE_AUTH_OPENID_ISSUER, issuer);
 
@@ -419,7 +419,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
             request.AddCookie(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
             request.Headers.Add(Globals.XsrfTokenCookieAndHeaderName, xsrfToken);
 
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
 
             var tableClientMoq = new Mock<ITableClient>();
 
@@ -466,7 +466,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             Auth.AlternativeConnectionStringNames = new[] { connName };
 
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
 
             var tableClientMoq = new Mock<ITableClient>();
 
@@ -617,7 +617,7 @@ namespace durablefunctionsmonitor.dotnetbackend.tests
 
             // Assert
 
-            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, string.Empty);
+            Environment.SetEnvironmentVariable(EnvVariableNames.DFM_HUB_NAME, null);
 
             Assert.IsTrue(hubNames.Contains("mYtASKhUB"));
         }

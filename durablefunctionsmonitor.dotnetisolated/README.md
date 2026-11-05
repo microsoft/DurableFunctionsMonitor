@@ -1,8 +1,11 @@
 # DurableFunctionsMonitor.DotNetIsolated
 
-"Standalone" [.NET 7 Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) version of DurableFunctionsMonitor backend.
+"Standalone" [.NET 10 Isolated](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide) version of DurableFunctionsMonitor backend.
 
 ## How to deploy to Azure
+
+> [!IMPORTANT]
+> When upgrading an existing deployment, update the Function App's .NET version to .NET 10 Isolated.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2FDurableFunctionsMonitor%2Fmain%2Fdurablefunctionsmonitor.dotnetisolated%2Farm-template.json) 
 
