@@ -1,6 +1,6 @@
 # Durable Functions Monitor .Net Isolated for MSSQL
 
-Custom Durable Functions Monitor .NET Isolated backend project to be used with [Durable Task SQL Provider](https://microsoft.github.io/durabletask-mssql/#/).
+Custom Durable Functions Monitor .NET 10 Isolated backend project to be used with [Durable Task SQL Provider](https://microsoft.github.io/durabletask-mssql/#/).
 
 ## How to run locally
 
@@ -32,6 +32,9 @@ func start
 
 
 ## How to deploy to Azure
+
+> [!IMPORTANT]
+> When upgrading an existing deployment, update the Function App's .NET version to .NET 10 Isolated.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2FDurableFunctionsMonitor%2Fmain%2Fcustom-backends%2FdotnetIsolated-mssql%2Farm-template.json) 
 
